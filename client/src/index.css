@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: 99 102 241;
+  --color-primary-hover: 79 70 229;
+  --color-accent: 236 72 153;
+  --color-success: 22 163 74;
+  --color-warning: 234 179 8;
+  --color-danger: 239 68 68;
+  --color-surface: 248 250 252;
+  --color-card: 255 255 255;
+  --radius: 0.75rem;
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  background: rgb(var(--color-surface));
+  color: #1e293b;
+}
+
+/* Form inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-800;
+  @apply focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none;
+  @apply transition-all duration-200;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white shadow-sm;
+  @apply hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none;
+  @apply transition-all duration-200;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-medium text-slate-700;
+  @apply hover:bg-slate-50 focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 focus:outline-none;
+  @apply transition-all duration-200;
+}
+
+/* Cards */
+.card {
+  @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm;
+}
+
+.card-header {
+  @apply border-b border-slate-100 px-5 py-4 font-semibold text-slate-800;
+}
+
+/* Tables */
+.table-wrapper {
+  @apply overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm;
+}
+
+.table-wrapper thead {
+  @apply bg-slate-50/80;
+}
+
+.table-wrapper th {
+  @apply px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500;
+}
+
+.table-wrapper td {
+  @apply px-5 py-3.5 text-sm text-slate-700;
+}
+
+.table-wrapper tbody tr {
+  @apply border-t border-slate-100 transition-colors hover:bg-slate-50/50;
+}
+
+/* Badges */
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-emerald-100 text-emerald-800;
+}
+
+.badge-warning {
+  @apply bg-amber-100 text-amber-800;
+}
+
+.badge-danger {
+  @apply bg-red-100 text-red-800;
+}
+
+.badge-neutral {
+  @apply bg-slate-100 text-slate-700;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
