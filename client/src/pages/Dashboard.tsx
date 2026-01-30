@@ -176,8 +176,7 @@ export default function Dashboard() {
                     paddingAngle={2}
                     dataKey="value"
                     nameKey="name"
-                    label={({ name, percent }) => `${name} ${percent != null ? (percent * 100).toFixed(0) : 0}%`}
-                    labelLine={false}
+                    isAnimationActive={true}
                   >
                     {incomePieData.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} stroke="none" />
