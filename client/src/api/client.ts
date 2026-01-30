@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { Property, Unit, Tenant, Lease, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus } from './types'
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const baseURL = import.meta.env.VITE_API_URL ?? '/api'
 
 export const api = axios.create({
   baseURL,
