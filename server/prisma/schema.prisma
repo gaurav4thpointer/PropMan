@@ -63,6 +63,11 @@ enum Gender {
   PREFER_NOT_TO_SAY
 }
 
+enum UserRole {
+  USER
+  SUPER_ADMIN
+}
+
 // ============== MODELS ==============
 
 model User {
@@ -72,6 +77,7 @@ model User {
   name      String?
   mobile    String?
   gender    Gender?
+  role      UserRole @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

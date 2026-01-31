@@ -27,13 +27,13 @@ api.interceptors.response.use(
 
 export const auth = {
   login: (email: string, password: string) =>
-    api.post<{ user: { id: string; email: string }; access_token: string }>('/auth/login', { email, password }),
+    api.post<{ user: { id: string; email: string; name?: string | null; role?: string }; access_token: string }>('/auth/login', { email, password }),
   register: (name: string, email: string, password: string) =>
-    api.post<{ user: { id: string; email: string; name?: string | null }; access_token: string }>('/auth/register', { name, email, password }),
+    api.post<{ user: { id: string; email: string; name?: string | null; role?: string }; access_token: string }>('/auth/register', { name, email, password }),
 }
 
 export const users = {
-  me: () => api.get<{ id: string; email: string; name?: string | null; mobile?: string | null; gender?: string | null; createdAt?: string }>('/users/me'),
+  me: () => api.get<{ id: string; email: string; name?: string | null; mobile?: string | null; gender?: string | null; role?: string; createdAt?: string }>('/users/me'),
   updateProfile: (data: { email?: string; name?: string; mobile?: string; gender?: string | null }) =>
     api.patch<{ id: string; email: string; name?: string | null; mobile?: string | null; gender?: string | null }>('/users/me', data),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
@@ -125,4 +125,39 @@ export const reports = {
       a.click()
       URL.revokeObjectURL(url)
     }),
+}
+
+export interface AdminStats {
+  totalUsers: number
+  totalProperties: number
+  totalUnits: number
+  totalLeases: number
+  totalTenants: number
+  totalCheques: number
+  totalPayments: number
+  usersByRole: Record<string, number>
+  propertiesByCountry: Record<string, number>
+  totalRentExpectedAllTime: number
+  totalRentReceivedAllTime: number
+  totalChequeValueTracked: number
+  totalSecurityDepositsTracked: number
+  rentExpectedByCurrency?: Record<string, number>
+  rentReceivedByCurrency?: Record<string, number>
+  chequeValueByCurrency?: Record<string, number>
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  name?: string | null
+  mobile?: string | null
+  role: string
+  createdAt: string
+}
+
+export const admin = {
+  stats: () => api.get<AdminStats>('/admin/stats'),
+  activity: (limit?: number) => api.get<{ recentLeases: unknown[]; recentPayments: unknown[]; recentUsers: AdminUser[] }>('/admin/activity', { params: { limit } }),
+  users: (params?: { page?: number; limit?: number }) =>
+    api.get<{ data: AdminUser[]; meta: { total: number; page: number; limit: number; totalPages: number } }>('/admin/users', { params }),
 }

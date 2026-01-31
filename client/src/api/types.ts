@@ -8,12 +8,15 @@ export type PaymentMethod = 'CHEQUE' | 'BANK_TRANSFER' | 'UPI' | 'CASH'
 
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY'
 
+export type UserRole = 'USER' | 'SUPER_ADMIN'
+
 export interface User {
   id: string
   email: string
   name?: string | null
   mobile?: string | null
   gender?: Gender | null
+  role?: UserRole
 }
 
 export interface Property {
@@ -126,4 +129,8 @@ export interface DashboardData {
   bouncedCount: number
   unitStats: { vacant: number; occupied: number }
   expiringLeases: (Lease & { property?: Property; unit?: Unit; tenant?: Tenant })[]
+  totalTrackedExpected?: number
+  totalTrackedReceived?: number
+  totalChequeValueTracked?: number
+  totalSecurityDepositsTracked?: number
 }

@@ -1,0 +1,32 @@
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
+import { AdminService } from './admin.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
+
+@ApiTags('admin')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, SuperAdminGuard)
+@Controller('admin')
+export class AdminController {
+  constructor(private adminService: AdminService) {}
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Platform-wide stats (super admin only)' })
+  getStats() {
+    return this.adminService.getStats();
+  }
+
+  @Get('activity')
+  @ApiOperation({ summary: 'Recent activity across platform (super admin only)' })
+  getActivity(@Query('limit') limit?: string) {
+    return this.adminService.getRecentActivity(limit ? parseInt(limit, 10) : 10);
+  }
+
+  @Get('users')
+  @ApiOperation({ summary: 'List all users (super admin only)' })
+  getUsers(@Query() dto: PaginationDto) {
+    return this.adminService.getUsers(dto.page ?? 1, dto.limit ?? 20);
+  }
+}

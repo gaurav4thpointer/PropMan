@@ -87,14 +87,32 @@ export class ReportsService {
       }),
     ]);
 
-    const overdueAmount = await this.prisma.rentSchedule.aggregate({
-      where: {
-        lease: leaseWhere,
-        status: { in: [ScheduleStatus.DUE, ScheduleStatus.PARTIAL] },
-        dueDate: { lt: now },
-      },
-      _sum: { expectedAmount: true },
-    });
+    const [overdueAmount, totalTrackedExpected, totalTrackedReceived, totalChequeValueTracked, totalSecurityDepositsTracked] = await Promise.all([
+      this.prisma.rentSchedule.aggregate({
+        where: {
+          lease: leaseWhere,
+          status: { in: [ScheduleStatus.DUE, ScheduleStatus.PARTIAL] },
+          dueDate: { lt: now },
+        },
+        _sum: { expectedAmount: true },
+      }),
+      this.prisma.rentSchedule.aggregate({
+        where: { lease: leaseWhere },
+        _sum: { expectedAmount: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: { ownerId },
+        _sum: { amount: true },
+      }),
+      this.prisma.cheque.aggregate({
+        where: { ownerId },
+        _sum: { amount: true },
+      }),
+      this.prisma.lease.aggregate({
+        where: { ownerId },
+        _sum: { securityDeposit: true },
+      }),
+    ]);
 
     const monthExpectedVal = Number(monthExpected._sum.expectedAmount ?? 0);
     const monthPaidVal = Number(monthPaid._sum.expectedAmount ?? 0);
@@ -110,6 +128,10 @@ export class ReportsService {
       bouncedCount,
       unitStats: { vacant: vacantCount, occupied: occupiedCount },
       expiringLeases,
+      totalTrackedExpected: Number(totalTrackedExpected._sum.expectedAmount ?? 0),
+      totalTrackedReceived: Number(totalTrackedReceived._sum.amount ?? 0),
+      totalChequeValueTracked: Number(totalChequeValueTracked._sum.amount ?? 0),
+      totalSecurityDepositsTracked: Number(totalSecurityDepositsTracked._sum.securityDeposit ?? 0),
     };
   }
 

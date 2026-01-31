@@ -26,8 +26,8 @@ export default function Login() {
   const onSubmit = async (data: FormData) => {
     setError('')
     try {
-      await login(data.email, data.password)
-      navigate(from, { replace: true })
+      const user = await login(data.email, data.password)
+      navigate(user?.role === 'SUPER_ADMIN' ? '/admin' : from, { replace: true })
     } catch (e: unknown) {
       setError((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Login failed')
     }
@@ -87,6 +87,9 @@ export default function Login() {
             <Link to="/register" className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
               Create one
             </Link>
+          </p>
+          <p className="mt-2 text-center text-xs text-slate-500">
+            Super admin? Use the same form — you’ll be redirected to the admin panel.
           </p>
         </div>
       </div>

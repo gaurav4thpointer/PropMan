@@ -11,6 +11,7 @@ import { RentScheduleModule } from './rent-schedule/rent-schedule.module';
 import { ChequesModule } from './cheques/cheques.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ReportsModule } from './reports/reports.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ReportsModule } from './reports/reports.module';
     PrismaModule,
     AuthModule,
     UsersModule,
+    AdminModule,
     PropertiesModule,
     UnitsModule,
     TenantsModule,

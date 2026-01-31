@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import Layout from './components/Layout'
+import AdminLayout from './components/AdminLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -14,6 +16,9 @@ import Cheques from './pages/Cheques'
 import Payments from './pages/Payments'
 import Reports from './pages/Reports'
 import Account from './pages/Account'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminActivity from './pages/admin/AdminActivity'
 
 function App() {
   return (
@@ -40,6 +45,18 @@ function App() {
             <Route path="payments" element={<Payments />} />
             <Route path="reports" element={<Reports />} />
             <Route path="account" element={<Account />} />
+          </Route>
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="activity" element={<AdminActivity />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

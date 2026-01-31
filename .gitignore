@@ -40,3 +40,6 @@ Thumbs.db
 coverage/
 *.local
 .cache/
+
+# Flutter mobile app (separate project, not part of this repo)
+mobile/

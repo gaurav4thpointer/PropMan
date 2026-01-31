@@ -1,10 +1,11 @@
-import { PrismaClient, Country, Currency, UnitStatus, RentFrequency, ChequeStatus, PaymentMethod, ScheduleStatus } from '@prisma/client';
+import { PrismaClient, Country, Currency, UnitStatus, RentFrequency, ChequeStatus, PaymentMethod, ScheduleStatus, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
   const hashed = await bcrypt.hash('password123', 10);
+  const adminHashed = await bcrypt.hash('admin123', 10);
 
   const user = await prisma.user.upsert({
     where: { email: 'owner@example.com' },
@@ -13,6 +14,17 @@ async function main() {
       email: 'owner@example.com',
       password: hashed,
       name: 'Demo Owner',
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'admin@propman.com' },
+    update: { role: UserRole.SUPER_ADMIN, password: adminHashed, name: 'Super Admin' },
+    create: {
+      email: 'admin@propman.com',
+      password: adminHashed,
+      name: 'Super Admin',
+      role: UserRole.SUPER_ADMIN,
     },
   });
 
@@ -736,7 +748,7 @@ async function main() {
   console.log(
     'Seed completed. User:',
     user.email,
-    '| 5 properties, multiple units, 8 tenants, 8 leases, cheques (incl. bounced), payments + matches.'
+    '| Super admin: admin@propman.com / admin123 | 5 properties, multiple units, 8 tenants, 8 leases, cheques (incl. bounced), payments + matches.'
   );
 }
 

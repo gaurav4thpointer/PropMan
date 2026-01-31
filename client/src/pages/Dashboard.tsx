@@ -123,6 +123,38 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Money tracked in PropMan */}
+      <div className="mt-8">
+        <h2 className="mb-2 text-lg font-semibold text-slate-800">Money tracked in PropMan</h2>
+        <p className="mb-4 text-sm text-slate-500">Total value of rent, payments, cheques and security deposits you track</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="card overflow-hidden p-0">
+            <div className="bg-gradient-to-br from-sky-500 to-blue-600 px-5 py-4 text-white">
+              <p className="text-sm font-medium opacity-90">Total rent expected (all time)</p>
+              <p className="mt-1 text-xl font-bold">{formatNum(data.totalTrackedExpected ?? 0)}</p>
+            </div>
+          </div>
+          <div className="card overflow-hidden p-0">
+            <div className="bg-gradient-to-br from-green-500 to-emerald-600 px-5 py-4 text-white">
+              <p className="text-sm font-medium opacity-90">Total received (all time)</p>
+              <p className="mt-1 text-xl font-bold">{formatNum(data.totalTrackedReceived ?? 0)}</p>
+            </div>
+          </div>
+          <div className="card overflow-hidden p-0">
+            <div className="bg-gradient-to-br from-amber-500 to-orange-600 px-5 py-4 text-white">
+              <p className="text-sm font-medium opacity-90">Cheque value tracked</p>
+              <p className="mt-1 text-xl font-bold">{formatNum(data.totalChequeValueTracked ?? 0)}</p>
+            </div>
+          </div>
+          <div className="card overflow-hidden p-0">
+            <div className="bg-gradient-to-br from-slate-600 to-slate-800 px-5 py-4 text-white">
+              <p className="text-sm font-medium opacity-90">Security deposits tracked</p>
+              <p className="mt-1 text-xl font-bold">{formatNum(data.totalSecurityDepositsTracked ?? 0)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Charts */}
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="card overflow-hidden p-0">
