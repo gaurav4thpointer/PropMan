@@ -56,7 +56,7 @@ const variantClasses = {
       'max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20',
     clearBtn: 'text-sm text-slate-600 hover:text-slate-800 underline',
     table: 'min-w-full',
-    th: (col: DataTableColumn<unknown>, canSort: boolean, isSorted: boolean) =>
+    th: (col: { align?: 'left' | 'right' }, canSort: boolean, isSorted: boolean) =>
       `whitespace-nowrap py-3 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 ${col.align === 'right' ? 'text-right pl-4' : ''} ${isSorted ? 'text-indigo-600' : ''} ${canSort ? 'cursor-pointer select-none hover:bg-slate-50' : ''}`,
     sortIndicator: 'text-indigo-500',
     tr: 'border-t border-slate-100 hover:bg-slate-50/50',
@@ -75,7 +75,7 @@ const variantClasses = {
       'max-w-xs rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
     clearBtn: 'text-sm text-slate-400 hover:text-white underline',
     table: 'w-full min-w-[600px] text-left text-sm',
-    th: (col: DataTableColumn<unknown>, canSort: boolean, isSorted: boolean) =>
+    th: (col: { align?: 'left' | 'right' }, canSort: boolean, isSorted: boolean) =>
       `whitespace-nowrap px-5 py-4 font-semibold ${col.align === 'right' ? 'text-right' : ''} ${isSorted ? 'text-amber-400' : 'text-slate-300'} ${canSort ? 'cursor-pointer select-none hover:bg-slate-700/50' : ''}`,
     sortIndicator: 'text-amber-500',
     tr: 'border-b border-slate-700/50 transition-colors hover:bg-slate-700/30',

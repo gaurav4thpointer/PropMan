@@ -292,7 +292,7 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#64748b' }} />
               <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(v) => formatNum(v)} />
-              <Tooltip formatter={(v: number) => formatNum(v)} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0' }} />
+              <Tooltip formatter={(v) => formatNum(Number(v) || 0)} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0' }} />
               <Bar dataKey="expected" name="Expected" fill={CHART_COLORS.expected} radius={[6, 6, 0, 0]} />
               <Bar dataKey="received" name="Received" fill={CHART_COLORS.received} radius={[6, 6, 0, 0]} />
             </BarChart>
@@ -317,7 +317,7 @@ export default function Dashboard() {
                     <Cell key={entry.name} fill={entry.fill} stroke="none" />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v: number) => formatNum(v)} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0' }} />
+                <Tooltip formatter={(v) => formatNum(Number(v) || 0)} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0' }} />
               </PieChart>
             </ResponsiveContainer>
           ) : (

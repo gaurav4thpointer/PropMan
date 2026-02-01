@@ -116,6 +116,14 @@ RentalTracker/
 └── client/                 # React app (Vite)
 ```
 
+## Pre-push sanity check
+
+Run this from the repo root to verify both client and server build successfully before pushing:
+
+```bash
+npm run build --prefix client && npm run build --prefix server
+```
+
 ## Env vars (server)
 
 | Variable       | Description                    |
