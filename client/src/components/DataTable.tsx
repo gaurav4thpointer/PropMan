@@ -53,7 +53,7 @@ const variantClasses = {
     wrapper: '',
     toolbarBorder: 'border-slate-100',
     searchInput:
-      'max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20',
+      'w-full min-w-0 max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 sm:max-w-xs',
     clearBtn: 'text-sm text-slate-600 hover:text-slate-800 underline',
     table: 'min-w-full',
     th: (col: { align?: 'left' | 'right' }, canSort: boolean, isSorted: boolean) =>
@@ -72,7 +72,7 @@ const variantClasses = {
     wrapper: 'rounded-2xl border border-slate-700/80 bg-slate-800/50 overflow-hidden',
     toolbarBorder: 'border-slate-700',
     searchInput:
-      'max-w-xs rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+      'w-full min-w-0 max-w-xs rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 sm:max-w-xs',
     clearBtn: 'text-sm text-slate-400 hover:text-white underline',
     table: 'w-full min-w-[600px] text-left text-sm',
     th: (col: { align?: 'left' | 'right' }, canSort: boolean, isSorted: boolean) =>
@@ -156,7 +156,7 @@ export default function DataTable<T>({
   }
 
   const searchBar = (
-    <div className={`flex flex-nowrap items-center gap-3 overflow-x-auto border-b ${c.toolbarBorder} px-5 py-3 ${variant === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50/80'}`}>
+    <div className={`flex flex-wrap items-center gap-3 border-b ${c.toolbarBorder} px-4 py-3 sm:px-5 ${variant === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50/80'}`}>
       <input
         type="search"
         placeholder={searchPlaceholder}
@@ -189,7 +189,7 @@ export default function DataTable<T>({
   return (
     <div className={variant === 'dark' ? c.wrapper : 'table-wrapper'}>
       {searchBar}
-      <div className={variant === 'dark' ? 'overflow-x-auto' : ''}>
+      <div className="overflow-x-auto">
         <table className={c.table}>
           <thead>
             <tr className={variant === 'dark' ? 'border-b border-slate-700 bg-slate-800/80' : ''}>
@@ -237,8 +237,8 @@ export default function DataTable<T>({
       )}
 
       {(totalFiltered > 0 || search) && (
-        <div className={`flex flex-wrap items-center justify-between gap-3 border-t ${c.footerBorder} px-5 py-3`}>
-          <div className={`flex flex-nowrap items-center gap-4 ${c.footerText}`}>
+        <div className={`flex flex-col gap-3 border-t ${c.footerBorder} px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5`}>
+          <div className={`flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 ${c.footerText}`}>
             <span className="whitespace-nowrap">
               Showing {start + 1}–{Math.min(start + rowsPerPage, totalFiltered)} of {totalFiltered}
             </span>

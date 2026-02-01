@@ -77,7 +77,7 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
           <p className="mt-1 text-slate-500">Overview of your rental income and activity</p>
         </div>
-        <div className="flex flex-nowrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <label className="text-sm font-medium text-slate-600">Property</label>
           <select
             value={filterPropertyId}

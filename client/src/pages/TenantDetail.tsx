@@ -108,7 +108,7 @@ export default function TenantDetail() {
       <Link to="/tenants" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Tenants</Link>
 
       <div className="card mb-8 overflow-hidden p-0">
-        <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50/50 px-6 py-5">
+        <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50/50 px-4 py-5 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-800">{tenant.name}</h1>

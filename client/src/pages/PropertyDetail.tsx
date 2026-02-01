@@ -101,7 +101,7 @@ export default function PropertyDetail() {
     <div>
       <Link to="/properties" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Properties</Link>
       <div className="card mb-8 overflow-hidden p-0">
-        <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50/50 px-6 py-5">
+        <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50/50 px-4 py-5 sm:px-6">
           <h1 className="text-2xl font-bold text-slate-800">{property.name}</h1>
           <p className="mt-1 text-slate-600">{property.address ?? '–'}</p>
           <div className="mt-3 flex flex-wrap gap-2">

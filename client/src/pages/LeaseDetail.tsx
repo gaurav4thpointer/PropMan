@@ -47,7 +47,7 @@ export default function LeaseDetail() {
         </div>
       )}
       <div className="card mb-8 overflow-hidden p-0">
-        <div className={`border-b border-slate-100 px-6 py-5 ${expired ? 'bg-rose-50/50' : 'bg-gradient-to-r from-violet-50 to-indigo-50/50'}`}>
+        <div className={`border-b border-slate-100 px-4 py-5 sm:px-6 ${expired ? 'bg-rose-50/50' : 'bg-gradient-to-r from-violet-50 to-indigo-50/50'}`}>
           <h1 className="text-2xl font-bold text-slate-800">Lease details</h1>
           <p className="mt-1 text-slate-600">
             {lease.propertyId ? (
