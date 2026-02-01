@@ -66,6 +66,7 @@ export interface Lease {
   id: string
   startDate: string
   endDate: string
+  terminationDate?: string | null
   rentFrequency: RentFrequency
   installmentAmount: number | string
   dueDay: number
@@ -78,6 +79,17 @@ export interface Lease {
   unit?: Unit
   tenant?: Tenant
   rentSchedules?: RentSchedule[]
+}
+
+export interface LeaseDocument {
+  id: string
+  leaseId: string
+  displayName?: string | null
+  originalFileName: string
+  storedPath: string
+  mimeType?: string | null
+  size?: number | null
+  createdAt: string
 }
 
 export interface RentSchedule {

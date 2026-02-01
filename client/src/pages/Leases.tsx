@@ -4,7 +4,7 @@ import { leases as leasesApi, properties as propertiesApi } from '../api/client'
 import type { Lease, Property } from '../api/types'
 import LeaseForm from '../components/LeaseForm'
 import DataTable, { type DataTableColumn } from '../components/DataTable'
-import { isLeaseExpired } from '../utils/lease'
+import { isLeaseExpired, isLeaseTerminated } from '../utils/lease'
 
 const FETCH_LIMIT = 100
 
@@ -86,11 +86,15 @@ export default function Leases() {
       sortKey: 'endDate',
       render: (l) => {
         const expired = isLeaseExpired(l.endDate)
+        const terminated = isLeaseTerminated(l)
         return (
           <span className="text-slate-600">
             {formatDate(l.startDate)} – {formatDate(l.endDate)}
             {expired && (
               <span className="ml-2 inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800">Expired</span>
+            )}
+            {terminated && !expired && (
+              <span className="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">Terminated early</span>
             )}
           </span>
         )

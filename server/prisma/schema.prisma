@@ -144,6 +144,7 @@ model Lease {
   id                String        @id @default(uuid())
   startDate         DateTime      @db.Date
   endDate           DateTime      @db.Date
+  terminationDate   DateTime?     @db.Date  // when lease was ended early (if before endDate)
   rentFrequency     RentFrequency
   installmentAmount  Decimal       @db.Decimal(14, 2)
   dueDay            Int           // 1-28
@@ -163,8 +164,24 @@ model Lease {
   rentSchedules RentSchedule[]
   cheques      Cheque[]
   payments     Payment[]
+  documents    LeaseDocument[]
 
   @@index([unitId, startDate, endDate])
+}
+
+model LeaseDocument {
+  id               String   @id @default(uuid())
+  leaseId          String
+  displayName      String?  // optional user-provided name (shown in UI)
+  originalFileName String   // original file name from upload
+  storedPath       String   // path on disk relative to upload root
+  mimeType        String?
+  size            Int?     // bytes
+  createdAt       DateTime @default(now())
+
+  lease Lease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  @@index([leaseId])
 }
 
 model RentSchedule {

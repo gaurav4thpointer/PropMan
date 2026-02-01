@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLeaseDto } from './dto/create-lease.dto';
 import { UpdateLeaseDto } from './dto/update-lease.dto';
+import { TerminateLeaseDto } from './dto/terminate-lease.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { paginatedResponse } from '../common/dto/pagination.dto';
 import { RentFrequency, UnitStatus } from '@prisma/client';
@@ -170,19 +171,55 @@ export class LeasesService {
     return { deleted: true };
   }
 
-  /** Set unit to VACANT if it has no active (non-expired) lease, excluding optional lease id. */
+  /** Set unit to VACANT if it has no active (non-expired, not terminated) lease, excluding optional lease id. */
   private async setUnitVacantIfNoActiveLease(unitId: string, excludeLeaseId: string | null) {
     const now = new Date();
-    const active = await this.prisma.lease.findFirst({
+    now.setHours(0, 0, 0, 0);
+    const leases = await this.prisma.lease.findMany({
       where: {
         unitId,
         ...(excludeLeaseId && { id: { not: excludeLeaseId } }),
         endDate: { gte: now },
       },
+      select: { id: true, endDate: true, terminationDate: true },
+    });
+    const active = leases.some((l) => {
+      const end = new Date(l.endDate);
+      end.setHours(0, 0, 0, 0);
+      if (end < now) return false;
+      if (l.terminationDate == null) return true;
+      const term = new Date(l.terminationDate);
+      term.setHours(0, 0, 0, 0);
+      return term > now;
     });
     if (!active) {
       await this.prisma.unit.update({ where: { id: unitId }, data: { status: UnitStatus.VACANT } });
     }
+  }
+
+  async terminateEarly(ownerId: string, id: string, dto: TerminateLeaseDto) {
+    const lease = await this.findOne(ownerId, id);
+    const start = new Date(lease.startDate);
+    const end = new Date(lease.endDate);
+    const term = new Date(dto.terminationDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    term.setHours(0, 0, 0, 0);
+    if (term < start) throw new BadRequestException('terminationDate must be on or after lease startDate');
+    if (term > end) throw new BadRequestException('terminationDate must be on or before lease endDate');
+    if (lease.terminationDate) throw new BadRequestException('Lease is already terminated');
+
+    await this.prisma.lease.update({
+      where: { id },
+      data: { terminationDate: term },
+    });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (term <= today) {
+      await this.setUnitVacantIfNoActiveLease(lease.unitId, null);
+    }
+    return this.findOne(ownerId, id);
   }
 
   private async ensurePropertyUnitTenantOwned(

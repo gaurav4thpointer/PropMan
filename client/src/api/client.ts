@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Property, Unit, Tenant, Lease, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload } from './types'
+import type { Property, Unit, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload } from './types'
 
 const baseURL = import.meta.env.VITE_API_URL ?? '/api'
 
@@ -71,7 +71,30 @@ export const leases = {
   get: (id: string) => api.get<Lease>(`/leases/${id}`),
   create: (data: Record<string, unknown>) => api.post<Lease>('/leases', data),
   update: (id: string, data: Record<string, unknown>) => api.patch<Lease>(`/leases/${id}`, data),
+  terminate: (id: string, data: { terminationDate: string }) => api.patch<Lease>(`/leases/${id}/terminate`, data),
   delete: (id: string) => api.delete(`/leases/${id}`),
+}
+
+export const leaseDocuments = {
+  list: (leaseId: string) => api.get<LeaseDocument[]>(`/leases/${leaseId}/documents`),
+  upload: (leaseId: string, file: File, name?: string | null) => {
+    const form = new FormData()
+    form.append('file', file)
+    if (name != null && name.trim()) form.append('name', name.trim())
+    return api.post<LeaseDocument>(`/leases/${leaseId}/documents`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  download: async (leaseId: string, docId: string) => {
+    const r = await api.get<Blob>(`/leases/${leaseId}/documents/${docId}/download`, { responseType: 'blob' })
+    const disp = r.headers['content-disposition']
+    const match = disp && /filename="?([^"]+)"?/.exec(disp)
+    const filename = match ? match[1] : 'document'
+    return { blob: r.data, filename }
+  },
+  update: (leaseId: string, docId: string, data: { displayName?: string | null }) =>
+    api.patch<LeaseDocument>(`/leases/${leaseId}/documents/${docId}`, data),
+  delete: (leaseId: string, docId: string) => api.delete(`/leases/${leaseId}/documents/${docId}`),
 }
 
 export const rentSchedule = {

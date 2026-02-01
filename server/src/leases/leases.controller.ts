@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { LeasesService } from './leases.service';
 import { CreateLeaseDto } from './dto/create-lease.dto';
 import { UpdateLeaseDto } from './dto/update-lease.dto';
+import { TerminateLeaseDto } from './dto/terminate-lease.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -37,6 +38,12 @@ export class LeasesController {
   @ApiOperation({ summary: 'Get lease with rent schedule' })
   findOne(@CurrentUser() user: User, @Param('id') id: string) {
     return this.leasesService.findOne(user.id, id);
+  }
+
+  @Patch(':id/terminate')
+  @ApiOperation({ summary: 'Terminate lease early' })
+  terminateEarly(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: TerminateLeaseDto) {
+    return this.leasesService.terminateEarly(user.id, id, dto);
   }
 
   @Patch(':id')
