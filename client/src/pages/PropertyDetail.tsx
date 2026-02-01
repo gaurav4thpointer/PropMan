@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { properties, units } from '../api/client'
 import type { Property, Unit } from '../api/types'
 import UnitForm from '../components/UnitForm'
+import DataTable, { type DataTableColumn } from '../components/DataTable'
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>()
@@ -12,6 +13,7 @@ export default function PropertyDetail() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [showUnitForm, setShowUnitForm] = useState(false)
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
+  const [unitStatusFilter, setUnitStatusFilter] = useState<string>('')
 
   useEffect(() => {
     if (!id) return
@@ -53,6 +55,48 @@ export default function PropertyDetail() {
     )
   }
 
+  const unitColumns: DataTableColumn<Unit>[] = [
+    {
+      key: 'unitNo',
+      label: 'Unit no',
+      searchable: true,
+      render: (u) => <span className="font-semibold text-slate-800">{u.unitNo}</span>,
+    },
+    {
+      key: 'bedrooms',
+      label: 'Bedrooms',
+      sortable: true,
+      getSortValue: (u) => u.bedrooms ?? -1,
+      render: (u) => <span className="text-slate-600">{u.bedrooms ?? '–'}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortKey: 'status',
+      searchable: true,
+      render: (u) => (
+        <span className={u.status === 'OCCUPIED' ? 'badge badge-success' : 'badge badge-neutral'}>
+          {u.status}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      align: 'right',
+      render: (u) => (
+        <button
+          type="button"
+          onClick={() => { setEditingUnit(u); setShowUnitForm(true) }}
+          className="text-sm font-medium text-indigo-600 hover:underline"
+        >
+          Edit
+        </button>
+      ),
+    },
+  ]
+
   return (
     <div>
       <Link to="/properties" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Properties</Link>
@@ -68,11 +112,23 @@ export default function PropertyDetail() {
         </div>
       </div>
 
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-bold text-slate-800">Units</h2>
-        <button type="button" onClick={() => { setEditingUnit(null); setShowUnitForm(true) }} className="btn-primary text-sm">
-          + Add unit
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {id && (
+            <>
+              <Link to={`/leases?propertyId=${id}`} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">
+                View leases
+              </Link>
+              <Link to={`/cheques?propertyId=${id}`} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">
+                View cheques
+              </Link>
+            </>
+          )}
+          <button type="button" onClick={() => { setEditingUnit(null); setShowUnitForm(true) }} className="btn-primary text-sm">
+            + Add unit
+          </button>
+        </div>
       </div>
       {showUnitForm && id && (
         <UnitForm
@@ -82,35 +138,28 @@ export default function PropertyDetail() {
           onCancel={() => { setShowUnitForm(false); setEditingUnit(null) }}
         />
       )}
-      <div className="table-wrapper">
-        <table className="min-w-full">
-          <thead>
-            <tr>
-              <th>Unit no</th>
-              <th>Bedrooms</th>
-              <th>Status</th>
-              <th className="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {unitsList.map((u) => (
-              <tr key={u.id}>
-                <td className="font-semibold text-slate-800">{u.unitNo}</td>
-                <td className="text-slate-600">{u.bedrooms ?? '–'}</td>
-                <td>
-                  <span className={u.status === 'OCCUPIED' ? 'badge badge-success' : 'badge badge-neutral'}>
-                    {u.status}
-                  </span>
-                </td>
-                <td className="text-right">
-                  <button type="button" onClick={() => { setEditingUnit(u); setShowUnitForm(true) }} className="text-sm font-medium text-indigo-600 hover:underline">Edit</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {unitsList.length === 0 && <p className="px-5 py-12 text-center text-slate-500">No units. Add one above.</p>}
-      </div>
+
+      <DataTable<Unit>
+        data={unitsList.filter((u) => !unitStatusFilter || u.status === unitStatusFilter)}
+        columns={unitColumns}
+        idKey="id"
+        searchPlaceholder="Search unit no..."
+        defaultRowsPerPage={10}
+        rowsPerPageOptions={[5, 10, 20, 50]}
+        extraToolbar={
+          <select
+            value={unitStatusFilter}
+            onChange={(e) => setUnitStatusFilter(e.target.value)}
+            className="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none"
+            aria-label="Filter by status"
+          >
+            <option value="">All statuses</option>
+            <option value="VACANT">Vacant</option>
+            <option value="OCCUPIED">Occupied</option>
+          </select>
+        }
+        emptyMessage="No units. Add one above."
+      />
     </div>
   )
 }

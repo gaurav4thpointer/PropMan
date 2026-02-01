@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Property, Unit, Tenant, Lease, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus } from './types'
+import type { Property, Unit, Tenant, Lease, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload } from './types'
 
 const baseURL = import.meta.env.VITE_API_URL ?? '/api'
 
@@ -41,9 +41,10 @@ export const users = {
 }
 
 export const properties = {
-  list: (params?: { page?: number; limit?: number }) => api.get<Paginated<Property>>('/properties', { params }),
+  list: (params?: { page?: number; limit?: number; search?: string; country?: string; currency?: string }) =>
+    api.get<Paginated<Property>>('/properties', { params }),
   get: (id: string) => api.get<Property>(`/properties/${id}`),
-  create: (data: Partial<Property>) => api.post<Property>('/properties', data),
+  create: (data: CreatePropertyPayload) => api.post<Property>('/properties', data),
   update: (id: string, data: Partial<Property>) => api.patch<Property>(`/properties/${id}`, data),
   delete: (id: string) => api.delete(`/properties/${id}`),
 }
@@ -58,7 +59,7 @@ export const units = {
 }
 
 export const tenants = {
-  list: (params?: { page?: number; limit?: number }) => api.get<Paginated<Tenant>>('/tenants', { params }),
+  list: (params?: { page?: number; limit?: number; search?: string }) => api.get<Paginated<Tenant>>('/tenants', { params }),
   get: (id: string) => api.get<Tenant>(`/tenants/${id}`),
   create: (data: Partial<Tenant>) => api.post<Tenant>('/tenants', data),
   update: (id: string, data: Partial<Tenant>) => api.patch<Tenant>(`/tenants/${id}`, data),
@@ -66,7 +67,7 @@ export const tenants = {
 }
 
 export const leases = {
-  list: (params?: { page?: number; limit?: number }) => api.get<Paginated<Lease>>('/leases', { params }),
+  list: (params?: { page?: number; limit?: number; propertyId?: string; tenantId?: string; search?: string }) => api.get<Paginated<Lease>>('/leases', { params }),
   get: (id: string) => api.get<Lease>(`/leases/${id}`),
   create: (data: Record<string, unknown>) => api.post<Lease>('/leases', data),
   update: (id: string, data: Record<string, unknown>) => api.patch<Lease>(`/leases/${id}`, data),
@@ -83,7 +84,7 @@ export const rentSchedule = {
 }
 
 export const cheques = {
-  list: (params?: { page?: number; limit?: number; propertyId?: string; status?: string }) =>
+  list: (params?: { page?: number; limit?: number; propertyId?: string; tenantId?: string; status?: string; search?: string }) =>
     api.get<Paginated<Cheque>>('/cheques', { params }),
   upcoming: (days?: number, propertyId?: string) =>
     api.get<Cheque[]>('/cheques/upcoming', { params: { days: days ?? 30, propertyId } }),
@@ -96,7 +97,7 @@ export const cheques = {
 }
 
 export const payments = {
-  list: (params?: { page?: number; limit?: number; leaseId?: string }) =>
+  list: (params?: { page?: number; limit?: number; leaseId?: string; propertyId?: string; tenantId?: string; search?: string }) =>
     api.get<Paginated<Payment>>('/payments', { params }),
   get: (id: string) => api.get<Payment>(`/payments/${id}`),
   create: (data: Record<string, unknown>) => api.post<Payment>('/payments', data),
@@ -158,6 +159,6 @@ export interface AdminUser {
 export const admin = {
   stats: () => api.get<AdminStats>('/admin/stats'),
   activity: (limit?: number) => api.get<{ recentLeases: unknown[]; recentPayments: unknown[]; recentUsers: AdminUser[] }>('/admin/activity', { params: { limit } }),
-  users: (params?: { page?: number; limit?: number }) =>
+  users: (params?: { page?: number; limit?: number; search?: string }) =>
     api.get<{ data: AdminUser[]; meta: { total: number; page: number; limit: number; totalPages: number } }>('/admin/users', { params }),
 }

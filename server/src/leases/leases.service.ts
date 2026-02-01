@@ -77,17 +77,27 @@ export class LeasesService {
     return this.findOne(ownerId, lease.id);
   }
 
-  async findAll(ownerId: string, pagination: PaginationDto) {
+  async findAll(ownerId: string, pagination: PaginationDto, filters?: { propertyId?: string; tenantId?: string; search?: string }) {
     const { page = 1, limit = 20 } = pagination;
+    const where: Record<string, unknown> = { ownerId };
+    if (filters?.propertyId) where.propertyId = filters.propertyId;
+    if (filters?.tenantId) where.tenantId = filters.tenantId;
+    if (filters?.search?.trim()) {
+      const q = filters.search.trim();
+      where.OR = [
+        { tenant: { name: { contains: q, mode: 'insensitive' } } },
+        { property: { name: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
     const [data, total] = await Promise.all([
       this.prisma.lease.findMany({
-        where: { ownerId },
+        where: where as { ownerId: string },
         include: { property: true, unit: true, tenant: true },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { startDate: 'desc' },
       }),
-      this.prisma.lease.count({ where: { ownerId } }),
+      this.prisma.lease.count({ where: where as { ownerId: string } }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }

@@ -10,23 +10,49 @@ export class PropertiesService {
   constructor(private prisma: PrismaService) {}
 
   async create(ownerId: string, dto: CreatePropertyDto) {
-    return this.prisma.property.create({
-      data: { ...dto, ownerId },
-      include: { units: true },
+    const { firstUnit, ...propertyData } = dto;
+    return this.prisma.$transaction(async (tx) => {
+      const property = await tx.property.create({
+        data: { ...propertyData, ownerId },
+      });
+      if (firstUnit?.unitNo) {
+        await tx.unit.create({
+          data: {
+            propertyId: property.id,
+            unitNo: firstUnit.unitNo,
+            bedrooms: firstUnit.bedrooms,
+            status: firstUnit.status ?? 'VACANT',
+            notes: firstUnit.notes,
+          },
+        });
+      }
+      return tx.property.findUniqueOrThrow({
+        where: { id: property.id },
+        include: { units: true },
+      });
     });
   }
 
-  async findAll(ownerId: string, pagination: PaginationDto) {
+  async findAll(ownerId: string, pagination: PaginationDto, filters?: { search?: string; country?: string; currency?: string }) {
     const { page = 1, limit = 20 } = pagination;
+    const where: Record<string, unknown> = { ownerId };
+    if (filters?.country) where.country = filters.country;
+    if (filters?.currency) where.currency = filters.currency;
+    if (filters?.search?.trim()) {
+      const q = filters.search.trim();
+      where.AND = [
+        { OR: [{ name: { contains: q, mode: 'insensitive' } }, { address: { contains: q, mode: 'insensitive' } }] },
+      ];
+    }
     const [data, total] = await Promise.all([
       this.prisma.property.findMany({
-        where: { ownerId },
+        where: where as { ownerId: string },
         include: { units: true },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.property.count({ where: { ownerId } }),
+      this.prisma.property.count({ where: where as { ownerId: string } }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }

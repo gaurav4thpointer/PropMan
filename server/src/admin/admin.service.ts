@@ -163,7 +163,7 @@ export class AdminService {
     };
   }
 
-  async getUsers(page: number, limit: number) {
-    return this.usersService.findAll(page, limit);
+  async getUsers(page: number, limit: number, search?: string) {
+    return this.usersService.findAll(page, limit, search);
   }
 }

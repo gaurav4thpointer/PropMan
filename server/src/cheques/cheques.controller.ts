@@ -29,9 +29,11 @@ export class ChequesController {
     @CurrentUser() user: User,
     @Query() pagination: PaginationDto,
     @Query('propertyId') propertyId?: string,
+    @Query('tenantId') tenantId?: string,
     @Query('status') status?: ChequeStatus,
+    @Query('search') search?: string,
   ) {
-    return this.chequesService.findAll(user.id, pagination, { propertyId, status });
+    return this.chequesService.findAll(user.id, pagination, { propertyId, tenantId, status, search });
   }
 
   @Get('upcoming')

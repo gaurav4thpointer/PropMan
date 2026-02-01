@@ -31,18 +31,28 @@ export class PaymentsService {
     });
   }
 
-  async findAll(ownerId: string, pagination: PaginationDto, leaseId?: string) {
+  async findAll(ownerId: string, pagination: PaginationDto, filters?: { leaseId?: string; propertyId?: string; tenantId?: string; search?: string }) {
     const { page = 1, limit = 20 } = pagination;
-    const where = { ownerId, ...(leaseId && { leaseId }) };
+    const where: Record<string, unknown> = { ownerId };
+    if (filters?.leaseId) where.leaseId = filters.leaseId;
+    if (filters?.propertyId) where.propertyId = filters.propertyId;
+    if (filters?.tenantId) where.tenantId = filters.tenantId;
+    if (filters?.search?.trim()) {
+      const q = filters.search.trim();
+      where.OR = [
+        { reference: { contains: q, mode: 'insensitive' } },
+        { tenant: { name: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
     const [data, total] = await Promise.all([
       this.prisma.payment.findMany({
-        where,
+        where: where as { ownerId: string },
         include: { lease: true, tenant: true, property: true, unit: true },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { date: 'desc' },
       }),
-      this.prisma.payment.count({ where }),
+      this.prisma.payment.count({ where: where as { ownerId: string } }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }

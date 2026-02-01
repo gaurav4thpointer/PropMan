@@ -30,6 +30,20 @@ export interface Property {
   units?: Unit[]
 }
 
+export interface CreatePropertyPayload {
+  name: string
+  address?: string
+  country: Country
+  emirateOrState?: string
+  currency: Currency
+  notes?: string
+  firstUnit?: {
+    unitNo: string
+    bedrooms?: number
+    status?: UnitStatus
+  }
+}
+
 export interface Unit {
   id: string
   unitNo: string

@@ -23,8 +23,14 @@ export class PropertiesController {
 
   @Get()
   @ApiOperation({ summary: 'List properties' })
-  findAll(@CurrentUser() user: User, @Query() pagination: PaginationDto) {
-    return this.propertiesService.findAll(user.id, pagination);
+  findAll(
+    @CurrentUser() user: User,
+    @Query() pagination: PaginationDto,
+    @Query('search') search?: string,
+    @Query('country') country?: string,
+    @Query('currency') currency?: string,
+  ) {
+    return this.propertiesService.findAll(user.id, pagination, { search, country, currency });
   }
 
   @Get(':id')

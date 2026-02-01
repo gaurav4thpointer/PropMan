@@ -15,16 +15,25 @@ export class TenantsService {
     });
   }
 
-  async findAll(ownerId: string, pagination: PaginationDto) {
+  async findAll(ownerId: string, pagination: PaginationDto, search?: string) {
     const { page = 1, limit = 20 } = pagination;
+    const where: Record<string, unknown> = { ownerId };
+    if (search?.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
+        { phone: { contains: q, mode: 'insensitive' } },
+      ];
+    }
     const [data, total] = await Promise.all([
       this.prisma.tenant.findMany({
-        where: { ownerId },
+        where: where as { ownerId: string },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { name: 'asc' },
       }),
-      this.prisma.tenant.count({ where: { ownerId } }),
+      this.prisma.tenant.count({ where: where as { ownerId: string } }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }

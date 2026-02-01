@@ -12,8 +12,8 @@ import {
   Pie,
   Cell,
 } from 'recharts'
-import { reports } from '../api/client'
-import type { DashboardData } from '../api/types'
+import { reports, properties as propertiesApi } from '../api/client'
+import type { DashboardData, Property } from '../api/types'
 
 const CHART_COLORS = {
   expected: '#6366f1',
@@ -30,13 +30,19 @@ const statCards = [
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
+  const [propertiesList, setPropertiesList] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
+  const [filterPropertyId, setFilterPropertyId] = useState('')
 
   useEffect(() => {
-    reports.dashboard()
+    reports.dashboard(filterPropertyId || undefined)
       .then((r) => setData(r.data))
       .catch(() => setData(null))
       .finally(() => setLoading(false))
+  }, [filterPropertyId])
+
+  useEffect(() => {
+    propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data))
   }, [])
 
   if (loading) {
@@ -78,7 +84,21 @@ export default function Dashboard() {
   return (
     <div>
       <h1 className="mb-2 text-2xl font-bold text-slate-800">Dashboard</h1>
-      <p className="mb-8 text-slate-500">Overview of your rental income and activity</p>
+      <p className="mb-4 text-slate-500">Overview of your rental income and activity</p>
+
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <label className="text-sm font-semibold text-slate-700">Filter by property</label>
+        <select
+          value={filterPropertyId}
+          onChange={(e) => setFilterPropertyId(e.target.value)}
+          className="max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+        >
+          <option value="">All properties</option>
+          {propertiesList.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+      </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card overflow-hidden p-0">
@@ -236,7 +256,7 @@ export default function Dashboard() {
             ) : (
               data.upcomingCheques.slice(0, 10).map((c) => (
                 <li key={c.id} className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-slate-50/50">
-                  <span className="font-medium text-slate-800">{c.coversPeriod}</span>
+                  <Link to="/cheques" className="font-medium text-indigo-600 hover:underline">{c.coversPeriod}</Link>
                   <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                     {formatDate(c.chequeDate)}
                   </span>
@@ -264,7 +284,13 @@ export default function Dashboard() {
               data.overdueSchedules.slice(0, 10).map((s) => (
                 <li key={s.id} className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-slate-50/50">
                   <span className="text-slate-700">
-                    {s.lease?.property?.name} – {s.lease?.unit?.unitNo}
+                    {s.lease?.id ? (
+                      <Link to={`/leases/${s.lease.id}`} className="text-indigo-600 hover:underline">
+                        {s.lease?.property?.name} – {s.lease?.unit?.unitNo}
+                      </Link>
+                    ) : (
+                      `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo}`
+                    )}
                   </span>
                   <span className="font-semibold text-rose-600">{formatNum(Number(s.expectedAmount))}</span>
                 </li>
@@ -294,8 +320,10 @@ export default function Dashboard() {
               (data.expiringLeases ?? []).slice(0, 10).map((lease) => (
                 <li key={lease.id} className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-slate-50/50">
                   <span className="text-slate-700">
-                    {lease.property?.name} – {lease.unit?.unitNo}
-                    {lease.tenant?.name && <span className="text-slate-500"> · {lease.tenant.name}</span>}
+                    <Link to={`/leases/${lease.id}`} className="text-indigo-600 hover:underline">
+                      {lease.property?.name} – {lease.unit?.unitNo}
+                      {lease.tenant?.name && <span className="text-slate-500"> · {lease.tenant.name}</span>}
+                    </Link>
                   </span>
                   <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-violet-700">
                     {formatDate(lease.endDate)}

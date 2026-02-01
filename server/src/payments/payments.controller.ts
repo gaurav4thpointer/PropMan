@@ -23,8 +23,15 @@ export class PaymentsController {
 
   @Get()
   @ApiOperation({ summary: 'List payments' })
-  findAll(@CurrentUser() user: User, @Query() pagination: PaginationDto, @Query('leaseId') leaseId?: string) {
-    return this.paymentsService.findAll(user.id, pagination, leaseId);
+  findAll(
+    @CurrentUser() user: User,
+    @Query() pagination: PaginationDto,
+    @Query('leaseId') leaseId?: string,
+    @Query('propertyId') propertyId?: string,
+    @Query('tenantId') tenantId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.paymentsService.findAll(user.id, pagination, { leaseId, propertyId, tenantId, search });
   }
 
   @Get(':id')

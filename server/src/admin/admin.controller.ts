@@ -26,7 +26,7 @@ export class AdminController {
 
   @Get('users')
   @ApiOperation({ summary: 'List all users (super admin only)' })
-  getUsers(@Query() dto: PaginationDto) {
-    return this.adminService.getUsers(dto.page ?? 1, dto.limit ?? 20);
+  getUsers(@Query() dto: PaginationDto, @Query('search') search?: string) {
+    return this.adminService.getUsers(dto.page ?? 1, dto.limit ?? 20, search);
   }
 }

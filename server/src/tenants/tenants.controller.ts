@@ -23,8 +23,8 @@ export class TenantsController {
 
   @Get()
   @ApiOperation({ summary: 'List tenants' })
-  findAll(@CurrentUser() user: User, @Query() pagination: PaginationDto) {
-    return this.tenantsService.findAll(user.id, pagination);
+  findAll(@CurrentUser() user: User, @Query() pagination: PaginationDto, @Query('search') search?: string) {
+    return this.tenantsService.findAll(user.id, pagination, search);
   }
 
   @Get(':id')

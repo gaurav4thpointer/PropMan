@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import Properties from './pages/Properties'
 import PropertyDetail from './pages/PropertyDetail'
 import Tenants from './pages/Tenants'
+import TenantDetail from './pages/TenantDetail'
 import Leases from './pages/Leases'
 import LeaseDetail from './pages/LeaseDetail'
 import Cheques from './pages/Cheques'
@@ -39,6 +40,7 @@ function App() {
             <Route path="properties" element={<Properties />} />
             <Route path="properties/:id" element={<PropertyDetail />} />
             <Route path="tenants" element={<Tenants />} />
+            <Route path="tenants/:id" element={<TenantDetail />} />
             <Route path="leases" element={<Leases />} />
             <Route path="leases/:id" element={<LeaseDetail />} />
             <Route path="cheques" element={<Cheques />} />

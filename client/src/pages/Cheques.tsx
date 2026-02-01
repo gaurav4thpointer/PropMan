@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
-import { cheques as chequesApi, properties } from '../api/client'
+import { Link, useSearchParams } from 'react-router-dom'
+import { cheques as chequesApi, properties as propertiesApi } from '../api/client'
 import type { Cheque, Property } from '../api/types'
 import ChequeForm from '../components/ChequeForm'
 import ChequeStatusUpdate from '../components/ChequeStatusUpdate'
+import DataTable, { type DataTableColumn } from '../components/DataTable'
+
+const FETCH_LIMIT = 100
 
 const STATUS_COLORS: Record<string, string> = {
   RECEIVED: 'badge-neutral',
@@ -12,35 +16,168 @@ const STATUS_COLORS: Record<string, string> = {
   REPLACED: 'badge-warning',
 }
 
+function formatDate(s: string) {
+  return new Date(s).toLocaleDateString()
+}
+
+function formatNum(n: number) {
+  return n.toLocaleString()
+}
+
 export default function Cheques() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const propertyIdFromUrl = searchParams.get('propertyId') ?? ''
+  const tenantIdFromUrl = searchParams.get('tenantId') ?? ''
   const [list, setList] = useState<Cheque[]>([])
   const [propertiesList, setPropertiesList] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [filterStatus, setFilterStatus] = useState<string>('')
-  const [filterPropertyId, setFilterPropertyId] = useState<string>('')
+  const [filterPropertyId, setFilterPropertyId] = useState<string>(propertyIdFromUrl)
+  const [filterTenantId, setFilterTenantId] = useState<string>(tenantIdFromUrl)
   const [showForm, setShowForm] = useState(false)
   const [statusModal, setStatusModal] = useState<Cheque | null>(null)
 
+  useEffect(() => {
+    if (propertyIdFromUrl !== filterPropertyId) setFilterPropertyId(propertyIdFromUrl)
+  }, [propertyIdFromUrl])
+  useEffect(() => {
+    if (tenantIdFromUrl !== filterTenantId) setFilterTenantId(tenantIdFromUrl)
+  }, [tenantIdFromUrl])
+
   const load = () => {
     setLoading(true)
-    const params: { page: number; limit: number; propertyId?: string; status?: string } = { page, limit: 20 }
-    if (filterPropertyId) params.propertyId = filterPropertyId
-    if (filterStatus) params.status = filterStatus
-    chequesApi.list(params)
-      .then((r) => {
-        setList(r.data.data)
-        setTotalPages(r.data.meta.totalPages)
-      })
+    chequesApi.list({ page: 1, limit: FETCH_LIMIT })
+      .then((r) => setList(r.data.data))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [page, filterStatus, filterPropertyId])
-  useEffect(() => { properties.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data)) }, [])
+  useEffect(() => { load() }, [])
+  useEffect(() => { propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data)) }, [])
+
+  const filteredList = list.filter(
+    (c) =>
+      (!filterPropertyId || c.propertyId === filterPropertyId) &&
+      (!filterTenantId || c.tenantId === filterTenantId) &&
+      (!filterStatus || c.status === filterStatus)
+  )
 
   const handleSaved = () => { setShowForm(false); load() }
   const handleStatusSaved = () => { setStatusModal(null); load() }
+
+  const columns: DataTableColumn<Cheque>[] = [
+    {
+      key: 'chequeNumber',
+      label: 'Cheque no',
+      searchable: true,
+      render: (c) => <span className="font-semibold text-slate-800">{c.chequeNumber}</span>,
+    },
+    {
+      key: 'bankName',
+      label: 'Bank',
+      searchable: true,
+      render: (c) => <span className="text-slate-600">{c.bankName}</span>,
+    },
+    {
+      key: 'chequeDate',
+      label: 'Date',
+      sortKey: 'chequeDate',
+      render: (c) => <span className="text-slate-600">{formatDate(c.chequeDate)}</span>,
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortKey: 'amount',
+      getSortValue: (c) => Number(c.amount),
+      align: 'right',
+      render: (c) => <span className="font-medium">{formatNum(Number(c.amount))}</span>,
+    },
+    {
+      key: 'coversPeriod',
+      label: 'Covers',
+      searchable: true,
+      render: (c) => <span className="text-slate-600">{c.coversPeriod}</span>,
+    },
+    {
+      key: 'propertyTenant',
+      label: 'Property / Tenant',
+      searchable: true,
+      getSearchValue: (c) => `${c.property?.name ?? ''} ${c.tenant?.name ?? ''}`.trim(),
+      render: (c) => (
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-slate-600">
+          {c.propertyId ? (
+            <Link to={`/properties/${c.propertyId}`} className="text-indigo-600 hover:underline">{c.property?.name ?? 'Property'}</Link>
+          ) : (
+            <span>{c.property?.name ?? '–'}</span>
+          )}
+          {c.tenant?.name && c.tenantId && (
+            <>
+              <span className="text-slate-400">·</span>
+              <Link to={`/tenants/${c.tenantId}`} className="text-indigo-600 hover:underline">{c.tenant.name}</Link>
+            </>
+          )}
+          {c.leaseId && (
+            <>
+              <span className="text-slate-400">·</span>
+              <Link to={`/leases/${c.leaseId}`} className="text-sm text-indigo-600 hover:underline">Lease</Link>
+            </>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortKey: 'status',
+      searchable: true,
+      render: (c) => <span className={`badge ${STATUS_COLORS[c.status] ?? 'badge-neutral'}`}>{c.status}</span>,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      align: 'right',
+      render: (c) =>
+        ['RECEIVED', 'DEPOSITED', 'BOUNCED'].includes(c.status) ? (
+          <button type="button" onClick={() => setStatusModal(c)} className="text-sm font-medium text-indigo-600 hover:underline">Update status</button>
+        ) : null,
+    },
+  ]
+
+  const extraToolbar = (
+    <>
+      <select
+        value={filterPropertyId}
+        onChange={(e) => {
+          const v = e.target.value
+          setFilterPropertyId(v)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            if (v) next.set('propertyId', v)
+            else next.delete('propertyId')
+            return next
+          })
+        }}
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+      >
+        <option value="">All properties</option>
+        {propertiesList.map((p) => (
+          <option key={p.id} value={p.id}>{p.name}</option>
+        ))}
+      </select>
+      <select
+        value={filterStatus}
+        onChange={(e) => setFilterStatus(e.target.value)}
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+      >
+        <option value="">All statuses</option>
+        <option value="RECEIVED">Received</option>
+        <option value="DEPOSITED">Deposited</option>
+        <option value="CLEARED">Cleared</option>
+        <option value="BOUNCED">Bounced</option>
+        <option value="REPLACED">Replaced</option>
+      </select>
+    </>
+  )
 
   return (
     <div>
@@ -63,87 +200,20 @@ export default function Cheques() {
         />
       )}
 
-      <div className="mb-4 flex flex-wrap gap-3">
-        <select
-          value={filterPropertyId}
-          onChange={(e) => setFilterPropertyId(e.target.value)}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
-        >
-          <option value="">All properties</option>
-          {propertiesList.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
-        >
-          <option value="">All statuses</option>
-          <option value="RECEIVED">Received</option>
-          <option value="DEPOSITED">Deposited</option>
-          <option value="CLEARED">Cleared</option>
-          <option value="BOUNCED">Bounced</option>
-          <option value="REPLACED">Replaced</option>
-        </select>
-      </div>
-
       {loading ? (
         <div className="flex min-h-[200px] items-center justify-center">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
         </div>
       ) : (
-        <div className="table-wrapper">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th>Cheque no</th>
-                <th>Bank</th>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Covers</th>
-                <th>Status</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((c) => (
-                <tr key={c.id}>
-                  <td className="font-semibold text-slate-800">{c.chequeNumber}</td>
-                  <td className="text-slate-600">{c.bankName}</td>
-                  <td className="text-slate-600">{formatDate(c.chequeDate)}</td>
-                  <td className="font-medium">{formatNum(Number(c.amount))}</td>
-                  <td className="text-slate-600">{c.coversPeriod}</td>
-                  <td>
-                    <span className={`badge ${STATUS_COLORS[c.status] ?? 'badge-neutral'}`}>{c.status}</span>
-                  </td>
-                  <td className="text-right">
-                    {['RECEIVED', 'DEPOSITED', 'BOUNCED'].includes(c.status) && (
-                      <button type="button" onClick={() => setStatusModal(c)} className="text-sm font-medium text-indigo-600 hover:underline">Update status</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {list.length === 0 && <p className="px-5 py-12 text-center text-slate-500">No cheques match filters.</p>}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
-              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="btn-secondary text-sm disabled:opacity-50">Previous</button>
-              <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
-              <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn-secondary text-sm disabled:opacity-50">Next</button>
-            </div>
-          )}
-        </div>
+        <DataTable<Cheque>
+          data={filteredList}
+          columns={columns}
+          idKey="id"
+          searchPlaceholder="Search cheque no, bank or covers..."
+          extraToolbar={extraToolbar}
+          emptyMessage="No cheques match filters."
+        />
       )}
     </div>
   )
-}
-
-function formatDate(s: string) {
-  return new Date(s).toLocaleDateString()
-}
-
-function formatNum(n: number) {
-  return n.toLocaleString()
 }

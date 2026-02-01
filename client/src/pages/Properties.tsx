@@ -3,26 +3,30 @@ import { Link } from 'react-router-dom'
 import { properties as propertiesApi } from '../api/client'
 import type { Property } from '../api/types'
 import PropertyForm from '../components/PropertyForm'
+import DataTable, { type DataTableColumn } from '../components/DataTable'
+
+const FETCH_LIMIT = 100
 
 export default function Properties() {
   const [list, setList] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Property | null>(null)
+  const [filterCountry, setFilterCountry] = useState('')
+  const [filterCurrency, setFilterCurrency] = useState('')
 
   const load = () => {
     setLoading(true)
-    propertiesApi.list({ page, limit: 20 })
-      .then((r) => {
-        setList(r.data.data)
-        setTotalPages(r.data.meta.totalPages)
-      })
+    propertiesApi.list({ page: 1, limit: FETCH_LIMIT })
+      .then((r) => setList(r.data.data))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [page])
+  useEffect(() => { load() }, [])
+
+  const filteredList = list.filter(
+    (p) => (!filterCountry || p.country === filterCountry) && (!filterCurrency || p.currency === filterCurrency)
+  )
 
   const handleSaved = () => {
     setShowForm(false)
@@ -34,6 +38,79 @@ export default function Properties() {
     setEditing(p)
     setShowForm(true)
   }
+
+  const columns: DataTableColumn<Property>[] = [
+    {
+      key: 'name',
+      label: 'Name',
+      searchable: true,
+      render: (p) => (
+        <Link to={`/properties/${p.id}`} className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
+          {p.name}
+        </Link>
+      ),
+    },
+    {
+      key: 'address',
+      label: 'Address',
+      searchable: true,
+      render: (p) => <span className="text-slate-600">{p.address ?? '–'}</span>,
+    },
+    {
+      key: 'country',
+      label: 'Country',
+      searchable: true,
+      render: (p) => <span className="badge badge-neutral">{p.country}</span>,
+    },
+    {
+      key: 'currency',
+      label: 'Currency',
+      searchable: true,
+      render: (p) => <span className="font-medium">{p.currency}</span>,
+    },
+    {
+      key: 'units',
+      label: 'Units',
+      sortable: true,
+      getSortValue: (p) => p.units?.length ?? 0,
+      align: 'right',
+      render: (p) => p.units?.length ?? 0,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      align: 'right',
+      render: (p) => (
+        <button type="button" onClick={() => handleEdit(p)} className="text-sm font-medium text-indigo-600 hover:underline">
+          Edit
+        </button>
+      ),
+    },
+  ]
+
+  const extraToolbar = (
+    <>
+      <select
+        value={filterCountry}
+        onChange={(e) => setFilterCountry(e.target.value)}
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+      >
+        <option value="">All countries</option>
+        <option value="IN">India</option>
+        <option value="AE">UAE</option>
+      </select>
+      <select
+        value={filterCurrency}
+        onChange={(e) => setFilterCurrency(e.target.value)}
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+      >
+        <option value="">All currencies</option>
+        <option value="INR">INR</option>
+        <option value="AED">AED</option>
+      </select>
+    </>
+  )
 
   return (
     <div>
@@ -64,48 +141,14 @@ export default function Properties() {
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
         </div>
       ) : (
-        <div className="table-wrapper">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Address</th>
-                <th>Country</th>
-                <th>Currency</th>
-                <th>Units</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <Link to={`/properties/${p.id}`} className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
-                      {p.name}
-                    </Link>
-                  </td>
-                  <td className="text-slate-600">{p.address ?? '–'}</td>
-                  <td><span className="badge badge-neutral">{p.country}</span></td>
-                  <td className="font-medium">{p.currency}</td>
-                  <td>{p.units?.length ?? 0}</td>
-                  <td className="text-right">
-                    <button type="button" onClick={() => handleEdit(p)} className="text-sm font-medium text-indigo-600 hover:underline">Edit</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {list.length === 0 && (
-            <p className="px-5 py-12 text-center text-slate-500">No properties yet. Add one to get started.</p>
-          )}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
-              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="btn-secondary text-sm disabled:opacity-50">Previous</button>
-              <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
-              <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn-secondary text-sm disabled:opacity-50">Next</button>
-            </div>
-          )}
-        </div>
+        <DataTable<Property>
+          data={filteredList}
+          columns={columns}
+          idKey="id"
+          searchPlaceholder="Search by name or address..."
+          extraToolbar={extraToolbar}
+          emptyMessage="No properties yet. Add one to get started."
+        />
       )}
     </div>
   )

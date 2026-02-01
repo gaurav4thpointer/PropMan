@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
-import { payments as paymentsApi } from '../api/client'
-import type { Payment } from '../api/types'
+import { Link, useSearchParams } from 'react-router-dom'
+import { payments as paymentsApi, properties as propertiesApi } from '../api/client'
+import type { Payment, Property } from '../api/types'
 import PaymentForm from '../components/PaymentForm'
+import DataTable, { type DataTableColumn } from '../components/DataTable'
+
+const FETCH_LIMIT = 100
 
 const METHOD_LABELS: Record<string, string> = {
   CHEQUE: 'Cheque',
@@ -10,24 +14,135 @@ const METHOD_LABELS: Record<string, string> = {
   CASH: 'Cash',
 }
 
+function formatDate(s: string) {
+  return new Date(s).toLocaleDateString()
+}
+
+function formatNum(n: number) {
+  return n.toLocaleString()
+}
+
 export default function Payments() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const propertyIdFromUrl = searchParams.get('propertyId') ?? ''
+  const tenantIdFromUrl = searchParams.get('tenantId') ?? ''
   const [list, setList] = useState<Payment[]>([])
+  const [propertiesList, setPropertiesList] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [showForm, setShowForm] = useState(false)
+  const [filterPropertyId, setFilterPropertyId] = useState(propertyIdFromUrl)
+  const [filterTenantId, setFilterTenantId] = useState(tenantIdFromUrl)
+
+  useEffect(() => {
+    setFilterPropertyId(propertyIdFromUrl)
+  }, [propertyIdFromUrl])
+  useEffect(() => {
+    setFilterTenantId(tenantIdFromUrl)
+  }, [tenantIdFromUrl])
 
   const load = () => {
     setLoading(true)
-    paymentsApi.list({ page, limit: 20 })
-      .then((r) => {
-        setList(r.data.data)
-        setTotalPages(r.data.meta.totalPages)
-      })
+    paymentsApi.list({ page: 1, limit: FETCH_LIMIT })
+      .then((r) => setList(r.data.data))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [page])
+  useEffect(() => { load() }, [])
+  useEffect(() => { propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data)) }, [])
+
+  const filteredList = list.filter(
+    (p) => (!filterPropertyId || p.propertyId === filterPropertyId) && (!filterTenantId || p.tenantId === filterTenantId)
+  )
+
+  const columns: DataTableColumn<Payment>[] = [
+    {
+      key: 'date',
+      label: 'Date',
+      sortKey: 'date',
+      render: (p) => <span className="text-slate-700">{formatDate(p.date)}</span>,
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortKey: 'amount',
+      getSortValue: (p) => Number(p.amount),
+      align: 'right',
+      render: (p) => <span className="font-semibold text-slate-800">{formatNum(Number(p.amount))}</span>,
+    },
+    {
+      key: 'method',
+      label: 'Method',
+      sortKey: 'method',
+      render: (p) => <span className="badge badge-neutral">{METHOD_LABELS[p.method] ?? p.method}</span>,
+    },
+    {
+      key: 'propertyUnit',
+      label: 'Property / Unit',
+      searchable: true,
+      getSearchValue: (p) => `${p.property?.name ?? ''} ${p.unit?.unitNo ?? ''}`.trim(),
+      render: (p) => (
+        <span className="text-slate-600">
+          {p.propertyId ? (
+            <Link to={`/properties/${p.propertyId}`} className="text-indigo-600 hover:underline">{p.property?.name ?? 'Property'}</Link>
+          ) : (
+            p.property?.name ?? '–'
+          )}
+          {' / '}{p.unit?.unitNo ?? '–'}
+        </span>
+      ),
+    },
+    {
+      key: 'tenant',
+      label: 'Tenant',
+      searchable: true,
+      getSearchValue: (p) => p.tenant?.name ?? '',
+      render: (p) =>
+        p.tenant?.name && p.tenantId ? (
+          <Link to={`/tenants/${p.tenantId}`} className="text-indigo-600 hover:underline">{p.tenant.name}</Link>
+        ) : (
+          p.tenant?.name ?? '–'
+        ),
+    },
+    {
+      key: 'reference',
+      label: 'Reference',
+      searchable: true,
+      render: (p) => <span className="text-slate-500">{p.reference ?? '–'}</span>,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      align: 'right',
+      render: (p) =>
+        p.leaseId ? (
+          <Link to={`/leases/${p.leaseId}`} className="text-sm font-medium text-indigo-600 hover:underline">View lease</Link>
+        ) : null,
+    },
+  ]
+
+  const extraToolbar = (
+    <select
+      value={filterPropertyId}
+      onChange={(e) => {
+        const v = e.target.value
+        setFilterPropertyId(v)
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev)
+          if (v) next.set('propertyId', v)
+          else next.delete('propertyId')
+          return next
+        })
+      }}
+      aria-label="Filter by property"
+      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+    >
+      <option value="">All properties</option>
+      {propertiesList.map((p) => (
+        <option key={p.id} value={p.id}>{p.name}</option>
+      ))}
+    </select>
+  )
 
   return (
     <div>
@@ -48,49 +163,15 @@ export default function Payments() {
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
         </div>
       ) : (
-        <div className="table-wrapper">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Method</th>
-                <th>Property / Unit</th>
-                <th>Tenant</th>
-                <th>Reference</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((p) => (
-                <tr key={p.id}>
-                  <td className="text-slate-700">{formatDate(p.date)}</td>
-                  <td className="font-semibold text-slate-800">{formatNum(Number(p.amount))}</td>
-                  <td><span className="badge badge-neutral">{METHOD_LABELS[p.method] ?? p.method}</span></td>
-                  <td className="text-slate-600">{p.property?.name ?? '–'} / {p.unit?.unitNo ?? '–'}</td>
-                  <td className="text-slate-600">{p.tenant?.name ?? '–'}</td>
-                  <td className="text-slate-500">{p.reference ?? '–'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {list.length === 0 && <p className="px-5 py-12 text-center text-slate-500">No payments yet.</p>}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
-              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="btn-secondary text-sm disabled:opacity-50">Previous</button>
-              <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
-              <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn-secondary text-sm disabled:opacity-50">Next</button>
-            </div>
-          )}
-        </div>
+        <DataTable<Payment>
+          data={filteredList}
+          columns={columns}
+          idKey="id"
+          searchPlaceholder="Search by reference or tenant..."
+          extraToolbar={extraToolbar}
+          emptyMessage="No payments yet."
+        />
       )}
     </div>
   )
-}
-
-function formatDate(s: string) {
-  return new Date(s).toLocaleDateString()
-}
-
-function formatNum(n: number) {
-  return n.toLocaleString()
 }

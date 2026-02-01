@@ -49,8 +49,22 @@ export default function LeaseDetail() {
       <div className="card mb-8 overflow-hidden p-0">
         <div className={`border-b border-slate-100 px-6 py-5 ${expired ? 'bg-rose-50/50' : 'bg-gradient-to-r from-violet-50 to-indigo-50/50'}`}>
           <h1 className="text-2xl font-bold text-slate-800">Lease details</h1>
-          <p className="mt-1 text-slate-600">{lease.property?.name} · Unit {lease.unit?.unitNo}</p>
-          <p className="mt-1 text-slate-600">Tenant: {lease.tenant?.name}</p>
+          <p className="mt-1 text-slate-600">
+            {lease.propertyId ? (
+              <Link to={`/properties/${lease.propertyId}`} className="text-indigo-600 hover:underline">{lease.property?.name ?? 'Property'}</Link>
+            ) : (
+              lease.property?.name ?? '–'
+            )}
+            {' · Unit '}{lease.unit?.unitNo ?? '–'}
+          </p>
+          <p className="mt-1 text-slate-600">
+            Tenant:{' '}
+            {lease.tenant?.name && lease.tenantId ? (
+              <Link to={`/tenants/${lease.tenantId}`} className="text-indigo-600 hover:underline">{lease.tenant.name}</Link>
+            ) : (
+              lease.tenant?.name ?? '–'
+            )}
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="badge badge-neutral">{formatDate(lease.startDate)} – {formatDate(lease.endDate)}</span>
             {expired && (

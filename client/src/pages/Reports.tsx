@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { reports, properties } from '../api/client'
 import type { DashboardData, Property } from '../api/types'
 
@@ -90,7 +91,16 @@ export default function Reports() {
           ) : (
             data.overdueSchedules.map((s) => (
               <li key={s.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/50">
-                <span className="text-slate-700">{s.lease?.property?.name} – {s.lease?.unit?.unitNo} · {formatDate(s.dueDate)}</span>
+                <span className="text-slate-700">
+                  {s.lease?.id ? (
+                    <Link to={`/leases/${s.lease.id}`} className="text-indigo-600 hover:underline">
+                      {s.lease?.property?.name} – {s.lease?.unit?.unitNo}
+                    </Link>
+                  ) : (
+                    `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo}`
+                  )}
+                  {' · '}{formatDate(s.dueDate)}
+                </span>
                 <span className="font-semibold text-rose-600">{formatNum(Number(s.expectedAmount))}</span>
               </li>
             ))

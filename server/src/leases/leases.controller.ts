@@ -23,8 +23,14 @@ export class LeasesController {
 
   @Get()
   @ApiOperation({ summary: 'List leases' })
-  findAll(@CurrentUser() user: User, @Query() pagination: PaginationDto) {
-    return this.leasesService.findAll(user.id, pagination);
+  findAll(
+    @CurrentUser() user: User,
+    @Query() pagination: PaginationDto,
+    @Query('propertyId') propertyId?: string,
+    @Query('tenantId') tenantId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.leasesService.findAll(user.id, pagination, { propertyId, tenantId, search });
   }
 
   @Get(':id')

@@ -44,19 +44,30 @@ export class ChequesService {
   async findAll(
     ownerId: string,
     pagination: PaginationDto,
-    filters?: { propertyId?: string; status?: ChequeStatus },
+    filters?: { propertyId?: string; tenantId?: string; status?: ChequeStatus; search?: string },
   ) {
     const { page = 1, limit = 20 } = pagination;
-    const where = { ownerId, ...(filters?.propertyId && { propertyId: filters.propertyId }), ...(filters?.status && { status: filters.status }) };
+    const where: Record<string, unknown> = { ownerId };
+    if (filters?.propertyId) where.propertyId = filters.propertyId;
+    if (filters?.tenantId) where.tenantId = filters.tenantId;
+    if (filters?.status) where.status = filters.status;
+    if (filters?.search?.trim()) {
+      const q = filters.search.trim();
+      where.OR = [
+        { chequeNumber: { contains: q, mode: 'insensitive' } },
+        { bankName: { contains: q, mode: 'insensitive' } },
+        { coversPeriod: { contains: q, mode: 'insensitive' } },
+      ];
+    }
     const [data, total] = await Promise.all([
       this.prisma.cheque.findMany({
-        where,
+        where: where as { ownerId: string },
         include: { lease: true, tenant: true, property: true, unit: true },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { chequeDate: 'asc' },
       }),
-      this.prisma.cheque.count({ where }),
+      this.prisma.cheque.count({ where: where as { ownerId: string } }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }
