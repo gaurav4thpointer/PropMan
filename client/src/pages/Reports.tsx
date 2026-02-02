@@ -46,8 +46,17 @@ export default function Reports() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <Link to="/" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Dashboard</Link>
+      </div>
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold text-slate-800">Reports</h1>
+        <Link to="/" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">Dashboard</Link>
+        <Link to="/leases" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">Leases</Link>
+        <Link to="/cheques" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">Cheques</Link>
+        <Link to="/payments" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">Payments</Link>
+      </div>
+      <div className="mb-8">
         <p className="text-slate-500">Export and filter by property</p>
       </div>
 
@@ -98,13 +107,22 @@ export default function Reports() {
                 <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-slate-50/50">
                   <span className="text-slate-700">
                     {s.lease?.id ? (
-                      <Link to={`/leases/${s.lease.id}`} className="text-indigo-600 hover:underline">
-                        {s.lease?.property?.name} – {s.lease?.unit?.unitNo}
-                      </Link>
+                      <>
+                        {s.lease?.propertyId ? (
+                          <Link to={`/properties/${s.lease.propertyId}`} className="text-indigo-600 hover:underline">{s.lease?.property?.name}</Link>
+                        ) : (
+                          <span>{s.lease?.property?.name}</span>
+                        )}
+                        <span className="text-slate-500"> – {s.lease?.unit?.unitNo}</span>
+                        {s.lease?.tenantId && s.lease?.tenant?.name && (
+                          <> · <Link to={`/tenants/${s.lease.tenantId}`} className="text-slate-600 hover:underline">{s.lease.tenant.name}</Link></>
+                        )}
+                        {' · '}{formatDate(s.dueDate)}
+                        <Link to={`/leases/${s.lease.id}`} className="ml-2 text-xs font-medium text-indigo-600 hover:underline">View lease</Link>
+                      </>
                     ) : (
-                      `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo}`
+                      `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo} · ${formatDate(s.dueDate)}`
                     )}
-                    {' · '}{formatDate(s.dueDate)}
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isOrange ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>

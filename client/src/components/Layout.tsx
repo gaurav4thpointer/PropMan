@@ -13,7 +13,7 @@ const navLinks = [
 ]
 
 export default function Layout() {
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -55,6 +55,14 @@ export default function Layout() {
               })}
             </div>
             <div className="flex items-center gap-3">
+              {user?.role === 'SUPER_ADMIN' && (
+                <Link
+                  to="/admin"
+                  className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 shadow-sm transition-colors hover:bg-amber-100"
+                >
+                  Admin
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={handleLogout}

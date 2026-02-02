@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -100,6 +101,7 @@ export default function Account() {
 
   return (
     <div>
+      <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Dashboard</Link>
       <h1 className="mb-2 text-2xl font-bold text-slate-800">Account</h1>
       <p className="mb-8 text-slate-500">Manage your profile and password</p>
 

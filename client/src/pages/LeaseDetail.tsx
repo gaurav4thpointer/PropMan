@@ -217,6 +217,16 @@ export default function LeaseDetail() {
             )}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
+            {lease.propertyId && (
+              <>
+                <Link to={`/cheques?propertyId=${lease.propertyId}`} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900">
+                  View cheques
+                </Link>
+                <Link to={`/payments?propertyId=${lease.propertyId}`} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900">
+                  View payments
+                </Link>
+              </>
+            )}
             <span className="badge badge-neutral">{formatDate(lease.startDate)} – {formatDate(lease.endDate)}</span>
             {expired && (
               <span className="inline-flex rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-medium text-rose-800">

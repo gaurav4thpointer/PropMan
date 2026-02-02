@@ -274,14 +274,19 @@ export default function TenantDetail() {
               ) : (
                 tenantCheques.map((c) => (
                   <tr key={c.id}>
-                    <td className="font-semibold text-slate-800">{c.chequeNumber}</td>
+                    <td>
+                      <Link to={`/cheques/${c.id}`} className="font-semibold text-indigo-600 hover:underline">{c.chequeNumber}</Link>
+                    </td>
                     <td className="text-slate-600">{c.bankName}</td>
                     <td className="text-slate-600">{formatDate(c.chequeDate)}</td>
                     <td className="font-medium">{formatNum(Number(c.amount))}</td>
                     <td className="text-slate-600">{c.coversPeriod}</td>
                     <td><span className={`badge ${CHEQUE_STATUS_CLASS[c.status] ?? 'badge-neutral'}`}>{c.status}</span></td>
                     <td className="text-right">
-                      {c.leaseId && <Link to={`/leases/${c.leaseId}`} className="text-sm font-medium text-indigo-600 hover:underline">View lease</Link>}
+                      <span className="flex flex-wrap items-center justify-end gap-2">
+                        <Link to={`/cheques/${c.id}`} className="text-sm font-medium text-indigo-600 hover:underline">View cheque</Link>
+                        {c.leaseId && <Link to={`/leases/${c.leaseId}`} className="text-sm font-medium text-slate-600 hover:underline">View lease</Link>}
+                      </span>
                     </td>
                   </tr>
                 ))

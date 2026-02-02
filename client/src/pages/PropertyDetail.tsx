@@ -123,6 +123,9 @@ export default function PropertyDetail() {
               <Link to={`/cheques?propertyId=${id}`} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">
                 View cheques
               </Link>
+              <Link to={`/payments?propertyId=${id}`} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">
+                View payments
+              </Link>
             </>
           )}
           <button type="button" onClick={() => { setEditingUnit(null); setShowUnitForm(true) }} className="btn-primary text-sm">
