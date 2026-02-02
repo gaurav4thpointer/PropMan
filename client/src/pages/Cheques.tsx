@@ -69,7 +69,11 @@ export default function Cheques() {
       key: 'chequeNumber',
       label: 'Cheque no',
       searchable: true,
-      render: (c) => <span className="font-semibold text-slate-800">{c.chequeNumber}</span>,
+      render: (c) => (
+        <Link to={`/cheques/${c.id}`} className="font-semibold text-indigo-600 hover:underline">
+          {c.chequeNumber}
+        </Link>
+      ),
     },
     {
       key: 'bankName',

@@ -14,6 +14,7 @@ import TenantDetail from './pages/TenantDetail'
 import Leases from './pages/Leases'
 import LeaseDetail from './pages/LeaseDetail'
 import Cheques from './pages/Cheques'
+import ChequeDetail from './pages/ChequeDetail'
 import Payments from './pages/Payments'
 import Reports from './pages/Reports'
 import Account from './pages/Account'
@@ -44,6 +45,7 @@ function App() {
             <Route path="leases" element={<Leases />} />
             <Route path="leases/:id" element={<LeaseDetail />} />
             <Route path="cheques" element={<Cheques />} />
+            <Route path="cheques/:id" element={<ChequeDetail />} />
             <Route path="payments" element={<Payments />} />
             <Route path="reports" element={<Reports />} />
             <Route path="account" element={<Account />} />

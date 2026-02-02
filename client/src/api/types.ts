@@ -113,14 +113,19 @@ export interface Cheque {
   clearedOrBounceDate?: string
   bounceReason?: string
   notes?: string
+  createdAt?: string
+  updatedAt?: string
   leaseId: string
   tenantId: string
   propertyId: string
   unitId: string
+  replacedByChequeId?: string | null
   lease?: Lease
   tenant?: Tenant
   property?: Property
   unit?: Unit
+  replacedBy?: Cheque | null
+  replacesCheque?: Cheque | null
 }
 
 export interface Payment {

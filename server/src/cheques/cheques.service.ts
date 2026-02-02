@@ -75,7 +75,14 @@ export class ChequesService {
   async findOne(ownerId: string, id: string) {
     const cheque = await this.prisma.cheque.findFirst({
       where: { id, ownerId },
-      include: { lease: true, tenant: true, property: true, unit: true },
+      include: {
+        lease: true,
+        tenant: true,
+        property: true,
+        unit: true,
+        replacedBy: true,
+        replacesCheque: true,
+      },
     });
     if (!cheque) throw new NotFoundException('Cheque not found');
     return cheque;

@@ -243,7 +243,7 @@ export default function Dashboard() {
                 <li key={c.id} className="px-4 py-3 transition-colors hover:bg-slate-50/50">
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 text-sm">
-                      <Link to="/cheques" className="font-medium text-indigo-600 hover:underline truncate block">{c.coversPeriod}</Link>
+                      <Link to={`/cheques/${c.id}`} className="font-medium text-indigo-600 hover:underline truncate block">{c.coversPeriod}</Link>
                       {c.propertyId && (
                         <Link to={`/cheques?propertyId=${c.propertyId}`} className="text-xs text-slate-500 hover:underline">{c.property?.name}</Link>
                       )}
