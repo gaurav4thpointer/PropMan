@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsUUID, Min } from 'class-validator';
+import { IsArray, IsNumber, IsUUID, Min, ValidateNested } from 'class-validator';
 
 export class MatchScheduleItemDto {
   @ApiProperty()
@@ -16,5 +16,8 @@ export class MatchScheduleItemDto {
 
 export class MatchPaymentDto {
   @ApiProperty({ type: [MatchScheduleItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MatchScheduleItemDto)
   matches: MatchScheduleItemDto[];
 }

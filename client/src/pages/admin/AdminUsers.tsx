@@ -64,7 +64,8 @@ export default function AdminUsers() {
         handleCloseReset()
       })
       .catch((err: { response?: { data?: { message?: string } } }) => {
-        setResetError(err.response?.data?.message ?? 'Failed to reset password')
+        const m = err.response?.data?.message;
+        setResetError(Array.isArray(m) ? m.join('. ') : typeof m === 'string' ? m : 'Failed to reset password')
       })
       .finally(() => setResetting(false))
   }
@@ -100,7 +101,8 @@ export default function AdminUsers() {
         }
       })
       .catch((err: { response?: { data?: { message?: string } } }) => {
-        setSampleError(err.response?.data?.message ?? 'Failed to add sample data')
+        const m = err.response?.data?.message;
+        setSampleError(Array.isArray(m) ? m.join('. ') : typeof m === 'string' ? m : 'Failed to add sample data')
       })
       .finally(() => setAddingSample(false))
   }

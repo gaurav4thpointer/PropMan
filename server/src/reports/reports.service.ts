@@ -87,6 +87,10 @@ export class ReportsService {
       }),
     ]);
 
+    const paymentWhere = { ownerId, ...(propertyId && { propertyId }) };
+    const chequeWhere = { ownerId, ...(propertyId && { propertyId }) };
+    const leaseWhereForDeposits = { ownerId, ...(propertyId && { propertyId }) };
+
     const [overdueAmount, totalTrackedExpected, totalTrackedReceived, totalChequeValueTracked, totalSecurityDepositsTracked] = await Promise.all([
       this.prisma.rentSchedule.aggregate({
         where: {
@@ -101,15 +105,15 @@ export class ReportsService {
         _sum: { expectedAmount: true },
       }),
       this.prisma.payment.aggregate({
-        where: { ownerId },
+        where: paymentWhere as { ownerId: string },
         _sum: { amount: true },
       }),
       this.prisma.cheque.aggregate({
-        where: { ownerId },
+        where: chequeWhere as { ownerId: string },
         _sum: { amount: true },
       }),
       this.prisma.lease.aggregate({
-        where: { ownerId },
+        where: leaseWhereForDeposits as { ownerId: string },
         _sum: { securityDeposit: true },
       }),
     ]);

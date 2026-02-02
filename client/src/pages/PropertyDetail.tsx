@@ -29,7 +29,8 @@ export default function PropertyDetail() {
       .catch((err) => {
         setProperty(null)
         setUnitsList([])
-        setLoadError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to load property')
+        const m = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+        setLoadError(Array.isArray(m) ? m.join('. ') : typeof m === 'string' ? m : 'Failed to load property')
       })
       .finally(() => setLoading(false))
   }, [id])

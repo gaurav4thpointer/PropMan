@@ -60,8 +60,9 @@ export default function LeaseDetail() {
         setTerminateDate('')
         refresh()
       })
-      .catch((err: { response?: { data?: { message?: string } } }) => {
-        setTerminateError(err.response?.data?.message ?? 'Failed to terminate lease')
+      .catch((err: { response?: { data?: { message?: string | string[] } } }) => {
+        const m = err.response?.data?.message;
+        setTerminateError(Array.isArray(m) ? m.join('. ') : typeof m === 'string' ? m : 'Failed to terminate lease')
       })
       .finally(() => setTerminating(false))
   }
@@ -86,8 +87,9 @@ export default function LeaseDetail() {
         setPendingFile(null)
         setPendingDocName('')
       })
-      .catch((err: { response?: { data?: { message?: string } } }) => {
-        setUploadError(err.response?.data?.message ?? 'Upload failed')
+      .catch((err: { response?: { data?: { message?: string | string[] } } }) => {
+        const m = err.response?.data?.message;
+        setUploadError(Array.isArray(m) ? m.join('. ') : typeof m === 'string' ? m : 'Upload failed')
       })
       .finally(() => setUploading(false))
   }

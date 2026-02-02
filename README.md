@@ -24,7 +24,7 @@ npx prisma db seed
 npm run start:dev
 ```
 
-Then open **http://localhost:3000/api/docs** for Swagger. Use `owner@example.com` / `password123` after registering or seeding.
+Then open **http://localhost:3000/docs** for Swagger. Use `owner@example.com` / `password123` after registering or seeding.
 
 In `server/.env`, set:
 
@@ -72,7 +72,7 @@ npm run start:dev
 ```
 
 API: `http://localhost:3000`  
-Swagger: `http://localhost:3000/api/docs`
+Swagger: `http://localhost:3000/docs`
 
 **Frontend (Vite + React):**
 

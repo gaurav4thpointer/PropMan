@@ -28,7 +28,8 @@ export default function Register() {
       await registerUser(data.name.trim(), data.email, data.password)
       navigate('/', { replace: true })
     } catch (e: unknown) {
-      setError((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Registration failed')
+      const m = (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      setError(Array.isArray(m) ? m.join('. ') : typeof m === 'string' ? m : 'Registration failed')
     }
   }
 

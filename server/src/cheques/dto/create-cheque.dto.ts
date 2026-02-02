@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsDateString, IsNumber, IsOptional, IsString, IsUUID, Min, MinLength } from 'class-validator';
 
 export class CreateChequeDto {
   @ApiProperty()
@@ -21,10 +21,12 @@ export class CreateChequeDto {
 
   @ApiProperty()
   @IsString()
+  @MinLength(1, { message: 'Cheque number is required' })
   chequeNumber: string;
 
   @ApiProperty()
   @IsString()
+  @MinLength(1, { message: 'Bank name is required' })
   bankName: string;
 
   @ApiProperty({ example: '2026-02-15' })

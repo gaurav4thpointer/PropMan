@@ -42,7 +42,8 @@ export default function ChequeStatusUpdate({ cheque, onSaved, onCancel }: { cheq
       })
       onSaved()
     } catch (e: unknown) {
-      setError((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Update failed')
+      const m = (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      setError(Array.isArray(m) ? m.join('. ') : typeof m === 'string' ? m : 'Update failed')
     }
   }
 

@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data as User)
     } catch {
       localStorage.removeItem('token')
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data as User)
     } catch {
       localStorage.removeItem('token')
+      setUser(null)
     }
   }, [])
 
