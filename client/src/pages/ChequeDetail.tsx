@@ -15,10 +15,6 @@ function formatDate(s: string): string {
   return new Date(s).toLocaleDateString(undefined, { dateStyle: 'medium' })
 }
 
-function formatDateTime(s: string): string {
-  return new Date(s).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-}
-
 function formatNum(n: number): string {
   return n.toLocaleString()
 }
@@ -27,10 +23,6 @@ type TimelineEvent = { date: string; label: string; detail?: string; link?: stri
 
 function buildTimeline(c: Cheque): TimelineEvent[] {
   const events: TimelineEvent[] = []
-
-  if (c.createdAt) {
-    events.push({ date: c.createdAt, label: 'Record created', detail: formatDateTime(c.createdAt), variant: 'default' })
-  }
 
   if (c.depositDate) {
     events.push({ date: c.depositDate, label: 'Deposited', detail: formatDate(c.depositDate), variant: 'default' })
