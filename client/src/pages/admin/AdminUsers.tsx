@@ -8,17 +8,63 @@ const FETCH_LIMIT = 100
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [resetUser, setResetUser] = useState<AdminUser | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [resetting, setResetting] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadUsers = () => {
     setLoading(true)
     admin
       .users({ page: 1, limit: FETCH_LIMIT })
       .then((r) => setUsers(r.data.data))
       .catch(() => setUsers([]))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadUsers()
   }, [])
 
   const formatDate = (s: string) => new Date(s).toLocaleDateString(undefined, { dateStyle: 'medium' })
+
+  const handleOpenReset = (u: AdminUser) => {
+    setResetUser(u)
+    setNewPassword('')
+    setConfirmPassword('')
+    setResetError(null)
+  }
+
+  const handleCloseReset = () => {
+    setResetUser(null)
+    setNewPassword('')
+    setConfirmPassword('')
+    setResetError(null)
+  }
+
+  const handleSubmitReset = () => {
+    if (!resetUser) return
+    if (newPassword.length < 8) {
+      setResetError('Password must be at least 8 characters')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match')
+      return
+    }
+    setResetError(null)
+    setResetting(true)
+    admin
+      .resetPassword(resetUser.id, newPassword)
+      .then(() => {
+        handleCloseReset()
+      })
+      .catch((err: { response?: { data?: { message?: string } } }) => {
+        setResetError(err.response?.data?.message ?? 'Failed to reset password')
+      })
+      .finally(() => setResetting(false))
+  }
 
   const columns: DataTableColumn<AdminUser>[] = [
     {
@@ -54,6 +100,21 @@ export default function AdminUsers() {
       sortKey: 'createdAt',
       render: (u) => <span className="text-slate-400">{formatDate(u.createdAt)}</span>,
     },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      align: 'right',
+      render: (u) => (
+        <button
+          type="button"
+          onClick={() => handleOpenReset(u)}
+          className="rounded-lg border border-slate-500/50 bg-slate-700/50 px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-slate-600/50 hover:text-amber-300"
+        >
+          Reset password
+        </button>
+      ),
+    },
   ]
 
   if (loading && users.length === 0) {
@@ -80,6 +141,66 @@ export default function AdminUsers() {
         emptyMessage="No users found."
         variant="dark"
       />
+
+      {resetUser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-password-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-slate-600 bg-slate-800 p-6 shadow-xl">
+            <h2 id="reset-password-title" className="text-lg font-semibold text-white">Reset password</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Set a new password for <span className="font-medium text-slate-300">{resetUser.email}</span>
+              {resetUser.name && ` (${resetUser.name})`}.
+            </p>
+            <div className="mt-4 space-y-3">
+              <label className="block">
+                <span className="mb-1 block text-sm text-slate-400">New password</span>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Min 8 characters"
+                  className="w-full rounded-xl border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                  autoComplete="new-password"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm text-slate-400">Confirm password</span>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter password"
+                  className="w-full rounded-xl border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                  autoComplete="new-password"
+                />
+              </label>
+            </div>
+            {resetError && <p className="mt-2 text-sm text-rose-400">{resetError}</p>}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleSubmitReset}
+                disabled={resetting || newPassword.length < 8 || newPassword !== confirmPassword}
+                className="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-500 disabled:opacity-50"
+              >
+                {resetting ? 'Resetting…' : 'Reset password'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseReset}
+                disabled={resetting}
+                className="rounded-xl border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-600 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

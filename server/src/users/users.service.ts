@@ -88,4 +88,16 @@ export class UsersService {
     });
     return { message: 'Password updated' };
   }
+
+  /** Reset user password (no current password required). For super-admin use only. */
+  async resetPassword(userId: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) throw new NotFoundException('User not found');
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashed },
+    });
+    return { message: 'Password reset successfully' };
+  }
 }

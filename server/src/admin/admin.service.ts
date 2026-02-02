@@ -166,4 +166,8 @@ export class AdminService {
   async getUsers(page: number, limit: number, search?: string) {
     return this.usersService.findAll(page, limit, search);
   }
+
+  async resetUserPassword(userId: string, newPassword: string) {
+    return this.usersService.resetPassword(userId, newPassword);
+  }
 }

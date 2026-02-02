@@ -1,9 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { AdminService } from './admin.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -28,5 +29,11 @@ export class AdminController {
   @ApiOperation({ summary: 'List all users (super admin only)' })
   getUsers(@Query() dto: PaginationDto, @Query('search') search?: string) {
     return this.adminService.getUsers(dto.page ?? 1, dto.limit ?? 20, search);
+  }
+
+  @Patch('users/:id/reset-password')
+  @ApiOperation({ summary: 'Reset a user password (super admin only)' })
+  resetUserPassword(@Param('id') id: string, @Body() dto: ResetUserPasswordDto) {
+    return this.adminService.resetUserPassword(id, dto.newPassword);
   }
 }

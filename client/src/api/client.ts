@@ -184,4 +184,6 @@ export const admin = {
   activity: (limit?: number) => api.get<{ recentLeases: unknown[]; recentPayments: unknown[]; recentUsers: AdminUser[] }>('/admin/activity', { params: { limit } }),
   users: (params?: { page?: number; limit?: number; search?: string }) =>
     api.get<{ data: AdminUser[]; meta: { total: number; page: number; limit: number; totalPages: number } }>('/admin/users', { params }),
+  resetPassword: (userId: string, newPassword: string) =>
+    api.patch<{ message: string }>(`/admin/users/${userId}/reset-password`, { newPassword }),
 }
