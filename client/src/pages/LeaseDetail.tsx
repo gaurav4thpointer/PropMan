@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { leases, leaseDocuments } from '../api/client'
 import type { Lease, LeaseDocument } from '../api/types'
-import { isLeaseExpired, isLeaseTerminated } from '../utils/lease'
+import { isLeaseExpired, isLeaseTerminated, getDaysOverdue } from '../utils/lease'
 
 export default function LeaseDetail() {
   const { id } = useParams<{ id: string }>()
@@ -303,11 +303,21 @@ export default function LeaseDetail() {
                   <td>
                     {cancelled ? (
                       <span className="badge bg-slate-200 text-slate-600">Cancelled</span>
+                    ) : s.status === 'OVERDUE' ? (
+                      (() => {
+                        const days = getDaysOverdue(s.dueDate)
+                        const label = days === 1 ? '1 day overdue' : `${days} days overdue`
+                        const isOrange = days <= 7
+                        return (
+                          <span className={`badge ${isOrange ? 'bg-amber-100 text-amber-800' : 'badge-danger'}`} title={label}>
+                            {label}
+                          </span>
+                        )
+                      })()
                     ) : (
                       <span className={`badge ${
                         s.status === 'PAID' ? 'badge-success' :
-                        s.status === 'PARTIAL' ? 'badge-warning' :
-                        s.status === 'OVERDUE' ? 'badge-danger' : 'badge-neutral'
+                        s.status === 'PARTIAL' ? 'badge-warning' : 'badge-neutral'
                       }`}>
                         {s.status}
                       </span>

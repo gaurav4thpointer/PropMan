@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
@@ -35,5 +35,11 @@ export class AdminController {
   @ApiOperation({ summary: 'Reset a user password (super admin only)' })
   resetUserPassword(@Param('id') id: string, @Body() dto: ResetUserPasswordDto) {
     return this.adminService.resetUserPassword(id, dto.newPassword);
+  }
+
+  @Post('users/:id/sample-data')
+  @ApiOperation({ summary: 'Add random sample data for a user (super admin only)' })
+  addSampleData(@Param('id') id: string) {
+    return this.adminService.addSampleData(id);
   }
 }

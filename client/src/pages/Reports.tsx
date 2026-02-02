@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { reports, properties } from '../api/client'
 import type { DashboardData, Property } from '../api/types'
+import { getDaysOverdue } from '../utils/lease'
 
 export default function Reports() {
   const [data, setData] = useState<DashboardData | null>(null)
@@ -89,21 +90,31 @@ export default function Reports() {
           {data.overdueSchedules.length === 0 ? (
             <li className="px-5 py-6 text-center text-sm text-slate-500">None</li>
           ) : (
-            data.overdueSchedules.map((s) => (
-              <li key={s.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/50">
-                <span className="text-slate-700">
-                  {s.lease?.id ? (
-                    <Link to={`/leases/${s.lease.id}`} className="text-indigo-600 hover:underline">
-                      {s.lease?.property?.name} – {s.lease?.unit?.unitNo}
-                    </Link>
-                  ) : (
-                    `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo}`
-                  )}
-                  {' · '}{formatDate(s.dueDate)}
-                </span>
-                <span className="font-semibold text-rose-600">{formatNum(Number(s.expectedAmount))}</span>
-              </li>
-            ))
+            data.overdueSchedules.map((s) => {
+              const days = getDaysOverdue(s.dueDate)
+              const overdueLabel = days === 1 ? '1 day overdue' : `${days} days overdue`
+              const isOrange = days <= 7
+              return (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-slate-50/50">
+                  <span className="text-slate-700">
+                    {s.lease?.id ? (
+                      <Link to={`/leases/${s.lease.id}`} className="text-indigo-600 hover:underline">
+                        {s.lease?.property?.name} – {s.lease?.unit?.unitNo}
+                      </Link>
+                    ) : (
+                      `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo}`
+                    )}
+                    {' · '}{formatDate(s.dueDate)}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isOrange ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>
+                      {overdueLabel}
+                    </span>
+                    <span className="font-semibold text-rose-600">{formatNum(Number(s.expectedAmount))}</span>
+                  </span>
+                </li>
+              )
+            })
           )}
         </ul>
       </div>

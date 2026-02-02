@@ -11,3 +11,13 @@ export function isLeaseExpired(endDate: string): boolean {
 export function isLeaseTerminated(lease: { terminationDate?: string | null }): boolean {
   return Boolean(lease.terminationDate)
 }
+
+/** Days overdue from due date (0 if not overdue). Date-only comparison with today. */
+export function getDaysOverdue(dueDate: string): number {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const due = new Date(dueDate)
+  due.setHours(0, 0, 0, 0)
+  if (due >= today) return 0
+  return Math.floor((today.getTime() - due.getTime()) / 86400000)
+}

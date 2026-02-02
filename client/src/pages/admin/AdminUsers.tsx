@@ -13,6 +13,9 @@ export default function AdminUsers() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [resetting, setResetting] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
+  const [sampleDataUser, setSampleDataUser] = useState<AdminUser | null>(null)
+  const [addingSample, setAddingSample] = useState(false)
+  const [sampleError, setSampleError] = useState<string | null>(null)
 
   const loadUsers = () => {
     setLoading(true)
@@ -66,6 +69,42 @@ export default function AdminUsers() {
       .finally(() => setResetting(false))
   }
 
+  const handleOpenSampleData = (u: AdminUser) => {
+    setSampleDataUser(u)
+    setSampleError(null)
+  }
+
+  const handleCloseSampleData = () => {
+    setSampleDataUser(null)
+    setSampleError(null)
+  }
+
+  const handleConfirmSampleData = () => {
+    if (!sampleDataUser) return
+    setSampleError(null)
+    setAddingSample(true)
+    admin
+      .addSampleData(sampleDataUser.id)
+      .then((r) => {
+        handleCloseSampleData()
+        if (r.data?.message) {
+          const details = [
+            r.data.properties != null && `${r.data.properties} properties`,
+            r.data.units != null && `${r.data.units} units`,
+            r.data.tenants != null && `${r.data.tenants} tenants`,
+            r.data.leases != null && `${r.data.leases} leases`,
+            r.data.cheques != null && `${r.data.cheques} cheques`,
+            r.data.payments != null && `${r.data.payments} payments`,
+          ].filter(Boolean).join(', ')
+          alert(details ? `${r.data.message}: ${details}` : r.data.message)
+        }
+      })
+      .catch((err: { response?: { data?: { message?: string } } }) => {
+        setSampleError(err.response?.data?.message ?? 'Failed to add sample data')
+      })
+      .finally(() => setAddingSample(false))
+  }
+
   const columns: DataTableColumn<AdminUser>[] = [
     {
       key: 'email',
@@ -106,13 +145,22 @@ export default function AdminUsers() {
       sortable: false,
       align: 'right',
       render: (u) => (
-        <button
-          type="button"
-          onClick={() => handleOpenReset(u)}
-          className="rounded-lg border border-slate-500/50 bg-slate-700/50 px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-slate-600/50 hover:text-amber-300"
-        >
-          Reset password
-        </button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => handleOpenSampleData(u)}
+            className="rounded-lg border border-slate-500/50 bg-slate-700/50 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-slate-600/50 hover:text-emerald-300"
+          >
+            Add sample data
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOpenReset(u)}
+            className="rounded-lg border border-slate-500/50 bg-slate-700/50 px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-slate-600/50 hover:text-amber-300"
+          >
+            Reset password
+          </button>
+        </div>
       ),
     },
   ]
@@ -141,6 +189,42 @@ export default function AdminUsers() {
         emptyMessage="No users found."
         variant="dark"
       />
+
+      {sampleDataUser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sample-data-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-slate-600 bg-slate-800 p-6 shadow-xl">
+            <h2 id="sample-data-title" className="text-lg font-semibold text-white">Add sample data</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Add random sample data for <span className="font-medium text-slate-300">{sampleDataUser.email}</span>
+              {sampleDataUser.name && ` (${sampleDataUser.name})`}? This will create random properties, units, tenants, leases, cheques, and payments.
+            </p>
+            {sampleError && <p className="mt-2 text-sm text-rose-400">{sampleError}</p>}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleConfirmSampleData}
+                disabled={addingSample}
+                className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-500 disabled:opacity-50"
+              >
+                {addingSample ? 'Adding…' : 'Yes, add sample data'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseSampleData}
+                disabled={addingSample}
+                className="rounded-xl border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-600 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {resetUser && (
         <div

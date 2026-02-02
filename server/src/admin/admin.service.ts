@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
+import { Country, Currency, UnitStatus, RentFrequency, ChequeStatus, PaymentMethod, ScheduleStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class AdminService {
@@ -169,5 +171,258 @@ export class AdminService {
 
   async resetUserPassword(userId: string, newPassword: string) {
     return this.usersService.resetPassword(userId, newPassword);
+  }
+
+  /** Add random sample data for a user (properties, units, tenants, leases, cheques, payments). */
+  async addSampleData(userId: string) {
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!targetUser) throw new NotFoundException('User not found');
+
+    const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+    const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
+
+    const propNamesIN = [
+      'Sunrise Apartments', 'Green Valley Residency', 'Palm Grove', 'Lake View Heights', 'Maple Towers',
+      'Oakwood Estates', 'Riverside Plaza', 'Hill Crest Residency', 'Garden View', 'Silver Springs',
+      'Coral Residency', 'Peacock Heights', 'Lotus Towers', 'Royal Greens', 'Emerald Park',
+      'Sapphire Apartments', 'Golden Gate', 'Ivory Heights', 'Jasmine Residency', 'Meadow Brook',
+    ];
+    const propNamesAE = [
+      'Marina Heights', 'JBR View Tower', 'Downtown Residency', 'Creek Vista', 'Palm Jumeirah Villa',
+      'Business Bay Tower', 'JLT Lake View', 'DIFC Residency', 'Arabian Ranches Villa', 'JVC Gardens',
+      'Dubai Hills Estate', 'Meydan Heights', 'City Walk Residency', 'Bluewaters View', 'Al Barsha Tower',
+      'Discovery Gardens', 'Silicon Oasis', 'Sports City Residency', 'Motor City Villa', 'Emirates Living',
+    ];
+    const addressesIN = ['Mumbai 400058', 'Bengaluru 560034', 'Delhi 110017', 'Pune 411001', 'Hyderabad 500032', 'Chennai 600001', 'Kolkata 700001', 'Ahmedabad 380001'];
+    const addressesAE = ['Dubai Marina', 'JBR The Walk', 'Downtown Dubai', 'Business Bay', 'JLT', 'DIFC', 'JVC', 'Al Barsha', 'Jumeirah', 'Deira'];
+    const statesIN = ['Maharashtra', 'Karnataka', 'Delhi', 'Tamil Nadu', 'Telangana', 'West Bengal', 'Gujarat'];
+    const firstNames = ['Rahul', 'Priya', 'Vikram', 'Anita', 'Suresh', 'Fatima', 'Omar', 'Lakshmi', 'Kiran', 'Deepa', 'Arun', 'Meera', 'Sanjay', 'Kavita', 'Rajesh', 'Pooja', 'Amit', 'Neha', 'Ravi', 'Anjali'];
+    const lastNames = ['Sharma', 'Nair', 'Singh', 'Patel', 'Reddy', 'Khan', 'Kumar', 'Menon', 'Iyer', 'Gupta', 'Joshi', 'Desai', 'Pillai', 'Nair', 'Mehta', 'Shah', 'Rao', 'Verma', 'Malhotra', 'Chopra'];
+    const bankNamesIN = ['HDFC Bank', 'ICICI Bank', 'SBI', 'Axis Bank', 'Kotak Mahindra'];
+    const bankNamesAE = ['Emirates NBD', 'Mashreq Bank', 'ADCB', 'ENBD', 'Dubai Islamic Bank'];
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const unitIds: string[] = [];
+      const propertyIds: string[] = [];
+
+      // 20 properties: 10 IN, 10 AE; 3 units each = 60 units
+      for (let i = 0; i < 20; i++) {
+        const country: Country = i < 10 ? Country.IN : Country.AE;
+        const currency = country === Country.IN ? Currency.INR : Currency.AED;
+        const propNames = country === Country.IN ? propNamesIN : propNamesAE;
+        const addresses = country === Country.IN ? addressesIN : addressesAE;
+        const stateOrEmirate = country === Country.IN ? pick(statesIN) : 'Dubai';
+
+        const prop = await tx.property.create({
+          data: {
+            ownerId: userId,
+            name: propNames[i],
+            address: pick(addresses),
+            country,
+            emirateOrState: stateOrEmirate,
+            currency,
+            notes: 'Sample data',
+          },
+        });
+        propertyIds.push(prop.id);
+        for (let u = 0; u < 3; u++) {
+          const unit = await tx.unit.create({
+            data: {
+              propertyId: prop.id,
+              unitNo: String(100 + u + (i % 10) * 10),
+              bedrooms: randInt(1, 4),
+              status: UnitStatus.VACANT,
+            },
+          });
+          unitIds.push(unit.id);
+        }
+      }
+
+      // 40 tenants
+      const tenantIds: string[] = [];
+      for (let t = 0; t < 40; t++) {
+        const country: Country = pick([Country.IN, Country.AE]);
+        const tenant = await tx.tenant.create({
+          data: {
+            ownerId: userId,
+            name: `${pick(firstNames)} ${pick(lastNames)}`,
+            phone: country === Country.IN ? `+91 ${randInt(9000000000, 9999999999)}` : `+971 50 ${randInt(1000000, 9999999)}`,
+            email: `sample${Date.now()}+${t}@example.com`,
+          },
+        });
+        tenantIds.push(tenant.id);
+      }
+
+      // 60 leases: ~40% expired, ~60% current; vary dates and frequency
+      const shuffledUnits = shuffle(unitIds);
+      let totalCheques = 0;
+      let totalPayments = 0;
+
+      for (let L = 0; L < 60; L++) {
+        const unitId = shuffledUnits[L];
+        const unit = await tx.unit.findUniqueOrThrow({ where: { id: unitId }, include: { property: true } });
+        const country: Country = unit.property.country;
+        const currency = country === Country.IN ? Currency.INR : Currency.AED;
+        const amount = country === Country.IN ? randInt(20000, 80000) : randInt(6000, 28000);
+        const dueDay = randInt(1, 28);
+        const freq = pick([RentFrequency.MONTHLY, RentFrequency.QUARTERLY, RentFrequency.YEARLY]);
+        const tenantId = pick(tenantIds);
+
+        // Expired: end in past (40%); current: end in future (60%)
+        const isExpired = L < 24; // 24 expired, 36 current
+        let startDate: Date;
+        let endDate: Date;
+        if (isExpired) {
+          const endYear = currentYear - randInt(0, 1);
+          const endMonth = randInt(0, 11);
+          endDate = new Date(endYear, endMonth, Math.min(dueDay, 28));
+          startDate = new Date(endYear - 1, endMonth, Math.min(dueDay, 28));
+        } else {
+          startDate = new Date(currentYear, randInt(0, 6), Math.min(dueDay, 28));
+          endDate = new Date(currentYear + 1, randInt(0, 11), Math.min(dueDay, 28));
+        }
+
+        const lease = await tx.lease.create({
+          data: {
+            ownerId: userId,
+            propertyId: unit.propertyId,
+            unitId: unit.id,
+            tenantId,
+            startDate,
+            endDate,
+            rentFrequency: freq,
+            installmentAmount: new Decimal(amount),
+            dueDay,
+            securityDeposit: new Decimal(Math.round(amount * 2)),
+            notes: 'Sample lease',
+          },
+        });
+        await tx.unit.update({ where: { id: unit.id }, data: { status: UnitStatus.OCCUPIED } });
+
+        const scheduleDates: Date[] = [];
+        const day = Math.min(dueDay, 28);
+        if (freq === RentFrequency.MONTHLY) {
+          let d = new Date(startDate.getFullYear(), startDate.getMonth(), day);
+          while (d <= endDate) {
+            if (d >= startDate) scheduleDates.push(new Date(d));
+            d.setMonth(d.getMonth() + 1);
+          }
+        } else if (freq === RentFrequency.QUARTERLY) {
+          let d = new Date(startDate.getFullYear(), startDate.getMonth(), day);
+          while (d <= endDate) {
+            if (d >= startDate) scheduleDates.push(new Date(d));
+            d.setMonth(d.getMonth() + 3);
+          }
+        } else {
+          const d = new Date(startDate.getFullYear(), startDate.getMonth(), day);
+          if (d >= startDate && d <= endDate) scheduleDates.push(d);
+        }
+        await tx.rentSchedule.createMany({
+          data: scheduleDates.map((dueDate) => ({
+            leaseId: lease.id,
+            dueDate,
+            expectedAmount: new Decimal(amount),
+            status: pick([ScheduleStatus.DUE, ScheduleStatus.PAID, ScheduleStatus.OVERDUE, ScheduleStatus.PARTIAL]),
+            paidAmount: Math.random() > 0.5 ? new Decimal(amount) : null,
+          })),
+        });
+        const schedules = await tx.rentSchedule.findMany({
+          where: { leaseId: lease.id },
+          orderBy: { dueDate: 'asc' },
+        });
+
+        // 2–4 cheques per lease (varied status: RECEIVED, DEPOSITED, CLEARED, BOUNCED)
+        const numC = randInt(2, 4);
+        const banks = country === Country.IN ? bankNamesIN : bankNamesAE;
+        for (let c = 0; c < numC && c < scheduleDates.length; c++) {
+          const dueDate = scheduleDates[c];
+          const chqStatus = pick([ChequeStatus.RECEIVED, ChequeStatus.DEPOSITED, ChequeStatus.CLEARED, ChequeStatus.BOUNCED]);
+          const depositDate = chqStatus !== ChequeStatus.RECEIVED ? dueDate : null;
+          const clearedDate = (chqStatus === ChequeStatus.CLEARED || chqStatus === ChequeStatus.BOUNCED) ? new Date(dueDate.getTime() + 5 * 86400000) : null;
+          await tx.cheque.create({
+            data: {
+              leaseId: lease.id,
+              tenantId,
+              propertyId: unit.propertyId,
+              unitId: unit.id,
+              ownerId: userId,
+              chequeNumber: `SMP-${randInt(10000, 99999)}`,
+              bankName: pick(banks),
+              chequeDate: dueDate,
+              amount: new Decimal(amount),
+              coversPeriod: dueDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) + ' Rent',
+              status: chqStatus,
+              depositDate,
+              clearedOrBounceDate: clearedDate,
+              bounceReason: chqStatus === ChequeStatus.BOUNCED ? 'Insufficient funds' : null,
+            },
+          });
+          totalCheques++;
+        }
+
+        // 2–4 payments per lease; match some to rent schedules
+        const numP = randInt(2, 4);
+        const methods = [PaymentMethod.BANK_TRANSFER, PaymentMethod.UPI, PaymentMethod.CHEQUE, PaymentMethod.CASH];
+        for (let p = 0; p < numP && p < scheduleDates.length; p++) {
+          const payDate = new Date(scheduleDates[p]);
+          const pay = await tx.payment.create({
+            data: {
+              leaseId: lease.id,
+              tenantId,
+              propertyId: unit.propertyId,
+              unitId: unit.id,
+              ownerId: userId,
+              date: payDate,
+              amount: new Decimal(amount),
+              method: pick(methods),
+              reference: `SMP-${randInt(100000, 999999)}`,
+              notes: 'Sample payment',
+            },
+          });
+          totalPayments++;
+          if (schedules.length > p) {
+            const sched = schedules[p];
+            if (sched) {
+              await tx.rentSchedule.update({
+                where: { id: sched.id },
+                data: { status: ScheduleStatus.PAID, paidAmount: new Decimal(amount) },
+              });
+              await tx.paymentScheduleMatch.upsert({
+                where: {
+                  paymentId_rentScheduleId: { paymentId: pay.id, rentScheduleId: sched.id },
+                },
+                update: {},
+                create: {
+                  paymentId: pay.id,
+                  rentScheduleId: sched.id,
+                  amount: new Decimal(amount),
+                },
+              });
+            }
+          }
+        }
+      }
+
+      return {
+        properties: 20,
+        units: 60,
+        tenants: 40,
+        leases: 60,
+        cheques: totalCheques,
+        payments: totalPayments,
+      };
+    });
+
+    return {
+      message: 'Sample data added successfully',
+      ...result,
+    };
   }
 }

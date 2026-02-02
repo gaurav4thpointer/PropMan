@@ -186,4 +186,6 @@ export const admin = {
     api.get<{ data: AdminUser[]; meta: { total: number; page: number; limit: number; totalPages: number } }>('/admin/users', { params }),
   resetPassword: (userId: string, newPassword: string) =>
     api.patch<{ message: string }>(`/admin/users/${userId}/reset-password`, { newPassword }),
+  addSampleData: (userId: string) =>
+    api.post<{ message: string; properties: number; units: number; tenants: number; leases: number; cheques: number; payments: number }>(`/admin/users/${userId}/sample-data`),
 }

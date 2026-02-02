@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { reports, properties as propertiesApi } from '../api/client'
 import type { DashboardData, Property } from '../api/types'
+import { getDaysOverdue } from '../utils/lease'
 
 function formatNum(n: number): string {
   if (n >= 1e7) return (n / 1e7).toFixed(1) + ' Cr'
@@ -184,33 +185,43 @@ export default function Dashboard() {
             {data.overdueSchedules.length === 0 ? (
               <li className="px-4 py-6 text-center text-sm text-slate-500">All clear</li>
             ) : (
-              data.overdueSchedules.slice(0, 10).map((s) => (
-                <li key={s.id} className="px-4 py-3 transition-colors hover:bg-slate-50/50">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 text-sm text-slate-700">
-                      {s.lease?.id ? (
-                        <>
-                          {s.lease?.propertyId && (
-                            <Link to={`/properties/${s.lease.propertyId}`} className="text-indigo-600 hover:underline truncate block">
-                              {s.lease?.property?.name}
-                            </Link>
-                          )}
-                          <span className="text-slate-500"> {s.lease?.unit?.unitNo}</span>
-                          {s.lease?.tenantId && s.lease?.tenant?.name && (
-                            <Link to={`/tenants/${s.lease.tenantId}`} className="ml-1 text-slate-600 hover:underline">· {s.lease.tenant.name}</Link>
-                          )}
-                        </>
-                      ) : (
-                        `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo}`
+              data.overdueSchedules.slice(0, 10).map((s) => {
+                const days = getDaysOverdue(s.dueDate)
+                const overdueLabel = days === 1 ? '1 day overdue' : `${days} days overdue`
+                const isOrange = days <= 7
+                return (
+                  <li key={s.id} className="px-4 py-3 transition-colors hover:bg-slate-50/50">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 text-sm text-slate-700">
+                        {s.lease?.id ? (
+                          <>
+                            {s.lease?.propertyId && (
+                              <Link to={`/properties/${s.lease.propertyId}`} className="text-indigo-600 hover:underline truncate block">
+                                {s.lease?.property?.name}
+                              </Link>
+                            )}
+                            <span className="text-slate-500"> {s.lease?.unit?.unitNo}</span>
+                            {s.lease?.tenantId && s.lease?.tenant?.name && (
+                              <Link to={`/tenants/${s.lease.tenantId}`} className="ml-1 text-slate-600 hover:underline">· {s.lease.tenant.name}</Link>
+                            )}
+                          </>
+                        ) : (
+                          `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo}`
+                        )}
+                      </span>
+                      <span className="shrink-0 font-semibold text-rose-600 text-sm">{formatNum(Number(s.expectedAmount))}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isOrange ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>
+                        {overdueLabel}
+                      </span>
+                      {s.lease?.id && (
+                        <Link to={`/leases/${s.lease.id}`} className="text-xs font-medium text-indigo-600 hover:underline">View lease →</Link>
                       )}
-                    </span>
-                    <span className="shrink-0 font-semibold text-rose-600 text-sm">{formatNum(Number(s.expectedAmount))}</span>
-                  </div>
-                  {s.lease?.id && (
-                    <Link to={`/leases/${s.lease.id}`} className="mt-1 inline-block text-xs font-medium text-indigo-600 hover:underline">View lease →</Link>
-                  )}
-                </li>
-              ))
+                    </div>
+                  </li>
+                )
+              })
             )}
           </ul>
           <Link to="/reports" className="block border-t border-slate-100 px-4 py-3 text-sm font-medium text-indigo-600 hover:bg-indigo-50/50">
