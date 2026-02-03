@@ -4,19 +4,27 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { leases, properties, tenants, units } from '../api/client'
 import type { Property, Tenant } from '../api/types'
+import PropertyForm from './PropertyForm'
+import TenantForm from './TenantForm'
+import UnitForm from './UnitForm'
 
-const schema = z.object({
-  propertyId: z.string().uuid(),
-  unitId: z.string().uuid(),
-  tenantId: z.string().uuid(),
-  startDate: z.string().min(1),
-  endDate: z.string().min(1),
-  rentFrequency: z.enum(['MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM']),
-  installmentAmount: z.coerce.number().min(0),
-  dueDay: z.coerce.number().min(1).max(28),
-  securityDeposit: z.coerce.number().min(0).optional(),
-  notes: z.string().optional(),
-})
+const schema = z
+  .object({
+    propertyId: z.string().uuid(),
+    unitId: z.string().uuid(),
+    tenantId: z.string().uuid(),
+    startDate: z.string().min(1),
+    endDate: z.string().min(1),
+    rentFrequency: z.enum(['MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM']),
+    installmentAmount: z.coerce.number().min(0),
+    dueDay: z.coerce.number().min(1).max(28),
+    securityDeposit: z.coerce.number().min(0).optional(),
+    notes: z.string().optional(),
+  })
+  .refine((data) => !data.startDate || !data.endDate || new Date(data.endDate) >= new Date(data.startDate), {
+    message: 'End date must be on or after start date',
+    path: ['endDate'],
+  })
 
 type FormData = z.infer<typeof schema>
 
@@ -33,6 +41,9 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
   const [unitsForProperty, setUnitsForProperty] = useState<{ id: string; unitNo: string }[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showAddProperty, setShowAddProperty] = useState(false)
+  const [showAddUnit, setShowAddUnit] = useState(false)
+  const [showAddTenant, setShowAddTenant] = useState(false)
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
@@ -97,7 +108,16 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
       )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Property *</label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="block text-sm font-medium text-slate-700">Property *</label>
+            <button
+              type="button"
+              onClick={() => setShowAddProperty(true)}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+            >
+              + Add new property
+            </button>
+          </div>
           <select {...register('propertyId')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
             <option value="">Select property</option>
             {propertiesList.map((p) => (
@@ -105,9 +125,33 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
             ))}
           </select>
           {errors.propertyId && <p className="text-red-600 text-sm mt-1">{errors.propertyId.message}</p>}
+          {showAddProperty && (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+              <PropertyForm
+                onSaved={() => setShowAddProperty(false)}
+                onCancel={() => setShowAddProperty(false)}
+                onSavedWithNew={(p) => {
+                  setPropertiesList((prev) => [...prev, p])
+                  setValue('propertyId', p.id)
+                  setShowAddProperty(false)
+                }}
+              />
+            </div>
+          )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Unit *</label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="block text-sm font-medium text-slate-700">Unit *</label>
+            {propertyId && (
+              <button
+                type="button"
+                onClick={() => setShowAddUnit(true)}
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+              >
+                + Add new unit
+              </button>
+            )}
+          </div>
           <select {...register('unitId')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
             <option value="">Select unit</option>
             {unitsForProperty.map((u) => (
@@ -115,9 +159,32 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
             ))}
           </select>
           {errors.unitId && <p className="text-red-600 text-sm mt-1">{errors.unitId.message}</p>}
+          {showAddUnit && propertyId && (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+              <UnitForm
+                propertyId={propertyId}
+                onSaved={() => setShowAddUnit(false)}
+                onCancel={() => setShowAddUnit(false)}
+                onSavedWithNew={(u) => {
+                  setUnitsForProperty((prev) => [...prev, { id: u.id, unitNo: u.unitNo }])
+                  setValue('unitId', u.id)
+                  setShowAddUnit(false)
+                }}
+              />
+            </div>
+          )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Tenant *</label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="block text-sm font-medium text-slate-700">Tenant *</label>
+            <button
+              type="button"
+              onClick={() => setShowAddTenant(true)}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+            >
+              + Add new tenant
+            </button>
+          </div>
           <select {...register('tenantId')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
             <option value="">Select tenant</option>
             {tenantsList.map((t) => (
@@ -125,6 +192,19 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
             ))}
           </select>
           {errors.tenantId && <p className="text-red-600 text-sm mt-1">{errors.tenantId.message}</p>}
+          {showAddTenant && (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+              <TenantForm
+                onSaved={() => setShowAddTenant(false)}
+                onCancel={() => setShowAddTenant(false)}
+                onSavedWithNew={(t) => {
+                  setTenantsList((prev) => [...prev, t])
+                  setValue('tenantId', t.id)
+                  setShowAddTenant(false)
+                }}
+              />
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>

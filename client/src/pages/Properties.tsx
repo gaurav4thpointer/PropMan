@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { properties as propertiesApi } from '../api/client'
 import type { Property } from '../api/types'
 import PropertyForm from '../components/PropertyForm'
@@ -8,12 +8,16 @@ import DataTable, { type DataTableColumn } from '../components/DataTable'
 const FETCH_LIMIT = 100
 
 export default function Properties() {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const countryFromUrl = searchParams.get('country') ?? ''
+  const currencyFromUrl = searchParams.get('currency') ?? ''
   const [list, setList] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Property | null>(null)
-  const [filterCountry, setFilterCountry] = useState('')
-  const [filterCurrency, setFilterCurrency] = useState('')
+  const [filterCountry, setFilterCountry] = useState(countryFromUrl)
+  const [filterCurrency, setFilterCurrency] = useState(currencyFromUrl)
 
   const load = () => {
     setLoading(true)
@@ -23,14 +27,38 @@ export default function Properties() {
   }
 
   useEffect(() => { load() }, [])
+  useEffect(() => {
+    setFilterCountry(countryFromUrl)
+    setFilterCurrency(currencyFromUrl)
+  }, [countryFromUrl, currencyFromUrl])
+
+  useEffect(() => {
+    if (searchParams.get('onboarding') === 'new') {
+      setEditing(null)
+      setShowForm(true)
+    }
+  }, [searchParams])
 
   const filteredList = list.filter(
     (p) => (!filterCountry || p.country === filterCountry) && (!filterCurrency || p.currency === filterCurrency)
   )
 
   const handleSaved = () => {
+    const next = searchParams.get('next')
     setShowForm(false)
     setEditing(null)
+
+    if (next === 'tenant') {
+      navigate('/tenants?onboarding=new&next=lease')
+      return
+    }
+
+    setSearchParams((prev) => {
+      const nextParams = new URLSearchParams(prev)
+      nextParams.delete('onboarding')
+      nextParams.delete('next')
+      return nextParams
+    })
     load()
   }
 
@@ -93,7 +121,17 @@ export default function Properties() {
     <>
       <select
         value={filterCountry}
-        onChange={(e) => setFilterCountry(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value
+          setFilterCountry(v)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            if (v) next.set('country', v)
+            else next.delete('country')
+            return next
+          })
+        }}
+        aria-label="Filter by country"
         className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
       >
         <option value="">All countries</option>
@@ -102,7 +140,17 @@ export default function Properties() {
       </select>
       <select
         value={filterCurrency}
-        onChange={(e) => setFilterCurrency(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value
+          setFilterCurrency(v)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            if (v) next.set('currency', v)
+            else next.delete('currency')
+            return next
+          })
+        }}
+        aria-label="Filter by currency"
         className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
       >
         <option value="">All currencies</option>
@@ -132,7 +180,16 @@ export default function Properties() {
         <PropertyForm
           property={editing ?? undefined}
           onSaved={handleSaved}
-          onCancel={() => { setShowForm(false); setEditing(null) }}
+          onCancel={() => {
+          setShowForm(false)
+          setEditing(null)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            next.delete('onboarding')
+            next.delete('next')
+            return next
+          })
+        }}
         />
       )}
 
@@ -147,7 +204,7 @@ export default function Properties() {
           idKey="id"
           searchPlaceholder="Search by name or address..."
           extraToolbar={extraToolbar}
-          emptyMessage="No properties yet. Add one to get started."
+          emptyMessage="No properties yet. Click “+ Add property” to create your first one."
         />
       )}
     </div>

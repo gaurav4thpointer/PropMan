@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { tenants as tenantsApi } from '../api/client'
 import type { Tenant } from '../api/types'
 import TenantForm from '../components/TenantForm'
@@ -8,6 +8,8 @@ import DataTable, { type DataTableColumn } from '../components/DataTable'
 const FETCH_LIMIT = 100
 
 export default function Tenants() {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [list, setList] = useState<Tenant[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -21,6 +23,32 @@ export default function Tenants() {
   }
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    if (searchParams.get('onboarding') === 'new') {
+      setEditing(null)
+      setShowForm(true)
+    }
+  }, [searchParams])
+
+  const handleSaved = () => {
+    const next = searchParams.get('next')
+    setShowForm(false)
+    setEditing(null)
+
+    if (next === 'lease') {
+      navigate('/leases?onboarding=new')
+      return
+    }
+
+    setSearchParams((prev) => {
+      const nextParams = new URLSearchParams(prev)
+      nextParams.delete('onboarding')
+      nextParams.delete('next')
+      return nextParams
+    })
+    load()
+  }
 
   const columns: DataTableColumn<Tenant>[] = [
     {
@@ -78,8 +106,17 @@ export default function Tenants() {
       {showForm && (
         <TenantForm
           tenant={editing ?? undefined}
-          onSaved={() => { setShowForm(false); setEditing(null); load() }}
-          onCancel={() => { setShowForm(false); setEditing(null) }}
+          onSaved={handleSaved}
+          onCancel={() => {
+          setShowForm(false)
+          setEditing(null)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            next.delete('onboarding')
+            next.delete('next')
+            return next
+          })
+        }}
         />
       )}
 
@@ -93,7 +130,7 @@ export default function Tenants() {
           columns={columns}
           idKey="id"
           searchPlaceholder="Search by name, email or phone..."
-          emptyMessage="No tenants yet."
+          emptyMessage="No tenants yet. Click “+ Add tenant” to add your first tenant."
         />
       )}
     </div>

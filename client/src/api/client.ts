@@ -14,11 +14,31 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+const LOGIN_RETURN_URL_KEY = 'loginReturnUrl'
+
+export function getLoginReturnUrl(): string | null {
+  try {
+    const url = sessionStorage.getItem(LOGIN_RETURN_URL_KEY)
+    if (url) sessionStorage.removeItem(LOGIN_RETURN_URL_KEY)
+    return url
+  } catch {
+    return null
+  }
+}
+
 api.interceptors.response.use(
   (r) => r,
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
+      try {
+        const path = window.location.pathname + window.location.search
+        if (path && path !== '/' && path !== '/login' && path !== '/register') {
+          sessionStorage.setItem(LOGIN_RETURN_URL_KEY, path)
+        }
+      } catch {
+        /* ignore */
+      }
       window.location.href = '/login'
     }
     return Promise.reject(err)

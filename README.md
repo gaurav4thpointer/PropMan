@@ -82,7 +82,7 @@ npm install
 npm run dev
 ```
 
-App: `http://localhost:5173`. Set `VITE_API_URL=http://localhost:3000` in `client/.env` if the API runs on a different URL.
+App: `http://localhost:5173`. If `VITE_API_URL` is unset, the dev server proxies `/api` to `http://localhost:3000`. Set `VITE_API_URL=http://localhost:3000/api` in `client/.env` if the API runs on another host/port.
 
 ### Seed user
 
@@ -126,9 +126,10 @@ npm run build --prefix client && npm run build --prefix server
 
 ## Env vars (server)
 
-| Variable       | Description                    |
-|----------------|--------------------------------|
-| `DATABASE_URL` | PostgreSQL connection string   |
-| `JWT_SECRET`   | Secret for JWT signing         |
-| `JWT_EXPIRES_IN` | Token expiry (default `7d`)  |
-| `PORT`         | API port (default `3000`)      |
+| Variable       | Description                                                    |
+|----------------|----------------------------------------------------------------|
+| `DATABASE_URL` | PostgreSQL connection string                                  |
+| `JWT_SECRET`   | Secret for JWT signing                                         |
+| `JWT_EXPIRES_IN` | Token expiry (default `7d`)                                  |
+| `PORT`         | API port (default `3000`)                                     |
+| `CORS_ORIGIN`  | Comma-separated allowed origins (optional; if unset, all origins allowed, suitable for dev only) |

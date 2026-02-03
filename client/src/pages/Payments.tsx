@@ -122,26 +122,48 @@ export default function Payments() {
   ]
 
   const extraToolbar = (
-    <select
-      value={filterPropertyId}
-      onChange={(e) => {
-        const v = e.target.value
-        setFilterPropertyId(v)
-        setSearchParams((prev) => {
-          const next = new URLSearchParams(prev)
-          if (v) next.set('propertyId', v)
-          else next.delete('propertyId')
-          return next
-        })
-      }}
-      aria-label="Filter by property"
-      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
-    >
-      <option value="">All properties</option>
-      {propertiesList.map((p) => (
-        <option key={p.id} value={p.id}>{p.name}</option>
-      ))}
-    </select>
+    <>
+      <select
+        value={filterPropertyId}
+        onChange={(e) => {
+          const v = e.target.value
+          setFilterPropertyId(v)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            if (v) next.set('propertyId', v)
+            else next.delete('propertyId')
+            return next
+          })
+        }}
+        aria-label="Filter by property"
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+      >
+        <option value="">All properties</option>
+        {propertiesList.map((p) => (
+          <option key={p.id} value={p.id}>{p.name}</option>
+        ))}
+      </select>
+      <select
+        value={filterTenantId}
+        onChange={(e) => {
+          const v = e.target.value
+          setFilterTenantId(v)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            if (v) next.set('tenantId', v)
+            else next.delete('tenantId')
+            return next
+          })
+        }}
+        aria-label="Filter by tenant"
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+      >
+        <option value="">All tenants</option>
+        {Array.from(new Map(list.filter((p) => p.tenant).map((p) => [p.tenant!.id, p.tenant!])).values()).map((t) => (
+          <option key={t.id} value={t.id}>{t.name}</option>
+        ))}
+      </select>
+    </>
   )
 
   return (
@@ -169,7 +191,7 @@ export default function Payments() {
           idKey="id"
           searchPlaceholder="Search by reference or tenant..."
           extraToolbar={extraToolbar}
-          emptyMessage="No payments yet."
+          emptyMessage="No payments yet. Use “+ Add payment” once you receive rent."
         />
       )}
     </div>

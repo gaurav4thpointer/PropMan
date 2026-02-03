@@ -16,7 +16,11 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.enableCors({ origin: true }); // allow client in dev
+
+  const corsOrigin = process.env.CORS_ORIGIN;
+  app.enableCors({
+    origin: corsOrigin ? corsOrigin.split(',').map((o) => o.trim()).filter(Boolean) : true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('PropMan API')

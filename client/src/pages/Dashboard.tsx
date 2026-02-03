@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { reports, properties as propertiesApi } from '../api/client'
 import type { DashboardData, Property } from '../api/types'
+import { useAuth } from '../context/AuthContext'
 import { getDaysOverdue } from '../utils/lease'
+import OnboardingDashboard from './OnboardingDashboard'
 
 function formatNum(n: number): string {
   if (n >= 1e7) return (n / 1e7).toFixed(1) + ' Cr'
@@ -21,7 +23,22 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [propertiesList, setPropertiesList] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
+  const [propertiesLoading, setPropertiesLoading] = useState(true)
   const [filterPropertyId, setFilterPropertyId] = useState('')
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
+  const { user } = useAuth()
+
+  const onboardingKey = user ? `onboardingDismissed:${user.id}` : 'onboardingDismissed'
+
+  useEffect(() => {
+    const stored = localStorage.getItem(onboardingKey)
+    setOnboardingDismissed(stored === 'true')
+  }, [onboardingKey])
+
+  const handleDismissOnboarding = () => {
+    setOnboardingDismissed(true)
+    localStorage.setItem(onboardingKey, 'true')
+  }
 
   useEffect(() => {
     reports.dashboard(filterPropertyId || undefined)
@@ -31,10 +48,14 @@ export default function Dashboard() {
   }, [filterPropertyId])
 
   useEffect(() => {
-    propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data))
+    setPropertiesLoading(true)
+    propertiesApi
+      .list({ limit: 100 })
+      .then((r) => setPropertiesList(r.data.data))
+      .finally(() => setPropertiesLoading(false))
   }, [])
 
-  if (loading) {
+  if (loading || propertiesLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -44,6 +65,7 @@ export default function Dashboard() {
       </div>
     )
   }
+
   if (!data) {
     return (
       <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
@@ -72,6 +94,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      {!onboardingDismissed && (
+        <OnboardingDashboard onDismiss={handleDismissOnboarding} />
+      )}
+
       {/* Header + filter */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -158,7 +184,10 @@ export default function Dashboard() {
             <p className="text-xs font-medium text-slate-500">Total rent expected (all time)</p>
             <p className="mt-1 text-lg font-bold text-slate-800">{formatNum(data.totalTrackedExpected ?? 0)}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <div
+            className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm"
+            title="Sum of all payments recorded (may include overpayments or unmatched amounts; month/quarter received are rent matched to schedule)"
+          >
             <p className="text-xs font-medium text-slate-500">Total received (all time)</p>
             <p className="mt-1 text-lg font-bold text-emerald-700">{formatNum(data.totalTrackedReceived ?? 0)}</p>
           </div>

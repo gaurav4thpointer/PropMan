@@ -128,6 +128,10 @@ export class LeasesService {
     const frequency = dto.rentFrequency ?? existing.rentFrequency;
     const amount = dto.installmentAmount != null ? new Decimal(dto.installmentAmount) : existing.installmentAmount;
 
+    if (endDate <= startDate) {
+      throw new BadRequestException('endDate must be after startDate');
+    }
+
     await this.ensurePropertyUnitTenantOwned(ownerId, propertyId, unitId, tenantId);
     await this.checkNoOverlappingLease(unitId, startDate.toISOString().slice(0, 10), endDate.toISOString().slice(0, 10), id);
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -17,6 +17,8 @@ export default function Register() {
   const [error, setError] = useState('')
   const { register: registerUser } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -26,7 +28,7 @@ export default function Register() {
     setError('')
     try {
       await registerUser(data.name.trim(), data.email, data.password)
-      navigate('/', { replace: true })
+      navigate(from && from !== '/login' && from !== '/register' ? from : '/', { replace: true })
     } catch (e: unknown) {
       const m = (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
       setError(Array.isArray(m) ? m.join('. ') : typeof m === 'string' ? m : 'Registration failed')
@@ -50,12 +52,14 @@ export default function Register() {
           <nav className="flex items-center gap-3">
             <Link
               to="/login"
+              state={{ from: location.state?.from ?? location }}
               className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
             >
               Log in
             </Link>
             <Link
               to="/register"
+              state={{ from: location.state?.from ?? location }}
               className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-violet-700"
             >
               Get started

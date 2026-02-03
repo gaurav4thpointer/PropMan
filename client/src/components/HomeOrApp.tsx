@@ -18,7 +18,7 @@ export default function HomeOrApp() {
 
   if (!user) {
     if (!isHome) {
-      return <Navigate to="/" replace />
+      return <Navigate to="/login" state={{ from: location }} replace />
     }
     return <Landing />
   }

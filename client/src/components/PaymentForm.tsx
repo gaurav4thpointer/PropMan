@@ -7,7 +7,7 @@ import type { Lease } from '../api/types'
 import { isLeaseExpired } from '../utils/lease'
 
 const schema = z.object({
-  leaseId: z.string().uuid(),
+  leaseId: z.string().min(1, 'Please select a lease').uuid('Please select a lease'),
   date: z.string().min(1),
   amount: z.coerce.number().min(0),
   method: z.enum(['CHEQUE', 'BANK_TRANSFER', 'UPI', 'CASH']),

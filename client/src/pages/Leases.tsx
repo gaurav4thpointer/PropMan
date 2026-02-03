@@ -44,6 +44,12 @@ export default function Leases() {
   useEffect(() => { load() }, [])
   useEffect(() => { propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data)) }, [])
 
+  useEffect(() => {
+    if (searchParams.get('onboarding') === 'new') {
+      setShowForm(true)
+    }
+  }, [searchParams])
+
   const filteredList = list.filter(
     (l) => (!filterPropertyId || l.propertyId === filterPropertyId) && (!filterTenantId || l.tenantId === filterTenantId)
   )
@@ -119,25 +125,48 @@ export default function Leases() {
   ]
 
   const extraToolbar = (
-    <select
-      value={filterPropertyId}
-      onChange={(e) => {
-        const v = e.target.value
-        setFilterPropertyId(v)
-        setSearchParams((prev) => {
-          const next = new URLSearchParams(prev)
-          if (v) next.set('propertyId', v)
-          else next.delete('propertyId')
-          return next
-        })
-      }}
-      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
-    >
-      <option value="">All properties</option>
-      {propertiesList.map((p) => (
-        <option key={p.id} value={p.id}>{p.name}</option>
-      ))}
-    </select>
+    <>
+      <select
+        value={filterPropertyId}
+        onChange={(e) => {
+          const v = e.target.value
+          setFilterPropertyId(v)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            if (v) next.set('propertyId', v)
+            else next.delete('propertyId')
+            return next
+          })
+        }}
+        aria-label="Filter by property"
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+      >
+        <option value="">All properties</option>
+        {propertiesList.map((p) => (
+          <option key={p.id} value={p.id}>{p.name}</option>
+        ))}
+      </select>
+      <select
+        value={filterTenantId}
+        onChange={(e) => {
+          const v = e.target.value
+          setFilterTenantId(v)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            if (v) next.set('tenantId', v)
+            else next.delete('tenantId')
+            return next
+          })
+        }}
+        aria-label="Filter by tenant"
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+      >
+        <option value="">All tenants</option>
+        {Array.from(new Map(list.filter((l) => l.tenant).map((l) => [l.tenant!.id, l.tenant!])).values()).map((t) => (
+          <option key={t.id} value={t.id}>{t.name}</option>
+        ))}
+      </select>
+    </>
   )
 
   return (
@@ -154,8 +183,25 @@ export default function Leases() {
 
       {showForm && (
         <LeaseForm
-          onSaved={() => { setShowForm(false); load() }}
-          onCancel={() => setShowForm(false)}
+          onSaved={() => {
+          setShowForm(false)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            next.delete('onboarding')
+            next.delete('next')
+            return next
+          })
+          load()
+        }}
+          onCancel={() => {
+          setShowForm(false)
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            next.delete('onboarding')
+            next.delete('next')
+            return next
+          })
+        }}
         />
       )}
 
@@ -170,7 +216,7 @@ export default function Leases() {
           idKey="id"
           searchPlaceholder="Search by property or tenant..."
           extraToolbar={extraToolbar}
-          emptyMessage="No leases yet. Create one to generate rent schedule."
+          emptyMessage="No leases yet. Click “+ Create lease” to generate a rent schedule."
         />
       )}
     </div>
