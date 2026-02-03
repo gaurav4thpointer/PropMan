@@ -54,7 +54,7 @@ export default function Layout() {
                 )
               })}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               {user?.role === 'SUPER_ADMIN' && (
                 <Link
                   to="/admin"

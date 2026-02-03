@@ -215,4 +215,44 @@ Already covered under **1.1** (401 loses return URL). Fixing the interceptor (or
 
 ---
 
+## 6. Responsiveness audit (February 3, 2026)
+
+**Scope:** Layout, navigation, tables, forms, and key pages across breakpoints (mobile, tablet, desktop).
+
+### What was checked
+
+- **Viewport:** `index.html` has `<meta name="viewport" content="width=device-width, initial-scale=1.0" />` — correct.
+- **Layout (`Layout.tsx`):**
+  - Container: `max-w-6xl`, `px-4 sm:px-6`; main has `overflow-x-hidden` — good.
+  - Logo: "PropMan" text uses `hidden sm:inline` on small screens — good.
+  - Nav links: Wrapped in `flex-1 min-w-0 overflow-x-auto scrollbar-hide` so links scroll horizontally on narrow viewports instead of wrapping or overflowing — good.
+  - Right block (Admin + Logout): `shrink-0` added so buttons do not shrink on very small widths.
+- **DataTable:** Toolbar and table wrapped in `overflow-x-auto`; toolbar uses `flex-wrap`; footer uses `flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`. Tables scroll horizontally on small screens — good.
+- **Dashboard:** Uses `grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6` for stat cards, `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` and `lg:grid-cols-3` for sections — good.
+- **Landing:** Hero and sections use `max-w-6xl`, `px-4 sm:px-6`, and responsive grids (`sm:grid-cols-2`, `lg:grid-cols-4`, etc.) — good.
+- **Login / Register:** Centered card with `w-full max-w-md` and `p-4` — good on mobile.
+
+### Fixes applied
+
+1. **Layout:** Nav right section (Admin + Logout) now has `shrink-0` and `gap-2 sm:gap-3` so it does not shrink on narrow viewports.
+2. **Forms:** Form grids that were fixed `grid-cols-2` now stack on mobile:
+   - **PropertyForm:** Country/Currency row → `grid-cols-1 sm:grid-cols-2`.
+   - **TenantForm, PaymentForm, LeaseForm, ChequeForm:** All two-column form rows → `grid-cols-1 sm:grid-cols-2` so fields stack on small screens and sit side-by-side from `sm` up.
+
+### Summary
+
+| Area        | Status | Notes                                                                 |
+|------------|--------|-----------------------------------------------------------------------|
+| Viewport   | OK     | Meta viewport set                                                     |
+| Layout nav | OK     | Scrollable links, logo shortening, right buttons no longer shrink     |
+| Tables     | OK     | Horizontal scroll, responsive toolbar/footer                          |
+| Dashboard  | OK     | Responsive grids for cards and columns                                |
+| Forms      | OK     | Two-column rows stack on mobile after applied fixes                   |
+| Landing    | OK     | Responsive typography and grids                                       |
+| Login/Reg  | OK     | Centered, constrained width                                           |
+
+**Recommendation:** Manually test at 320px, 375px, 768px, and 1024px widths (Chrome DevTools or real devices) for layout, tap targets, and table scrolling. A mobile hamburger menu for the main nav is optional if you want to reduce horizontal scrolling of links on very small screens.
+
+---
+
 *Report generated from codebase review. Run backend and frontend with a seeded DB and repeat critical paths (login, register, create property/lease, 401, CORS) in the browser for full regression coverage.*

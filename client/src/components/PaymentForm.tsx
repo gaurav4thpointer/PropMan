@@ -81,7 +81,7 @@ export default function PaymentForm({ onSaved, onCancel }: { onSaved: () => void
           {leasesError && <p className="text-amber-600 text-sm mt-1">{leasesError}</p>}
           {errors.leaseId && <p className="text-red-600 text-sm mt-1">{errors.leaseId.message}</p>}
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Date *</label>
             <input type="date" {...register('date')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />

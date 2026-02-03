@@ -24,10 +24,12 @@ export default function TenantForm({
   tenant,
   onSaved,
   onCancel,
+  onSavedWithNew,
 }: {
   tenant?: Tenant
   onSaved: () => void
   onCancel: () => void
+  onSavedWithNew?: (tenant: Tenant) => void
 }) {
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -46,7 +48,8 @@ export default function TenantForm({
       if (tenant) {
         await tenants.update(tenant.id, payload)
       } else {
-        await tenants.create(payload)
+        const { data: created } = await tenants.create(payload)
+        onSavedWithNew?.(created)
       }
       onSaved()
     } catch (err) {
@@ -66,7 +69,7 @@ export default function TenantForm({
           <input {...register('name')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
           {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>}
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
             <input {...register('phone')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />

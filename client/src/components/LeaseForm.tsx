@@ -206,7 +206,7 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
             </div>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Start date *</label>
             <input type="date" {...register('startDate')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
@@ -218,7 +218,7 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
             {errors.endDate && <p className="text-red-600 text-sm mt-1">{errors.endDate.message}</p>}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Rent frequency</label>
             <select {...register('rentFrequency')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
@@ -234,7 +234,7 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
             {errors.dueDay && <p className="text-red-600 text-sm mt-1">{errors.dueDay.message}</p>}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Installment amount *</label>
             <input type="number" step="0.01" {...register('installmentAmount')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />

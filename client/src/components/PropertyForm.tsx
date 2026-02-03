@@ -32,10 +32,12 @@ export default function PropertyForm({
   property,
   onSaved,
   onCancel,
+  onSavedWithNew,
 }: {
   property?: Property
   onSaved: () => void
   onCancel: () => void
+  onSavedWithNew?: (property: Property) => void
 }) {
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -86,7 +88,8 @@ export default function PropertyForm({
             status: data.unitStatus ?? 'VACANT',
           }
         }
-        await properties.create(payload)
+        const { data: created } = await properties.create(payload)
+        onSavedWithNew?.(created)
       }
       onSaved()
     } catch (err) {
@@ -110,7 +113,7 @@ export default function PropertyForm({
           <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
           <input {...register('address')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
             <select {...register('country')} className="w-full rounded-lg border border-slate-300 px-3 py-2">

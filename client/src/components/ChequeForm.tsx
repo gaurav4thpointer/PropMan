@@ -101,7 +101,7 @@ export default function ChequeForm({ onSaved, onCancel }: { onSaved: () => void;
           )}
           {errors.leaseId && <p className="text-red-600 text-sm mt-1">{errors.leaseId.message}</p>}
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Cheque number *</label>
             <input {...register('chequeNumber')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
@@ -113,7 +113,7 @@ export default function ChequeForm({ onSaved, onCancel }: { onSaved: () => void;
             {errors.bankName && <p className="text-red-600 text-sm mt-1">{errors.bankName.message}</p>}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Cheque date *</label>
             <input type="date" {...register('chequeDate')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
