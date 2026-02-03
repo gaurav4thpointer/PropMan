@@ -1,4 +1,4 @@
-import { Outlet, useLocation, Navigate } from 'react-router-dom'
+import { useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Layout from './Layout'
 import Landing from '../pages/Landing'
@@ -23,9 +23,5 @@ export default function HomeOrApp() {
     return <Landing />
   }
 
-  return (
-    <Layout>
-      <Outlet />
-    </Layout>
-  )
+  return <Layout />
 }
