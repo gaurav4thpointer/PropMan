@@ -25,11 +25,13 @@ export default function UnitForm({
   unit,
   onSaved,
   onCancel,
+  onSavedWithNew,
 }: {
   propertyId: string
   unit?: Unit
   onSaved: () => void
   onCancel: () => void
+  onSavedWithNew?: (unit: Unit) => void
 }) {
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -47,7 +49,8 @@ export default function UnitForm({
       if (unit) {
         await units.update(unit.id, data)
       } else {
-        await units.create(propertyId, data)
+        const { data: created } = await units.create(propertyId, data)
+        onSavedWithNew?.(created)
       }
       onSaved()
     } catch (err) {
