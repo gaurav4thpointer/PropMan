@@ -89,7 +89,7 @@ export default function TenantForm({
           <textarea {...register('notes')} rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
         </div>
         <div className="flex gap-3">
-          <button type="submit" className="btn-primary" disabled={submitting || (isManagerOrAgent && (propertyOptions.length === 0 || !selectedPropertyId))}>{submitting ? 'Saving…' : 'Save'}</button>
+          <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? 'Saving…' : 'Save'}</button>
           <button type="button" onClick={onCancel} className="btn-secondary" disabled={submitting}>Cancel</button>
         </div>
       </form>
