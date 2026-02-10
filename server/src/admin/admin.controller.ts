@@ -5,6 +5,7 @@ import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { AdminService } from './admin.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
+import { UpdateCountriesDto } from './dto/update-countries.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -41,5 +42,17 @@ export class AdminController {
   @ApiOperation({ summary: 'Add random sample data for a user (super admin only)' })
   addSampleData(@Param('id') id: string) {
     return this.adminService.addSampleData(id);
+  }
+
+  @Get('countries')
+  @ApiOperation({ summary: 'Get enabled and available countries/currencies (super admin only)' })
+  getCountries() {
+    return this.adminService.getCountryConfig();
+  }
+
+  @Patch('countries')
+  @ApiOperation({ summary: 'Update enabled countries/currencies (super admin only)' })
+  updateCountries(@Body() dto: UpdateCountriesDto) {
+    return this.adminService.updateCountryConfig(dto.enabledCountries, dto.enabledCurrencies);
   }
 }

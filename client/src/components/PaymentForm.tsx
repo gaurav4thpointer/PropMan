@@ -47,7 +47,6 @@ export default function PaymentForm({ onSaved, onCancel }: { onSaved: () => void
         ...data,
         tenantId: selectedLease.tenantId,
         propertyId: selectedLease.propertyId,
-        unitId: selectedLease.unitId,
         reference: data.reference || undefined,
         notes: data.notes || undefined,
       })
@@ -73,7 +72,7 @@ export default function PaymentForm({ onSaved, onCancel }: { onSaved: () => void
             <option value="">Select lease</option>
             {leasesList.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.property?.name} / {l.unit?.unitNo} – {l.tenant?.name}
+                {l.property?.name}{l.property?.unitNo ? ` / ${l.property.unitNo}` : ''} – {l.tenant?.name}
                 {isLeaseExpired(l.endDate) ? ' (Expired)' : ''}
               </option>
             ))}

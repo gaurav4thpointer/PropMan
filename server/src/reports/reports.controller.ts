@@ -16,7 +16,7 @@ export class ReportsController {
   @Get('dashboard')
   @ApiOperation({ summary: 'Dashboard: expected vs received, overdue, upcoming cheques, bounced count' })
   dashboard(@CurrentUser() user: User, @Query('propertyId') propertyId?: string) {
-    return this.reportsService.dashboard(user.id, propertyId);
+    return this.reportsService.dashboard(user.id, user.role, propertyId);
   }
 
   @Get('export/cheques')
@@ -29,7 +29,7 @@ export class ReportsController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    const csv = await this.reportsService.chequesCsv(user.id, propertyId, from, to);
+    const csv = await this.reportsService.chequesCsv(user.id, user.role, propertyId, from, to);
     res.setHeader('Content-Disposition', 'attachment; filename=cheques.csv');
     res.send(csv);
   }
@@ -44,7 +44,7 @@ export class ReportsController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    const csv = await this.reportsService.rentScheduleCsv(user.id, propertyId, from, to);
+    const csv = await this.reportsService.rentScheduleCsv(user.id, user.role, propertyId, from, to);
     res.setHeader('Content-Disposition', 'attachment; filename=rent-schedule.csv');
     res.send(csv);
   }

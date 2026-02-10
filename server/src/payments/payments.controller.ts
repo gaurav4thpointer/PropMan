@@ -18,7 +18,7 @@ export class PaymentsController {
   @Post()
   @ApiOperation({ summary: 'Create payment' })
   create(@CurrentUser() user: User, @Body() dto: CreatePaymentDto) {
-    return this.paymentsService.create(user.id, dto);
+    return this.paymentsService.create(user.id, user.role, dto);
   }
 
   @Get()
@@ -31,24 +31,24 @@ export class PaymentsController {
     @Query('tenantId') tenantId?: string,
     @Query('search') search?: string,
   ) {
-    return this.paymentsService.findAll(user.id, pagination, { leaseId, propertyId, tenantId, search });
+    return this.paymentsService.findAll(user.id, user.role, pagination, { leaseId, propertyId, tenantId, search });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get payment with schedule matches' })
   findOne(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.paymentsService.findOne(user.id, id);
+    return this.paymentsService.findOne(user.id, user.role, id);
   }
 
   @Post(':id/match')
   @ApiOperation({ summary: 'Match payment to rent schedule entries' })
   matchToSchedule(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: MatchPaymentDto) {
-    return this.paymentsService.matchToSchedule(user.id, id, dto.matches);
+    return this.paymentsService.matchToSchedule(user.id, user.role, id, dto.matches);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete payment' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.paymentsService.remove(user.id, id);
+    return this.paymentsService.remove(user.id, user.role, id);
   }
 }

@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { UserRole, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccessService } from '../access/access.service';
 import { CreateChequeDto } from './dto/create-cheque.dto';
 import { UpdateChequeDto } from './dto/update-cheque.dto';
 import { ChequeStatusUpdateDto } from './dto/cheque-status.dto';
@@ -18,17 +20,20 @@ const VALID_TRANSITIONS: Record<ChequeStatus, ChequeStatus[]> = {
 
 @Injectable()
 export class ChequesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private accessService: AccessService,
+  ) {}
 
-  async create(ownerId: string, dto: CreateChequeDto) {
-    await this.ensureLeaseOwned(ownerId, dto.leaseId);
+  async create(userId: string, role: UserRole, dto: CreateChequeDto) {
+    const lease = await this.ensureLeaseAccessible(userId, role, dto.leaseId);
+    const ownerId = role === UserRole.USER || role === UserRole.SUPER_ADMIN ? userId : lease.ownerId;
     return this.prisma.cheque.create({
       data: {
         ownerId,
         leaseId: dto.leaseId,
         tenantId: dto.tenantId,
         propertyId: dto.propertyId,
-        unitId: dto.unitId,
         chequeNumber: dto.chequeNumber,
         bankName: dto.bankName,
         chequeDate: new Date(dto.chequeDate),
@@ -37,17 +42,24 @@ export class ChequesService {
         status: ChequeStatus.RECEIVED,
         notes: dto.notes,
       },
-      include: { lease: true, tenant: true, property: true, unit: true },
+      include: { lease: true, tenant: true, property: true },
     });
   }
 
   async findAll(
-    ownerId: string,
+    userId: string,
+    role: UserRole,
     pagination: PaginationDto,
     filters?: { propertyId?: string; tenantId?: string; status?: ChequeStatus; search?: string },
   ) {
     const { page = 1, limit = 20 } = pagination;
-    const where: Record<string, unknown> = { ownerId };
+    const where: Record<string, unknown> =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId }
+        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) } };
+    if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && (where.propertyId as { in: string[] }).in.length === 0) {
+      return paginatedResponse([], 0, page, limit);
+    }
     if (filters?.propertyId) where.propertyId = filters.propertyId;
     if (filters?.tenantId) where.tenantId = filters.tenantId;
     if (filters?.status) where.status = filters.status;
@@ -61,35 +73,36 @@ export class ChequesService {
     }
     const [data, total] = await Promise.all([
       this.prisma.cheque.findMany({
-        where: where as { ownerId: string },
-        include: { lease: true, tenant: true, property: true, unit: true },
+        where: where as Prisma.ChequeWhereInput,
+        include: { lease: true, tenant: true, property: true },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { chequeDate: 'asc' },
       }),
-      this.prisma.cheque.count({ where: where as { ownerId: string } }),
+      this.prisma.cheque.count({ where: where as Prisma.ChequeWhereInput }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }
 
-  async findOne(ownerId: string, id: string) {
-    const cheque = await this.prisma.cheque.findFirst({
-      where: { id, ownerId },
+  async findOne(userId: string, role: UserRole, id: string) {
+    const cheque = await this.prisma.cheque.findUnique({
+      where: { id },
       include: {
         lease: true,
         tenant: true,
         property: true,
-        unit: true,
         replacedBy: true,
         replacesCheque: true,
       },
     });
     if (!cheque) throw new NotFoundException('Cheque not found');
+    const canAccess = await this.accessService.canAccessProperty(userId, role, cheque.propertyId);
+    if (!canAccess) throw new NotFoundException('Cheque not found');
     return cheque;
   }
 
-  async update(ownerId: string, id: string, dto: UpdateChequeDto) {
-    await this.findOne(ownerId, id);
+  async update(userId: string, role: UserRole, id: string, dto: UpdateChequeDto) {
+    await this.findOne(userId, role, id);
     const data: Record<string, unknown> = {};
     if (dto.depositDate != null) data.depositDate = new Date(dto.depositDate);
     if (dto.clearedOrBounceDate != null) data.clearedOrBounceDate = new Date(dto.clearedOrBounceDate);
@@ -103,12 +116,12 @@ export class ChequesService {
     return this.prisma.cheque.update({
       where: { id },
       data,
-      include: { lease: true, tenant: true, property: true, unit: true },
+      include: { lease: true, tenant: true, property: true },
     });
   }
 
-  async updateStatus(ownerId: string, id: string, dto: ChequeStatusUpdateDto) {
-    const cheque = await this.findOne(ownerId, id);
+  async updateStatus(userId: string, role: UserRole, id: string, dto: ChequeStatusUpdateDto) {
+    const cheque = await this.findOne(userId, role, id);
     this.assertValidTransition(cheque.status, dto.status, dto.replacedByChequeId);
 
     const data: Record<string, unknown> = { status: dto.status };
@@ -120,28 +133,31 @@ export class ChequesService {
     return this.prisma.cheque.update({
       where: { id },
       data,
-      include: { lease: true, tenant: true, property: true, unit: true },
+      include: { lease: true, tenant: true, property: true },
     });
   }
 
-  async upcoming(ownerId: string, days: 30 | 60 | 90, propertyId?: string) {
+  async upcoming(userId: string, role: UserRole, days: 30 | 60 | 90, propertyId?: string) {
     const from = new Date();
     const to = new Date();
     to.setDate(to.getDate() + days);
-    const where: { ownerId: string; chequeDate: { gte: Date; lte: Date }; propertyId?: string } = {
-      ownerId,
-      chequeDate: { gte: from, lte: to },
-    };
+    const where: { ownerId?: string; propertyId?: string | { in: string[] }; chequeDate: { gte: Date; lte: Date } } =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId, chequeDate: { gte: from, lte: to } }
+        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, chequeDate: { gte: from, lte: to } };
+    if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && (where.propertyId as { in: string[] }).in.length === 0) {
+      return [];
+    }
     if (propertyId) where.propertyId = propertyId;
     return this.prisma.cheque.findMany({
       where,
-      include: { lease: true, tenant: true, property: true, unit: true },
+      include: { lease: true, tenant: true, property: true },
       orderBy: { chequeDate: 'asc' },
     });
   }
 
-  async remove(ownerId: string, id: string) {
-    await this.findOne(ownerId, id);
+  async remove(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
     await this.prisma.cheque.delete({ where: { id } });
     return { deleted: true };
   }
@@ -152,8 +168,11 @@ export class ChequesService {
     if (next === ChequeStatus.REPLACED && !replacedByChequeId) throw new BadRequestException('replacedByChequeId required when status is REPLACED');
   }
 
-  private async ensureLeaseOwned(ownerId: string, leaseId: string) {
-    const lease = await this.prisma.lease.findFirst({ where: { id: leaseId, ownerId } });
+  private async ensureLeaseAccessible(userId: string, role: UserRole, leaseId: string) {
+    const lease = await this.prisma.lease.findUnique({ where: { id: leaseId }, include: { property: true } });
     if (!lease) throw new NotFoundException('Lease not found');
+    const canAccess = await this.accessService.canAccessProperty(userId, role, lease.propertyId);
+    if (!canAccess) throw new NotFoundException('Lease not found');
+    return lease;
   }
 }

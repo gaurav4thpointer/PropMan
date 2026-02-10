@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { UserRole, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccessService } from '../access/access.service';
 import { CreateLeaseDto } from './dto/create-lease.dto';
 import { UpdateLeaseDto } from './dto/update-lease.dto';
 import { TerminateLeaseDto } from './dto/terminate-lease.dto';
@@ -46,21 +48,29 @@ function generateScheduleDates(
 
 @Injectable()
 export class LeasesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private accessService: AccessService,
+  ) {}
 
-  async create(ownerId: string, dto: CreateLeaseDto) {
-    await this.ensurePropertyUnitTenantOwned(ownerId, dto.propertyId, dto.unitId, dto.tenantId);
-    await this.checkNoOverlappingLease(dto.unitId, dto.startDate, dto.endDate, null);
+  async create(userId: string, role: UserRole, dto: CreateLeaseDto) {
+    await this.ensurePropertyAndTenantAccessible(userId, role, dto.propertyId, dto.tenantId);
+    await this.checkNoOverlappingLease(dto.propertyId, dto.startDate, dto.endDate, null);
 
     const start = new Date(dto.startDate);
     const end = new Date(dto.endDate);
     if (end <= start) throw new BadRequestException('endDate must be after startDate');
 
+    const property = await this.prisma.property.findUniqueOrThrow({
+      where: { id: dto.propertyId },
+      select: { ownerId: true },
+    });
+    const ownerId = role === UserRole.USER || role === UserRole.SUPER_ADMIN ? userId : property.ownerId;
+
     const lease = await this.prisma.lease.create({
       data: {
         ownerId,
         propertyId: dto.propertyId,
-        unitId: dto.unitId,
         tenantId: dto.tenantId,
         startDate: start,
         endDate: end,
@@ -70,18 +80,37 @@ export class LeasesService {
         securityDeposit: dto.securityDeposit != null ? new Decimal(dto.securityDeposit) : null,
         notes: dto.notes,
       },
-      include: { property: true, unit: true, tenant: true },
+      include: { property: true, tenant: true },
     });
 
     await this.generateRentSchedule(lease.id, start, end, dto.dueDay, dto.rentFrequency, new Decimal(dto.installmentAmount));
-    await this.prisma.unit.update({ where: { id: dto.unitId }, data: { status: UnitStatus.OCCUPIED } });
-    return this.findOne(ownerId, lease.id);
+    await this.prisma.property.update({ where: { id: dto.propertyId }, data: { status: UnitStatus.OCCUPIED } });
+    return this.findOne(userId, role, lease.id);
   }
 
-  async findAll(ownerId: string, pagination: PaginationDto, filters?: { propertyId?: string; tenantId?: string; search?: string }) {
+  async findAll(
+    userId: string,
+    role: UserRole,
+    pagination: PaginationDto,
+    filters?: { propertyId?: string; tenantId?: string; search?: string },
+  ) {
     const { page = 1, limit = 20 } = pagination;
-    const where: Record<string, unknown> = { ownerId };
-    if (filters?.propertyId) where.propertyId = filters.propertyId;
+    const where: Record<string, unknown> =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId }
+        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) } };
+    if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && (where.propertyId as { in: string[] }).in.length === 0) {
+      return paginatedResponse([], 0, page, limit);
+    }
+    if (filters?.propertyId) {
+      if (role === UserRole.USER || role === UserRole.SUPER_ADMIN) {
+        where.propertyId = filters.propertyId;
+      } else {
+        const ids = (where.propertyId as { in: string[] }).in;
+        if (!ids.includes(filters.propertyId)) return paginatedResponse([], 0, page, limit);
+        where.propertyId = filters.propertyId;
+      }
+    }
     if (filters?.tenantId) where.tenantId = filters.tenantId;
     if (filters?.search?.trim()) {
       const q = filters.search.trim();
@@ -92,35 +121,35 @@ export class LeasesService {
     }
     const [data, total] = await Promise.all([
       this.prisma.lease.findMany({
-        where: where as { ownerId: string },
-        include: { property: true, unit: true, tenant: true },
+        where: where as Prisma.LeaseWhereInput,
+        include: { property: true, tenant: true },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { startDate: 'desc' },
       }),
-      this.prisma.lease.count({ where: where as { ownerId: string } }),
+      this.prisma.lease.count({ where: where as Prisma.LeaseWhereInput }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }
 
-  async findOne(ownerId: string, id: string) {
-    const lease = await this.prisma.lease.findFirst({
-      where: { id, ownerId },
+  async findOne(userId: string, role: UserRole, id: string) {
+    const lease = await this.prisma.lease.findUnique({
+      where: { id },
       include: {
         property: true,
-        unit: true,
         tenant: true,
         rentSchedules: { orderBy: { dueDate: 'asc' } },
       },
     });
     if (!lease) throw new NotFoundException('Lease not found');
+    const canAccess = await this.accessService.canAccessProperty(userId, role, lease.propertyId);
+    if (!canAccess) throw new NotFoundException('Lease not found');
     return lease;
   }
 
-  async update(ownerId: string, id: string, dto: UpdateLeaseDto) {
-    const existing = await this.findOne(ownerId, id);
+  async update(userId: string, role: UserRole, id: string, dto: UpdateLeaseDto) {
+    const existing = await this.findOne(userId, role, id);
     const propertyId = dto.propertyId ?? existing.propertyId;
-    const unitId = dto.unitId ?? existing.unitId;
     const tenantId = dto.tenantId ?? existing.tenantId;
     const startDate = dto.startDate ? new Date(dto.startDate) : existing.startDate;
     const endDate = dto.endDate ? new Date(dto.endDate) : existing.endDate;
@@ -132,14 +161,13 @@ export class LeasesService {
       throw new BadRequestException('endDate must be after startDate');
     }
 
-    await this.ensurePropertyUnitTenantOwned(ownerId, propertyId, unitId, tenantId);
-    await this.checkNoOverlappingLease(unitId, startDate.toISOString().slice(0, 10), endDate.toISOString().slice(0, 10), id);
+    await this.ensurePropertyAndTenantAccessible(userId, role, propertyId, tenantId);
+    await this.checkNoOverlappingLease(propertyId, startDate.toISOString().slice(0, 10), endDate.toISOString().slice(0, 10), id);
 
     const updated = await this.prisma.lease.update({
       where: { id },
       data: {
         ...(dto.propertyId && { propertyId: dto.propertyId }),
-        ...(dto.unitId && { unitId: dto.unitId }),
         ...(dto.tenantId && { tenantId: dto.tenantId }),
         ...(dto.startDate && { startDate: new Date(dto.startDate) }),
         ...(dto.endDate && { endDate: new Date(dto.endDate) }),
@@ -158,30 +186,30 @@ export class LeasesService {
     await this.prisma.rentSchedule.deleteMany({ where: { leaseId: id } });
     await this.generateRentSchedule(updated.id, startDate, endDate, dueDay, frequency, amount);
 
-    // If unit changed, update unit statuses: free old unit if no other active lease, occupy new unit
-    if (dto.unitId && existing.unitId !== dto.unitId) {
-      await this.setUnitVacantIfNoActiveLease(existing.unitId, id);
-      await this.prisma.unit.update({ where: { id: dto.unitId }, data: { status: UnitStatus.OCCUPIED } });
+    // If property changed, update property statuses: free old if no other active lease, occupy new
+    if (dto.propertyId && existing.propertyId !== dto.propertyId) {
+      await this.setPropertyVacantIfNoActiveLease(existing.propertyId, id);
+      await this.prisma.property.update({ where: { id: dto.propertyId }, data: { status: UnitStatus.OCCUPIED } });
     }
 
-    return this.findOne(ownerId, id);
+    return this.findOne(userId, role, id);
   }
 
-  async remove(ownerId: string, id: string) {
-    const lease = await this.findOne(ownerId, id);
-    const unitId = lease.unitId;
+  async remove(userId: string, role: UserRole, id: string) {
+    const lease = await this.findOne(userId, role, id);
+    const propertyId = lease.propertyId;
     await this.prisma.lease.delete({ where: { id } });
-    await this.setUnitVacantIfNoActiveLease(unitId, null);
+    await this.setPropertyVacantIfNoActiveLease(propertyId, null);
     return { deleted: true };
   }
 
-  /** Set unit to VACANT if it has no active (non-expired, not terminated) lease, excluding optional lease id. */
-  private async setUnitVacantIfNoActiveLease(unitId: string, excludeLeaseId: string | null) {
+  /** Set property to VACANT if it has no active (non-expired, not terminated) lease, excluding optional lease id. */
+  private async setPropertyVacantIfNoActiveLease(propertyId: string, excludeLeaseId: string | null) {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const leases = await this.prisma.lease.findMany({
       where: {
-        unitId,
+        propertyId,
         ...(excludeLeaseId && { id: { not: excludeLeaseId } }),
         endDate: { gte: now },
       },
@@ -197,12 +225,12 @@ export class LeasesService {
       return term > now;
     });
     if (!active) {
-      await this.prisma.unit.update({ where: { id: unitId }, data: { status: UnitStatus.VACANT } });
+      await this.prisma.property.update({ where: { id: propertyId }, data: { status: UnitStatus.VACANT } });
     }
   }
 
-  async terminateEarly(ownerId: string, id: string, dto: TerminateLeaseDto) {
-    const lease = await this.findOne(ownerId, id);
+  async terminateEarly(userId: string, role: UserRole, id: string, dto: TerminateLeaseDto) {
+    const lease = await this.findOne(userId, role, id);
     const start = new Date(lease.startDate);
     const end = new Date(lease.endDate);
     const term = new Date(dto.terminationDate);
@@ -221,39 +249,39 @@ export class LeasesService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (term <= today) {
-      await this.setUnitVacantIfNoActiveLease(lease.unitId, null);
+      await this.setPropertyVacantIfNoActiveLease(lease.propertyId, null);
     }
-    return this.findOne(ownerId, id);
+    return this.findOne(userId, role, id);
   }
 
-  private async ensurePropertyUnitTenantOwned(
-    ownerId: string,
+  private async ensurePropertyAndTenantAccessible(
+    userId: string,
+    role: UserRole,
     propertyId: string,
-    unitId: string,
     tenantId: string,
   ) {
-    const [prop, unit, tenant] = await Promise.all([
-      this.prisma.property.findFirst({ where: { id: propertyId, ownerId } }),
-      this.prisma.unit.findFirst({ where: { id: unitId, propertyId } }),
-      this.prisma.tenant.findFirst({ where: { id: tenantId, ownerId } }),
-    ]);
-    if (!prop) throw new NotFoundException('Property not found');
-    if (!unit) throw new NotFoundException('Unit not found');
+    const canAccess = await this.accessService.canAccessProperty(userId, role, propertyId);
+    if (!canAccess) throw new NotFoundException('Property not found');
+    const property = await this.prisma.property.findUnique({ where: { id: propertyId }, select: { ownerId: true } });
+    if (!property) throw new NotFoundException('Property not found');
+    const tenant = await this.prisma.tenant.findFirst({
+      where: { id: tenantId, ownerId: property.ownerId },
+    });
     if (!tenant) throw new NotFoundException('Tenant not found');
   }
 
-  private async checkNoOverlappingLease(unitId: string, start: string, end: string, excludeLeaseId: string | null) {
+  private async checkNoOverlappingLease(propertyId: string, start: string, end: string, excludeLeaseId: string | null) {
     const startDate = new Date(start);
     const endDate = new Date(end);
     const overlapping = await this.prisma.lease.findFirst({
       where: {
-        unitId,
+        propertyId,
         ...(excludeLeaseId && { id: { not: excludeLeaseId } }),
         startDate: { lte: endDate },
         endDate: { gte: startDate },
       },
     });
-    if (overlapping) throw new BadRequestException('Unit already has an overlapping active lease');
+    if (overlapping) throw new BadRequestException('Property already has an overlapping active lease');
   }
 
   private async generateRentSchedule(

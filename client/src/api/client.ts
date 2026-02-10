@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Property, Unit, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload } from './types'
+import type { Property, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload } from './types'
 
 const baseURL = import.meta.env.VITE_API_URL ?? '/api'
 
@@ -67,15 +67,6 @@ export const properties = {
   create: (data: CreatePropertyPayload) => api.post<Property>('/properties', data),
   update: (id: string, data: Partial<Property>) => api.patch<Property>(`/properties/${id}`, data),
   delete: (id: string) => api.delete(`/properties/${id}`),
-}
-
-export const units = {
-  list: (propertyId: string, params?: { page?: number; limit?: number }) =>
-    api.get<Paginated<Unit>>(`/properties/${propertyId}/units`, { params }),
-  get: (id: string) => api.get<Unit>(`/units/${id}`),
-  create: (propertyId: string, data: Partial<Unit>) => api.post<Unit>(`/properties/${propertyId}/units`, data),
-  update: (id: string, data: Partial<Unit>) => api.patch<Unit>(`/units/${id}`, data),
-  delete: (id: string) => api.delete(`/units/${id}`),
 }
 
 export const tenants = {
@@ -174,7 +165,6 @@ export const reports = {
 export interface AdminStats {
   totalUsers: number
   totalProperties: number
-  totalUnits: number
   totalLeases: number
   totalTenants: number
   totalCheques: number
@@ -199,6 +189,13 @@ export interface AdminUser {
   createdAt: string
 }
 
+export interface CountryConfig {
+  allCountries: string[]
+  allCurrencies: string[]
+  enabledCountries: string[]
+  enabledCurrencies: string[]
+}
+
 export const admin = {
   stats: () => api.get<AdminStats>('/admin/stats'),
   activity: (limit?: number) => api.get<{ recentLeases: unknown[]; recentPayments: unknown[]; recentUsers: AdminUser[] }>('/admin/activity', { params: { limit } }),
@@ -207,5 +204,15 @@ export const admin = {
   resetPassword: (userId: string, newPassword: string) =>
     api.patch<{ message: string }>(`/admin/users/${userId}/reset-password`, { newPassword }),
   addSampleData: (userId: string) =>
-    api.post<{ message: string; properties: number; units: number; tenants: number; leases: number; cheques: number; payments: number }>(`/admin/users/${userId}/sample-data`),
+    api.post<{ message: string; properties: number; tenants: number; leases: number; cheques: number; payments: number }>(`/admin/users/${userId}/sample-data`),
+  getCountries: () => api.get<CountryConfig>('/admin/countries'),
+  updateCountries: (enabledCountries: string[], enabledCurrencies: string[]) =>
+    api.patch<{ enabledCountries: string[]; enabledCurrencies: string[] }>('/admin/countries', {
+      enabledCountries,
+      enabledCurrencies,
+    }),
+}
+
+export const config = {
+  getCountries: () => api.get<CountryConfig>('/config/countries'),
 }

@@ -59,7 +59,7 @@ export default function Leases() {
       key: 'propertyUnit',
       label: 'Property / Unit',
       searchable: true,
-      getSearchValue: (l) => `${l.property?.name ?? ''} ${l.unit?.unitNo ?? ''}`.trim(),
+      getSearchValue: (l) => `${l.property?.name ?? ''} ${l.property?.unitNo ?? ''}`.trim(),
       sortKey: 'property.name',
       render: (l) => (
         <>
@@ -68,7 +68,7 @@ export default function Leases() {
           ) : (
             <span className="font-semibold text-slate-800">{l.property?.name ?? '–'}</span>
           )}
-          <span className="text-slate-500"> / {l.unit?.unitNo ?? '–'}</span>
+          <span className="text-slate-500"> / {l.property?.unitNo ?? '–'}</span>
         </>
       ),
     },

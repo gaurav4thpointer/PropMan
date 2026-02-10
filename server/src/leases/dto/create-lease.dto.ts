@@ -10,10 +10,6 @@ export class CreateLeaseDto {
 
   @ApiProperty()
   @IsUUID()
-  unitId: string;
-
-  @ApiProperty()
-  @IsUUID()
   tenantId: string;
 
   @ApiProperty({ example: '2026-01-01' })

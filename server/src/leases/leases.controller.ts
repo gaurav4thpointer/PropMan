@@ -19,7 +19,7 @@ export class LeasesController {
   @Post()
   @ApiOperation({ summary: 'Create lease (generates rent schedule)' })
   create(@CurrentUser() user: User, @Body() dto: CreateLeaseDto) {
-    return this.leasesService.create(user.id, dto);
+    return this.leasesService.create(user.id, user.role, dto);
   }
 
   @Get()
@@ -31,30 +31,30 @@ export class LeasesController {
     @Query('tenantId') tenantId?: string,
     @Query('search') search?: string,
   ) {
-    return this.leasesService.findAll(user.id, pagination, { propertyId, tenantId, search });
+    return this.leasesService.findAll(user.id, user.role, pagination, { propertyId, tenantId, search });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get lease with rent schedule' })
   findOne(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.leasesService.findOne(user.id, id);
+    return this.leasesService.findOne(user.id, user.role, id);
   }
 
   @Patch(':id/terminate')
   @ApiOperation({ summary: 'Terminate lease early' })
   terminateEarly(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: TerminateLeaseDto) {
-    return this.leasesService.terminateEarly(user.id, id, dto);
+    return this.leasesService.terminateEarly(user.id, user.role, id, dto);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update lease (regenerates rent schedule)' })
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateLeaseDto) {
-    return this.leasesService.update(user.id, id, dto);
+    return this.leasesService.update(user.id, user.role, id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete lease' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.leasesService.remove(user.id, id);
+    return this.leasesService.remove(user.id, user.role, id);
   }
 }

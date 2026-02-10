@@ -33,6 +33,7 @@ export default function TenantForm({
 }) {
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: tenant
@@ -44,11 +45,11 @@ export default function TenantForm({
     setApiError(null)
     setSubmitting(true)
     try {
-      const payload = { ...data, email: data.email || undefined }
+      const payload: Record<string, unknown> = { ...data, email: data.email || undefined }
       if (tenant) {
         await tenants.update(tenant.id, payload)
       } else {
-        const { data: created } = await tenants.create(payload)
+        const { data: created } = await tenants.create(payload as Partial<Tenant>)
         onSavedWithNew?.(created)
       }
       onSaved()
@@ -88,7 +89,7 @@ export default function TenantForm({
           <textarea {...register('notes')} rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
         </div>
         <div className="flex gap-3">
-          <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? 'Saving…' : 'Save'}</button>
+          <button type="submit" className="btn-primary" disabled={submitting || (isManagerOrAgent && (propertyOptions.length === 0 || !selectedPropertyId))}>{submitting ? 'Saving…' : 'Save'}</button>
           <button type="button" onClick={onCancel} className="btn-secondary" disabled={submitting}>Cancel</button>
         </div>
       </form>

@@ -16,10 +16,6 @@ export class CreateChequeDto {
   propertyId: string;
 
   @ApiProperty()
-  @IsUUID()
-  unitId: string;
-
-  @ApiProperty()
   @IsString()
   @MinLength(1, { message: 'Cheque number is required' })
   chequeNumber: string;

@@ -1,23 +1,44 @@
 import { Injectable } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccessService } from '../access/access.service';
 import { ScheduleStatus, ChequeStatus } from '@prisma/client';
 
 @Injectable()
 export class ReportsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private accessService: AccessService,
+  ) {}
 
-  async dashboard(ownerId: string, propertyId?: string) {
+  async dashboard(userId: string, role: UserRole, propertyId?: string) {
+    const accessibleIds =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN ? [] : await this.accessService.getAccessiblePropertyIds(userId, role);
+    if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && accessibleIds.length === 0) {
+      return this.emptyDashboardResponse();
+    }
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
     const quarterEnd = new Date(quarterStart.getFullYear(), quarterStart.getMonth() + 3, 0);
 
-    const leaseWhere = { ownerId, ...(propertyId && { propertyId }) };
+    const leaseWhere: { ownerId?: string; propertyId?: string | { in: string[] } } =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId, ...(propertyId && { propertyId }) }
+        : { propertyId: propertyId ? propertyId : { in: accessibleIds } };
+    if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && propertyId) {
+      if (!accessibleIds.includes(propertyId)) {
+        return this.emptyDashboardResponse();
+      }
+    }
 
     const expiryEnd = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-    const unitWhere = { property: { ownerId, ...(propertyId && { id: propertyId }) } };
+    const propertyWhere: { ownerId?: string; id?: string | { in: string[] } } =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId, ...(propertyId && { id: propertyId }) }
+        : { id: propertyId ? propertyId : { in: accessibleIds } };
 
     const [monthExpected, monthPaid, quarterExpected, quarterPaid, overdueSchedules, upcomingCheques, bouncedCount, vacantCount, occupiedCount, expiringLeases] = await Promise.all([
       this.prisma.rentSchedule.aggregate({
@@ -56,40 +77,51 @@ export class ReportsService {
           status: { in: [ScheduleStatus.DUE, ScheduleStatus.PARTIAL] },
           dueDate: { lt: now },
         },
-        include: { lease: { include: { property: true, unit: true, tenant: true } } },
+        include: { lease: { include: { property: true, tenant: true } } },
         orderBy: { dueDate: 'asc' },
         take: 50,
       }),
       this.prisma.cheque.findMany({
         where: {
-          ownerId,
-          ...(propertyId && { propertyId }),
+          ...(role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: propertyId ?? { in: accessibleIds } }),
+          ...(propertyId && (role === UserRole.USER || role === UserRole.SUPER_ADMIN) ? { propertyId } : {}),
           chequeDate: { gte: now, lte: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000) },
         },
-        include: { lease: true, tenant: true, property: true, unit: true },
+        include: { lease: true, tenant: true, property: true },
         orderBy: { chequeDate: 'asc' },
         take: 20,
       }),
       this.prisma.cheque.count({
-        where: { ownerId, ...(propertyId && { propertyId }), status: ChequeStatus.BOUNCED },
+        where: {
+          ...(role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: propertyId ?? { in: accessibleIds } }),
+          status: ChequeStatus.BOUNCED,
+        },
       }),
-      this.prisma.unit.count({ where: { ...unitWhere, status: 'VACANT' } }),
-      this.prisma.unit.count({ where: { ...unitWhere, status: 'OCCUPIED' } }),
+      this.prisma.property.count({ where: { ...propertyWhere, status: 'VACANT' } }),
+      this.prisma.property.count({ where: { ...propertyWhere, status: 'OCCUPIED' } }),
       this.prisma.lease.findMany({
         where: {
-          ownerId,
-          ...(propertyId && { propertyId }),
+          ...(role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: propertyId ?? { in: accessibleIds } }),
           endDate: { gte: now, lte: expiryEnd },
         },
-        include: { property: true, unit: true, tenant: true },
+        include: { property: true, tenant: true },
         orderBy: { endDate: 'asc' },
         take: 20,
       }),
     ]);
 
-    const paymentWhere = { ownerId, ...(propertyId && { propertyId }) };
-    const chequeWhere = { ownerId, ...(propertyId && { propertyId }) };
-    const leaseWhereForDeposits = { ownerId, ...(propertyId && { propertyId }) };
+    const paymentWhere =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId, ...(propertyId && { propertyId }) }
+        : { propertyId: propertyId ?? { in: accessibleIds } };
+    const chequeWhere =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId, ...(propertyId && { propertyId }) }
+        : { propertyId: propertyId ?? { in: accessibleIds } };
+    const leaseWhereForDeposits =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId, ...(propertyId && { propertyId }) }
+        : { propertyId: propertyId ?? { in: accessibleIds } };
 
     const [overdueAmount, totalTrackedExpected, totalTrackedReceived, totalChequeValueTracked, totalSecurityDepositsTracked] = await Promise.all([
       this.prisma.rentSchedule.aggregate({
@@ -105,15 +137,15 @@ export class ReportsService {
         _sum: { expectedAmount: true },
       }),
       this.prisma.payment.aggregate({
-        where: paymentWhere as { ownerId: string },
+        where: paymentWhere as { ownerId?: string; propertyId?: string | { in: string[] } },
         _sum: { amount: true },
       }),
       this.prisma.cheque.aggregate({
-        where: chequeWhere as { ownerId: string },
+        where: chequeWhere as { ownerId?: string; propertyId?: string | { in: string[] } },
         _sum: { amount: true },
       }),
       this.prisma.lease.aggregate({
-        where: leaseWhereForDeposits as { ownerId: string },
+        where: leaseWhereForDeposits as { ownerId?: string; propertyId?: string | { in: string[] } },
         _sum: { securityDeposit: true },
       }),
     ]);
@@ -139,8 +171,26 @@ export class ReportsService {
     };
   }
 
-  async chequesCsv(ownerId: string, propertyId?: string, from?: string, to?: string) {
-    const where: { ownerId: string; propertyId?: string; chequeDate?: { gte?: Date; lte?: Date } } = { ownerId };
+  private emptyDashboardResponse() {
+    return {
+      month: { expected: 0, received: 0 },
+      quarter: { expected: 0, received: 0 },
+      overdueAmount: 0,
+      overdueSchedules: [],
+      upcomingCheques: [],
+      bouncedCount: 0,
+      unitStats: { vacant: 0, occupied: 0 },
+      expiringLeases: [],
+      totalTrackedExpected: 0,
+      totalTrackedReceived: 0,
+      totalChequeValueTracked: 0,
+      totalSecurityDepositsTracked: 0,
+    };
+  }
+
+  async chequesCsv(userId: string, role: UserRole, propertyId?: string, from?: string, to?: string) {
+    const where: { ownerId?: string; propertyId?: string | { in: string[] }; chequeDate?: { gte?: Date; lte?: Date } } =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) } };
     if (propertyId) where.propertyId = propertyId;
     if (from || to) {
       where.chequeDate = {};
@@ -149,7 +199,7 @@ export class ReportsService {
     }
     const rows = await this.prisma.cheque.findMany({
       where,
-      include: { tenant: true, property: true, unit: true },
+      include: { tenant: true, property: true },
       orderBy: { chequeDate: 'asc' },
     });
     const headers = ['id', 'chequeNumber', 'bankName', 'chequeDate', 'amount', 'coversPeriod', 'status', 'depositDate', 'clearedOrBounceDate', 'bounceReason', 'tenantName', 'propertyName', 'unitNo'];
@@ -168,15 +218,16 @@ export class ReportsService {
         `"${(r.bounceReason || '').replace(/"/g, '""')}"`,
         `"${(r.tenant?.name ?? '').replace(/"/g, '""')}"`,
         `"${(r.property?.name ?? '').replace(/"/g, '""')}"`,
-        r.unit?.unitNo ?? '',
+        r.property?.unitNo ?? '',
       ];
       lines.push(row.join(','));
     }
     return lines.join('\n');
   }
 
-  async rentScheduleCsv(ownerId: string, propertyId?: string, from?: string, to?: string) {
-    const leaseWhere: { ownerId: string; propertyId?: string } = { ownerId };
+  async rentScheduleCsv(userId: string, role: UserRole, propertyId?: string, from?: string, to?: string) {
+    const leaseWhere: { ownerId?: string; propertyId?: string | { in: string[] } } =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) } };
     if (propertyId) leaseWhere.propertyId = propertyId;
     const dueDateFilter: { gte?: Date; lte?: Date } = {};
     if (from) dueDateFilter.gte = new Date(from);
@@ -186,7 +237,7 @@ export class ReportsService {
         lease: leaseWhere,
         ...(Object.keys(dueDateFilter).length ? { dueDate: dueDateFilter } : {}),
       },
-      include: { lease: { include: { property: true, unit: true, tenant: true } } },
+      include: { lease: { include: { property: true, tenant: true } } },
       orderBy: { dueDate: 'asc' },
     });
     const headers = ['id', 'dueDate', 'expectedAmount', 'paidAmount', 'status', 'leaseId', 'tenantName', 'propertyName', 'unitNo'];
@@ -201,7 +252,7 @@ export class ReportsService {
         r.leaseId,
         `"${(r.lease?.tenant?.name || '').replace(/"/g, '""')}"`,
         `"${(r.lease?.property?.name || '').replace(/"/g, '""')}"`,
-        r.lease?.unit?.unitNo ?? '',
+        r.lease?.property?.unitNo ?? '',
       ];
       lines.push(row.join(','));
     }

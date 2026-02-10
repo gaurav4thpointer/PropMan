@@ -7,8 +7,7 @@ interface ActivityData {
     id: string
     startDate: string
     endDate: string
-    property?: { name: string; country: string }
-    unit?: { unitNo: string }
+    property?: { name: string; country: string; unitNo?: string | null }
     tenant?: { name: string }
   }>
   recentPayments: Array<{
@@ -76,7 +75,7 @@ export default function AdminActivity() {
                   className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700/50 bg-slate-800/30 px-3 py-2 text-sm"
                 >
                   <span className="text-slate-300">
-                    {l.property?.name} – {l.unit?.unitNo}
+                    {l.property?.name}{l.property?.unitNo ? ` – ${l.property.unitNo}` : ''}
                     {l.tenant?.name && <span className="text-slate-500"> · {l.tenant.name}</span>}
                   </span>
                   <span className="text-slate-400">{formatDate(l.endDate)}</span>

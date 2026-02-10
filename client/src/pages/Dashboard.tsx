@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
@@ -229,13 +230,13 @@ export default function Dashboard() {
                                 {s.lease?.property?.name}
                               </Link>
                             )}
-                            <span className="text-slate-500"> {s.lease?.unit?.unitNo}</span>
+                            <span className="text-slate-500"> {s.lease?.property?.unitNo}</span>
                             {s.lease?.tenantId && s.lease?.tenant?.name && (
                               <Link to={`/tenants/${s.lease.tenantId}`} className="ml-1 text-slate-600 hover:underline">· {s.lease.tenant.name}</Link>
                             )}
                           </>
                         ) : (
-                          `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo}`
+                          `${s.lease?.property?.name} – ${s.lease?.property?.unitNo ?? ''}`
                         )}
                       </span>
                       <span className="shrink-0 font-semibold text-rose-600 text-sm">{formatNum(Number(s.expectedAmount))}</span>
@@ -305,7 +306,7 @@ export default function Dashboard() {
                       {lease.propertyId && (
                         <Link to={`/properties/${lease.propertyId}`} className="text-indigo-600 hover:underline">{lease.property?.name}</Link>
                       )}
-                      <span className="text-slate-500"> {lease.unit?.unitNo}</span>
+                      <span className="text-slate-500"> {lease.property?.unitNo}</span>
                       {lease.tenantId && lease.tenant?.name && (
                         <Link to={`/tenants/${lease.tenantId}`} className="ml-1 text-slate-600 hover:underline">· {lease.tenant.name}</Link>
                       )}

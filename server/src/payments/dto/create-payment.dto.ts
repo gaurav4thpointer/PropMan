@@ -40,10 +40,6 @@ export class CreatePaymentDto {
   @IsUUID()
   propertyId: string;
 
-  @ApiProperty()
-  @IsUUID()
-  unitId: string;
-
   @ApiPropertyOptional({ description: 'If payment from cleared cheque' })
   @IsOptional()
   @IsUUID()

@@ -2,16 +2,14 @@ import { useEffect, useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { leases, properties, tenants, units } from '../api/client'
+import { leases, properties, tenants } from '../api/client'
 import type { Property, Tenant } from '../api/types'
 import PropertyForm from './PropertyForm'
 import TenantForm from './TenantForm'
-import UnitForm from './UnitForm'
 
 const schema = z
   .object({
     propertyId: z.string().uuid(),
-    unitId: z.string().uuid(),
     tenantId: z.string().uuid(),
     startDate: z.string().min(1),
     endDate: z.string().min(1),
@@ -38,36 +36,20 @@ function getApiErrorMessage(err: unknown): string {
 export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
   const [propertiesList, setPropertiesList] = useState<Property[]>([])
   const [tenantsList, setTenantsList] = useState<Tenant[]>([])
-  const [unitsForProperty, setUnitsForProperty] = useState<{ id: string; unitNo: string }[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showAddProperty, setShowAddProperty] = useState(false)
-  const [showAddUnit, setShowAddUnit] = useState(false)
   const [showAddTenant, setShowAddTenant] = useState(false)
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: { rentFrequency: 'MONTHLY', dueDay: 5 },
   })
-
-  const propertyId = watch('propertyId')
 
   useEffect(() => {
     properties.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data))
     tenants.list({ limit: 100 }).then((r) => setTenantsList(r.data.data))
   }, [])
-
-  useEffect(() => {
-    if (!propertyId) {
-      setUnitsForProperty([])
-      setValue('unitId', '')
-      return
-    }
-    units.list(propertyId, { limit: 100 }).then((r) => {
-      setUnitsForProperty(r.data.data.map((u) => ({ id: u.id, unitNo: u.unitNo })))
-      setValue('unitId', '')
-    })
-  }, [propertyId, setValue])
 
   const onSubmit = async (data: FormData) => {
     setApiError(null)
@@ -75,7 +57,6 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
     try {
       const payload: Record<string, unknown> = {
         propertyId: data.propertyId,
-        unitId: data.unitId,
         tenantId: data.tenantId,
         startDate: data.startDate,
         endDate: data.endDate,
@@ -121,7 +102,7 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
           <select {...register('propertyId')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
             <option value="">Select property</option>
             {propertiesList.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+              <option key={p.id} value={p.id}>{p.name}{p.unitNo ? ` (${p.unitNo})` : ''}</option>
             ))}
           </select>
           {errors.propertyId && <p className="text-red-600 text-sm mt-1">{errors.propertyId.message}</p>}
@@ -134,41 +115,6 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
                   setPropertiesList((prev) => [...prev, p])
                   setValue('propertyId', p.id)
                   setShowAddProperty(false)
-                }}
-              />
-            </div>
-          )}
-        </div>
-        <div>
-          <div className="mb-1 flex items-center justify-between">
-            <label className="block text-sm font-medium text-slate-700">Unit *</label>
-            {propertyId && (
-              <button
-                type="button"
-                onClick={() => setShowAddUnit(true)}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
-              >
-                + Add new unit
-              </button>
-            )}
-          </div>
-          <select {...register('unitId')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
-            <option value="">Select unit</option>
-            {unitsForProperty.map((u) => (
-              <option key={u.id} value={u.id}>{u.unitNo}</option>
-            ))}
-          </select>
-          {errors.unitId && <p className="text-red-600 text-sm mt-1">{errors.unitId.message}</p>}
-          {showAddUnit && propertyId && (
-            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
-              <UnitForm
-                propertyId={propertyId}
-                onSaved={() => setShowAddUnit(false)}
-                onCancel={() => setShowAddUnit(false)}
-                onSavedWithNew={(u) => {
-                  setUnitsForProperty((prev) => [...prev, { id: u.id, unitNo: u.unitNo }])
-                  setValue('unitId', u.id)
-                  setShowAddUnit(false)
                 }}
               />
             </div>
@@ -259,4 +205,3 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
     </div>
   )
 }
-

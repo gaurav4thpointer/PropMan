@@ -174,7 +174,7 @@ export default function Landing() {
             </p>
             <div className="mt-14 grid gap-8 sm:grid-cols-3">
               {[
-                { step: '1', title: 'Add your properties', text: 'Create properties and units. Mark them vacant or occupied. Set currency and location so everything stays consistent.' },
+                { step: '1', title: 'Add your properties', text: 'Create properties (one per rentable unit). Set unit number, bedrooms, status, currency and location so everything stays consistent.' },
                 { step: '2', title: 'Add tenants and leases', text: 'Create tenants and leases with start and end dates, rent amount and due day. Rent schedules are generated automatically.' },
                 { step: '3', title: 'Track cheques and payments', text: "Record post-dated cheques and update status as they're deposited or cleared. Log payments and match them to rent due." },
               ].map(({ step, title, text }) => (

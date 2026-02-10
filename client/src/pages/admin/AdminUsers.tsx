@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { admin } from '../../api/client'
 import type { AdminUser } from '../../api/client'
@@ -91,7 +92,6 @@ export default function AdminUsers() {
         if (r.data?.message) {
           const details = [
             r.data.properties != null && `${r.data.properties} properties`,
-            r.data.units != null && `${r.data.units} units`,
             r.data.tenants != null && `${r.data.tenants} tenants`,
             r.data.leases != null && `${r.data.leases} leases`,
             r.data.cheques != null && `${r.data.cheques} cheques`,
@@ -125,15 +125,15 @@ export default function AdminUsers() {
       label: 'Role',
       sortKey: 'role',
       searchable: true,
-      render: (u) => (
-        <span
-          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            u.role === 'SUPER_ADMIN' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-600/50 text-slate-300'
-          }`}
-        >
-          {u.role === 'SUPER_ADMIN' ? 'Super Admin' : u.role}
-        </span>
-      ),
+      render: (u) => {
+        const roleLabel = u.role === 'SUPER_ADMIN' ? 'Super Admin' : u.role
+        const roleClass = u.role === 'SUPER_ADMIN' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-600/50 text-slate-300'
+        return (
+          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${roleClass}`}>
+            {roleLabel}
+          </span>
+        )
+      },
     },
     {
       key: 'createdAt',

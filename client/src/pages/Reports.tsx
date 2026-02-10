@@ -113,7 +113,7 @@ export default function Reports() {
                         ) : (
                           <span>{s.lease?.property?.name}</span>
                         )}
-                        <span className="text-slate-500"> – {s.lease?.unit?.unitNo}</span>
+                        <span className="text-slate-500"> – {s.lease?.property?.unitNo}</span>
                         {s.lease?.tenantId && s.lease?.tenant?.name && (
                           <> · <Link to={`/tenants/${s.lease.tenantId}`} className="text-slate-600 hover:underline">{s.lease.tenant.name}</Link></>
                         )}
@@ -121,7 +121,7 @@ export default function Reports() {
                         <Link to={`/leases/${s.lease.id}`} className="ml-2 text-xs font-medium text-indigo-600 hover:underline">View lease</Link>
                       </>
                     ) : (
-                      `${s.lease?.property?.name} – ${s.lease?.unit?.unitNo} · ${formatDate(s.dueDate)}`
+                      `${s.lease?.property?.name} – ${s.lease?.property?.unitNo ?? ''} · ${formatDate(s.dueDate)}`
                     )}
                   </span>
                   <span className="inline-flex items-center gap-2">

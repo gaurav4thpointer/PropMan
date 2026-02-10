@@ -7,7 +7,6 @@ import type { AdminStats } from '../../api/client'
 const countStatCards: { key: keyof AdminStats; label: string; color: string; link?: string }[] = [
   { key: 'totalUsers', label: 'Total users', color: 'from-violet-500 to-purple-600', link: '/admin/users' },
   { key: 'totalProperties', label: 'Properties', color: 'from-blue-500 to-cyan-500' },
-  { key: 'totalUnits', label: 'Units', color: 'from-emerald-500 to-teal-600' },
   { key: 'totalLeases', label: 'Leases', color: 'from-amber-500 to-orange-500' },
   { key: 'totalTenants', label: 'Tenants', color: 'from-rose-500 to-pink-500' },
   { key: 'totalCheques', label: 'Cheques', color: 'from-indigo-500 to-blue-600' },

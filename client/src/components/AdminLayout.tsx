@@ -5,6 +5,7 @@ const adminNavLinks = [
   { to: '/admin', label: 'Overview' },
   { to: '/admin/users', label: 'Users' },
   { to: '/admin/activity', label: 'Activity' },
+  { to: '/admin/countries', label: 'Countries' },
 ]
 
 export default function AdminLayout() {

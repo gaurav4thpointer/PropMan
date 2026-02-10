@@ -1,5 +1,5 @@
-export type Country = 'IN' | 'AE'
-export type Currency = 'INR' | 'AED'
+export type Country = 'IN' | 'AE' | 'US' | 'GB' | 'SG' | 'SA'
+export type Currency = 'INR' | 'AED' | 'USD' | 'GBP' | 'SGD' | 'SAR'
 export type UnitStatus = 'VACANT' | 'OCCUPIED'
 export type RentFrequency = 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'CUSTOM'
 export type ScheduleStatus = 'DUE' | 'OVERDUE' | 'PAID' | 'PARTIAL'
@@ -26,31 +26,24 @@ export interface Property {
   country: Country
   emirateOrState?: string
   currency: Currency
+  unitNo?: string | null
+  bedrooms?: number | null
+  status?: UnitStatus | null
   notes?: string
-  units?: Unit[]
+  ownerId?: string
 }
 
 export interface CreatePropertyPayload {
+  ownerId?: string
   name: string
   address?: string
   country: Country
   emirateOrState?: string
   currency: Currency
-  notes?: string
-  firstUnit?: {
-    unitNo: string
-    bedrooms?: number
-    status?: UnitStatus
-  }
-}
-
-export interface Unit {
-  id: string
-  unitNo: string
+  unitNo?: string
   bedrooms?: number
-  status: UnitStatus
+  status?: UnitStatus
   notes?: string
-  propertyId: string
 }
 
 export interface Tenant {
@@ -73,10 +66,8 @@ export interface Lease {
   securityDeposit?: number | string
   notes?: string
   propertyId: string
-  unitId: string
   tenantId: string
   property?: Property
-  unit?: Unit
   tenant?: Tenant
   rentSchedules?: RentSchedule[]
 }
@@ -118,12 +109,10 @@ export interface Cheque {
   leaseId: string
   tenantId: string
   propertyId: string
-  unitId: string
   replacedByChequeId?: string | null
   lease?: Lease
   tenant?: Tenant
   property?: Property
-  unit?: Unit
   replacedBy?: Cheque | null
   replacesCheque?: Cheque | null
 }
@@ -138,11 +127,9 @@ export interface Payment {
   leaseId: string
   tenantId: string
   propertyId: string
-  unitId: string
   lease?: Lease
   tenant?: Tenant
   property?: Property
-  unit?: Unit
   scheduleMatches?: { amount: number | string; rentSchedule: RentSchedule }[]
 }
 
@@ -159,7 +146,7 @@ export interface DashboardData {
   upcomingCheques: Cheque[]
   bouncedCount: number
   unitStats: { vacant: number; occupied: number }
-  expiringLeases: (Lease & { property?: Property; unit?: Unit; tenant?: Tenant })[]
+  expiringLeases: (Lease & { property?: Property; tenant?: Tenant })[]
   totalTrackedExpected?: number
   totalTrackedReceived?: number
   totalChequeValueTracked?: number

@@ -15,11 +15,19 @@ datasource db {
 enum Country {
   IN  // India
   AE  // UAE / Dubai
+  US  // United States
+  GB  // United Kingdom
+  SG  // Singapore
+  SA  // Saudi Arabia
 }
 
 enum Currency {
-  INR
-  AED
+  INR // Indian Rupee
+  AED // UAE Dirham
+  USD // US Dollar
+  GBP // British Pound
+  SGD // Singapore Dollar
+  SAR // Saudi Riyal
 }
 
 enum UnitStatus {
@@ -81,43 +89,29 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  properties Property[]
-  tenants    Tenant[]
-  leases     Lease[]
-  cheques    Cheque[]
-  payments   Payment[]
+  properties       Property[]
+  tenants          Tenant[]
+  leases           Lease[]
+  cheques          Cheque[]
+  payments         Payment[]
 }
 
 model Property {
-  id        String   @id @default(uuid())
-  name      String
-  address   String?
-  country   Country
-  emirateOrState String?  // optional: emirate (Dubai) or state (India)
-  currency  Currency
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ownerId   String
+  id             String      @id @default(uuid())
+  name           String
+  address        String?
+  country        Country
+  emirateOrState String?     // optional: emirate (Dubai) or state (India)
+  currency       Currency
+  unitNo         String?     // e.g. "101", "A-2" (one property = one rentable unit)
+  bedrooms       Int?
+  status         UnitStatus? @default(VACANT)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  ownerId        String
 
-  owner    User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  units    Unit[]
-  leases   Lease[]
-  cheques  Cheque[]
-  payments Payment[]
-}
-
-model Unit {
-  id         String     @id @default(uuid())
-  unitNo     String     // e.g. "101", "A-2"
-  bedrooms   Int?
-  status     UnitStatus @default(VACANT)
-  notes      String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  propertyId String
-
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  owner    User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   leases   Lease[]
   cheques  Cheque[]
   payments Payment[]
@@ -153,20 +147,18 @@ model Lease {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   propertyId        String
-  unitId            String
   tenantId          String
   ownerId           String
 
-  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit         Unit          @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   rentSchedules RentSchedule[]
-  cheques      Cheque[]
-  payments     Payment[]
-  documents    LeaseDocument[]
+  cheques       Cheque[]
+  payments      Payment[]
+  documents     LeaseDocument[]
 
-  @@index([unitId, startDate, endDate])
+  @@index([propertyId, startDate, endDate])
 }
 
 model LeaseDocument {
@@ -216,15 +208,13 @@ model Cheque {
   leaseId            String
   tenantId           String
   propertyId         String
-  unitId             String
   ownerId            String
   replacedByChequeId String?      @unique // when status = REPLACED, link to new cheque
 
-  lease           Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit            Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  owner           User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lease    Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  owner    User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   replacedBy      Cheque?  @relation("ChequeReplacement", fields: [replacedByChequeId], references: [id])
   replacesCheque  Cheque?  @relation("ChequeReplacement")
 }
@@ -241,15 +231,13 @@ model Payment {
   leaseId    String
   tenantId   String
   propertyId String
-  unitId     String
   ownerId    String
   chequeId   String?
 
-  lease    Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit     Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lease    Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  owner    User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   scheduleMatches PaymentScheduleMatch[]
 }
 
@@ -265,4 +253,15 @@ model PaymentScheduleMatch {
   rentSchedule RentSchedule @relation(fields: [rentScheduleId], references: [id], onDelete: Cascade)
 
   @@unique([paymentId, rentScheduleId])
+}
+
+/// Platform-wide configuration managed by super admins.
+model PlatformSettings {
+  /// Always use a single row with id = 1
+  id               Int      @id @default(1)
+  /// Enabled country codes (subset of Country enum values)
+  enabledCountries String[]
+  /// Enabled currency codes (subset of Currency enum values)
+  enabledCurrencies String[]
+  updatedAt        DateTime @updatedAt
 }

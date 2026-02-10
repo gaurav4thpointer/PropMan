@@ -15,7 +15,6 @@ export class AdminService {
     const [
       totalUsers,
       totalProperties,
-      totalUnits,
       totalLeases,
       totalTenants,
       totalCheques,
@@ -32,7 +31,6 @@ export class AdminService {
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.property.count(),
-      this.prisma.unit.count(),
       this.prisma.lease.count(),
       this.prisma.tenant.count(),
       this.prisma.cheque.count(),
@@ -115,7 +113,6 @@ export class AdminService {
     return {
       totalUsers,
       totalProperties,
-      totalUnits,
       totalLeases,
       totalTenants,
       totalCheques,
@@ -138,8 +135,7 @@ export class AdminService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          property: { select: { name: true, country: true } },
-          unit: { select: { unitNo: true } },
+          property: { select: { name: true, country: true, unitNo: true } },
           tenant: { select: { name: true } },
         },
       }),
@@ -209,12 +205,11 @@ export class AdminService {
     const currentYear = now.getFullYear();
 
     const result = await this.prisma.$transaction(async (tx) => {
-      const unitIds: string[] = [];
       const propertyIds: string[] = [];
 
-      // 20 properties: 10 IN, 10 AE; 3 units each = 60 units
-      for (let i = 0; i < 20; i++) {
-        const country: Country = i < 10 ? Country.IN : Country.AE;
+      // 60 properties (one property = one rentable unit): 30 IN, 30 AE
+      for (let i = 0; i < 60; i++) {
+        const country: Country = i < 30 ? Country.IN : Country.AE;
         const currency = country === Country.IN ? Currency.INR : Currency.AED;
         const propNames = country === Country.IN ? propNamesIN : propNamesAE;
         const addresses = country === Country.IN ? addressesIN : addressesAE;
@@ -223,26 +218,18 @@ export class AdminService {
         const prop = await tx.property.create({
           data: {
             ownerId: userId,
-            name: propNames[i],
+            name: `${propNames[i % propNames.length]} - ${String(100 + (i % 10) * 10 + (i % 3))}`,
             address: pick(addresses),
             country,
             emirateOrState: stateOrEmirate,
             currency,
+            unitNo: String(100 + (i % 10) * 10 + (i % 3)),
+            bedrooms: randInt(1, 4),
+            status: UnitStatus.VACANT,
             notes: 'Sample data',
           },
         });
         propertyIds.push(prop.id);
-        for (let u = 0; u < 3; u++) {
-          const unit = await tx.unit.create({
-            data: {
-              propertyId: prop.id,
-              unitNo: String(100 + u + (i % 10) * 10),
-              bedrooms: randInt(1, 4),
-              status: UnitStatus.VACANT,
-            },
-          });
-          unitIds.push(unit.id);
-        }
       }
 
       // 40 tenants
@@ -261,14 +248,14 @@ export class AdminService {
       }
 
       // 60 leases: ~40% expired, ~60% current; vary dates and frequency
-      const shuffledUnits = shuffle(unitIds);
+      const shuffledPropertyIds = shuffle(propertyIds);
       let totalCheques = 0;
       let totalPayments = 0;
 
       for (let L = 0; L < 60; L++) {
-        const unitId = shuffledUnits[L];
-        const unit = await tx.unit.findUniqueOrThrow({ where: { id: unitId }, include: { property: true } });
-        const country: Country = unit.property.country;
+        const propertyId = shuffledPropertyIds[L];
+        const prop = await tx.property.findUniqueOrThrow({ where: { id: propertyId } });
+        const country: Country = prop.country;
         const currency = country === Country.IN ? Currency.INR : Currency.AED;
         const amount = country === Country.IN ? randInt(20000, 80000) : randInt(6000, 28000);
         const dueDay = randInt(1, 28);
@@ -292,8 +279,7 @@ export class AdminService {
         const lease = await tx.lease.create({
           data: {
             ownerId: userId,
-            propertyId: unit.propertyId,
-            unitId: unit.id,
+            propertyId: prop.id,
             tenantId,
             startDate,
             endDate,
@@ -304,7 +290,7 @@ export class AdminService {
             notes: 'Sample lease',
           },
         });
-        await tx.unit.update({ where: { id: unit.id }, data: { status: UnitStatus.OCCUPIED } });
+        await tx.property.update({ where: { id: prop.id }, data: { status: UnitStatus.OCCUPIED } });
 
         const scheduleDates: Date[] = [];
         const day = Math.min(dueDay, 28);
@@ -350,8 +336,7 @@ export class AdminService {
             data: {
               leaseId: lease.id,
               tenantId,
-              propertyId: unit.propertyId,
-              unitId: unit.id,
+              propertyId: prop.id,
               ownerId: userId,
               chequeNumber: `SMP-${randInt(10000, 99999)}`,
               bankName: pick(banks),
@@ -376,8 +361,7 @@ export class AdminService {
             data: {
               leaseId: lease.id,
               tenantId,
-              propertyId: unit.propertyId,
-              unitId: unit.id,
+              propertyId: prop.id,
               ownerId: userId,
               date: payDate,
               amount: new Decimal(amount),
@@ -411,8 +395,7 @@ export class AdminService {
       }
 
       return {
-        properties: 20,
-        units: 60,
+        properties: 60,
         tenants: 40,
         leases: 60,
         cheques: totalCheques,
@@ -423,6 +406,57 @@ export class AdminService {
     return {
       message: 'Sample data added successfully',
       ...result,
+    };
+  }
+
+  /** Get platform-wide enabled countries and currencies, plus all supported values. */
+  async getCountryConfig() {
+    const allCountries = Object.values(Country);
+    const allCurrencies = Object.values(Currency);
+
+    const settings = await this.prisma.platformSettings.findUnique({
+      where: { id: 1 },
+    });
+
+    const enabledCountries = settings?.enabledCountries?.length
+      ? settings.enabledCountries
+      : allCountries;
+    const enabledCurrencies = settings?.enabledCurrencies?.length
+      ? settings.enabledCurrencies
+      : allCurrencies;
+
+    return {
+      allCountries,
+      allCurrencies,
+      enabledCountries,
+      enabledCurrencies,
+    };
+  }
+
+  /** Update platform-wide enabled countries and currencies (super admin only). */
+  async updateCountryConfig(enabledCountries: Country[], enabledCurrencies: Currency[]) {
+    const allCountries = new Set(Object.values(Country));
+    const allCurrencies = new Set(Object.values(Currency));
+
+    const sanitizedCountries = enabledCountries.filter((c) => allCountries.has(c));
+    const sanitizedCurrencies = enabledCurrencies.filter((c) => allCurrencies.has(c));
+
+    const settings = await this.prisma.platformSettings.upsert({
+      where: { id: 1 },
+      update: {
+        enabledCountries: sanitizedCountries,
+        enabledCurrencies: sanitizedCurrencies,
+      },
+      create: {
+        id: 1,
+        enabledCountries: sanitizedCountries.length ? sanitizedCountries : Array.from(allCountries),
+        enabledCurrencies: sanitizedCurrencies.length ? sanitizedCurrencies : Array.from(allCurrencies),
+      },
+    });
+
+    return {
+      enabledCountries: settings.enabledCountries,
+      enabledCurrencies: settings.enabledCurrencies,
     };
   }
 }

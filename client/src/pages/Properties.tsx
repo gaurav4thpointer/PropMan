@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { properties as propertiesApi } from '../api/client'
@@ -97,12 +98,11 @@ export default function Properties() {
       render: (p) => <span className="font-medium">{p.currency}</span>,
     },
     {
-      key: 'units',
-      label: 'Units',
+      key: 'unitNo',
+      label: 'Unit no',
       sortable: true,
-      getSortValue: (p) => p.units?.length ?? 0,
-      align: 'right',
-      render: (p) => p.units?.length ?? 0,
+      getSortValue: (p) => (p.unitNo ?? '').toString(),
+      render: (p) => <span className="text-slate-600">{p.unitNo ?? '–'}</span>,
     },
     {
       key: 'actions',

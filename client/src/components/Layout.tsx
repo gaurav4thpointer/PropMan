@@ -1,19 +1,18 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const navLinks = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/properties', label: 'Properties' },
-  { to: '/tenants', label: 'Tenants' },
-  { to: '/leases', label: 'Leases' },
-  { to: '/cheques', label: 'Cheques' },
-  { to: '/payments', label: 'Payments' },
-  { to: '/reports', label: 'Reports' },
-  { to: '/account', label: 'Account' },
-]
-
 export default function Layout() {
   const { user, logout } = useAuth()
+  const navLinks = [
+    { to: '/', label: 'Dashboard' },
+    { to: '/properties', label: 'Properties' },
+    { to: '/tenants', label: 'Tenants' },
+    { to: '/leases', label: 'Leases' },
+    { to: '/cheques', label: 'Cheques' },
+    { to: '/payments', label: 'Payments' },
+    { to: '/reports', label: 'Reports' },
+    { to: '/account', label: 'Account' },
+  ]
   const navigate = useNavigate()
   const location = useLocation()
 

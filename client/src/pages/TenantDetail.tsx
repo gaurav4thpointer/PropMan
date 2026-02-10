@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { tenants, leases, payments, cheques } from '../api/client'
@@ -174,7 +175,7 @@ export default function TenantDetail() {
                         ) : (
                           <span className="font-semibold text-slate-800">{l.property?.name ?? '–'}</span>
                         )}
-                        <span className="text-slate-500"> / {l.unit?.unitNo ?? '–'}</span>
+                        <span className="text-slate-500"> / {l.property?.unitNo ?? '–'}</span>
                       </td>
                       <td className="text-slate-600">
                         {formatDate(l.startDate)} – {formatDate(l.endDate)}

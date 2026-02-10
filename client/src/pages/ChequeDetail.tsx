@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { cheques as chequesApi } from '../api/client'
@@ -133,10 +134,10 @@ export default function ChequeDetail() {
               </Link>
             </span>
           )}
-          {cheque.unitId && (
+          {cheque.property?.unitNo && (
             <span>
               <span className="text-slate-500">Unit</span>{' '}
-              <span className="font-medium text-slate-700">{cheque.unit?.unitNo ?? '–'}</span>
+              <span className="font-medium text-slate-700">{cheque.property.unitNo}</span>
             </span>
           )}
           {cheque.tenantId && (

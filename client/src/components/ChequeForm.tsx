@@ -66,7 +66,6 @@ export default function ChequeForm({ onSaved, onCancel }: { onSaved: () => void;
         ...data,
         tenantId: selectedLease.tenantId,
         propertyId: selectedLease.propertyId,
-        unitId: selectedLease.unitId,
       })
       onSaved()
     } catch (err) {
@@ -90,7 +89,7 @@ export default function ChequeForm({ onSaved, onCancel }: { onSaved: () => void;
             <option value="">{leasesLoading ? 'Loading leases...' : 'Select lease'}</option>
             {leasesList.map((l) => (
               <option key={l.id} value={l.id}>
-                {[l.property?.name, l.unit?.unitNo, l.tenant?.name].filter(Boolean).join(' / ') || l.id}
+                {[l.property?.name, l.property?.unitNo, l.tenant?.name].filter(Boolean).join(' / ') || l.id}
                 {isLeaseExpired(l.endDate) ? ' (Expired)' : ''}
               </option>
             ))}

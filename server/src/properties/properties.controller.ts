@@ -18,7 +18,7 @@ export class PropertiesController {
   @Post()
   @ApiOperation({ summary: 'Create a property' })
   create(@CurrentUser() user: User, @Body() dto: CreatePropertyDto) {
-    return this.propertiesService.create(user.id, dto);
+    return this.propertiesService.create(user.id, user.role, dto);
   }
 
   @Get()
@@ -30,24 +30,24 @@ export class PropertiesController {
     @Query('country') country?: string,
     @Query('currency') currency?: string,
   ) {
-    return this.propertiesService.findAll(user.id, pagination, { search, country, currency });
+    return this.propertiesService.findAll(user.id, user.role, pagination, { search, country, currency });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get property by ID' })
   findOne(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.propertiesService.findOne(user.id, id);
+    return this.propertiesService.findOne(user.id, user.role, id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update property' })
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdatePropertyDto) {
-    return this.propertiesService.update(user.id, id, dto);
+    return this.propertiesService.update(user.id, user.role, id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete property' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.propertiesService.remove(user.id, id);
+    return this.propertiesService.remove(user.id, user.role, id);
   }
 }

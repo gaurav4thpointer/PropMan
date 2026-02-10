@@ -20,7 +20,7 @@ export class ChequesController {
   @Post()
   @ApiOperation({ summary: 'Create cheque (PDC)' })
   create(@CurrentUser() user: User, @Body() dto: CreateChequeDto) {
-    return this.chequesService.create(user.id, dto);
+    return this.chequesService.create(user.id, user.role, dto);
   }
 
   @Get()
@@ -33,7 +33,7 @@ export class ChequesController {
     @Query('status') status?: ChequeStatus,
     @Query('search') search?: string,
   ) {
-    return this.chequesService.findAll(user.id, pagination, { propertyId, tenantId, status, search });
+    return this.chequesService.findAll(user.id, user.role, pagination, { propertyId, tenantId, status, search });
   }
 
   @Get('upcoming')
@@ -44,30 +44,30 @@ export class ChequesController {
     @Query('propertyId') propertyId?: string,
   ) {
     const d = days === '60' ? 60 : days === '90' ? 90 : 30;
-    return this.chequesService.upcoming(user.id, d as 30 | 60 | 90, propertyId);
+    return this.chequesService.upcoming(user.id, user.role, d as 30 | 60 | 90, propertyId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get cheque by ID' })
   findOne(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.chequesService.findOne(user.id, id);
+    return this.chequesService.findOne(user.id, user.role, id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update cheque' })
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateChequeDto) {
-    return this.chequesService.update(user.id, id, dto);
+    return this.chequesService.update(user.id, user.role, id, dto);
   }
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update cheque status (validated transitions)' })
   updateStatus(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: ChequeStatusUpdateDto) {
-    return this.chequesService.updateStatus(user.id, id, dto);
+    return this.chequesService.updateStatus(user.id, user.role, id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete cheque' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.chequesService.remove(user.id, id);
+    return this.chequesService.remove(user.id, user.role, id);
   }
 }

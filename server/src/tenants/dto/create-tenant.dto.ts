@@ -2,6 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class CreateTenantDto {
+  @ApiPropertyOptional({ description: 'Optional property context (for future use)' })
+  @IsOptional()
+  @IsString()
+  propertyId?: string;
+
   @ApiProperty()
   @IsString()
   name: string;

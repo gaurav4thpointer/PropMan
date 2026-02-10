@@ -18,30 +18,30 @@ export class TenantsController {
   @Post()
   @ApiOperation({ summary: 'Create tenant' })
   create(@CurrentUser() user: User, @Body() dto: CreateTenantDto) {
-    return this.tenantsService.create(user.id, dto);
+    return this.tenantsService.create(user.id, user.role, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List tenants' })
   findAll(@CurrentUser() user: User, @Query() pagination: PaginationDto, @Query('search') search?: string) {
-    return this.tenantsService.findAll(user.id, pagination, search);
+    return this.tenantsService.findAll(user.id, user.role, pagination, search);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get tenant by ID' })
   findOne(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.tenantsService.findOne(user.id, id);
+    return this.tenantsService.findOne(user.id, user.role, id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update tenant' })
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateTenantDto) {
-    return this.tenantsService.update(user.id, id, dto);
+    return this.tenantsService.update(user.id, user.role, id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete tenant' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.tenantsService.remove(user.id, id);
+    return this.tenantsService.remove(user.id, user.role, id);
   }
 }

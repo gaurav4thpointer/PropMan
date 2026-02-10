@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { leases, leaseDocuments } from '../api/client'
@@ -208,7 +209,7 @@ export default function LeaseDetail() {
             ) : (
               lease.property?.name ?? '–'
             )}
-            {' · Unit '}{lease.unit?.unitNo ?? '–'}
+            {' · '}{lease.property?.unitNo ? `Unit ${lease.property.unitNo}` : '–'}
           </p>
           <p className="mt-1 text-slate-600">
             Tenant:{' '}

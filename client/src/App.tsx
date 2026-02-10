@@ -20,6 +20,7 @@ import Account from './pages/Account'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminActivity from './pages/admin/AdminActivity'
+import AdminCountries from './pages/admin/AdminCountries'
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="activity" element={<AdminActivity />} />
+            <Route path="countries" element={<AdminCountries />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

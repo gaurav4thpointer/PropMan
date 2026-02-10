@@ -79,7 +79,7 @@ export default function Payments() {
       key: 'propertyUnit',
       label: 'Property / Unit',
       searchable: true,
-      getSearchValue: (p) => `${p.property?.name ?? ''} ${p.unit?.unitNo ?? ''}`.trim(),
+      getSearchValue: (p) => `${p.property?.name ?? ''} ${p.property?.unitNo ?? ''}`.trim(),
       render: (p) => (
         <span className="text-slate-600">
           {p.propertyId ? (
@@ -87,7 +87,7 @@ export default function Payments() {
           ) : (
             p.property?.name ?? '–'
           )}
-          {' / '}{p.unit?.unitNo ?? '–'}
+          {' / '}{p.property?.unitNo ?? '–'}
         </span>
       ),
     },

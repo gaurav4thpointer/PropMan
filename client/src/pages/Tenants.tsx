@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { tenants as tenantsApi } from '../api/client'
@@ -23,7 +24,6 @@ export default function Tenants() {
   }
 
   useEffect(() => { load() }, [])
-
   useEffect(() => {
     if (searchParams.get('onboarding') === 'new') {
       setEditing(null)

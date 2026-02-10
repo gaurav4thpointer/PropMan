@@ -20,7 +20,7 @@ export class RentScheduleController {
     @Param('leaseId') leaseId: string,
     @Query() pagination: PaginationDto,
   ) {
-    return this.rentScheduleService.findByLease(user.id, leaseId, pagination);
+    return this.rentScheduleService.findByLease(user.id, user.role, leaseId, pagination);
   }
 
   @Get('overdue')
@@ -30,7 +30,7 @@ export class RentScheduleController {
     @Query('propertyId') propertyId?: string,
     @Query() pagination?: PaginationDto,
   ) {
-    return this.rentScheduleService.findOverdue(user.id, propertyId, pagination);
+    return this.rentScheduleService.findOverdue(user.id, user.role, propertyId, pagination);
   }
 
   @Get('outstanding')
@@ -41,6 +41,6 @@ export class RentScheduleController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.rentScheduleService.findOutstanding(user.id, propertyId, from, to);
+    return this.rentScheduleService.findOutstanding(user.id, user.role, propertyId, from, to);
   }
 }

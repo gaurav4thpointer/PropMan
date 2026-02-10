@@ -39,13 +39,13 @@ export class LeaseDocumentsController {
     @UploadedFile() file: Express.Multer.File,
     @Body('name') displayName?: string,
   ) {
-    return this.leaseDocumentsService.upload(user.id, leaseId, file, displayName);
+    return this.leaseDocumentsService.upload(user.id, user.role, leaseId, file, displayName);
   }
 
   @Get()
   @ApiOperation({ summary: 'List documents for a lease' })
   async list(@CurrentUser() user: User, @Param('leaseId') leaseId: string) {
-    return this.leaseDocumentsService.listByLease(user.id, leaseId);
+    return this.leaseDocumentsService.listByLease(user.id, user.role, leaseId);
   }
 
   @Patch(':docId')
@@ -56,7 +56,7 @@ export class LeaseDocumentsController {
     @Param('docId') docId: string,
     @Body() dto: UpdateLeaseDocumentDto,
   ) {
-    return this.leaseDocumentsService.update(user.id, leaseId, docId, dto);
+    return this.leaseDocumentsService.update(user.id, user.role, leaseId, docId, dto);
   }
 
   @Get(':docId/download')
@@ -67,7 +67,7 @@ export class LeaseDocumentsController {
     @Param('docId') docId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { stream, doc } = await this.leaseDocumentsService.getDownloadStream(user.id, leaseId, docId);
+    const { stream, doc } = await this.leaseDocumentsService.getDownloadStream(user.id, user.role, leaseId, docId);
     const filename = doc.downloadFileName.replace(/[^\w.-]/g, '_');
     res.set({
       'Content-Disposition': `attachment; filename="${filename}"`,
@@ -83,6 +83,6 @@ export class LeaseDocumentsController {
     @Param('leaseId') leaseId: string,
     @Param('docId') docId: string,
   ) {
-    return this.leaseDocumentsService.remove(user.id, leaseId, docId);
+    return this.leaseDocumentsService.remove(user.id, user.role, leaseId, docId);
   }
 }

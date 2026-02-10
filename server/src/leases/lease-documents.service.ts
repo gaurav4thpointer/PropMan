@@ -20,16 +20,16 @@ export class LeaseDocumentsService {
     private leasesService: LeasesService,
   ) {}
 
-  async ensureLeaseOwned(ownerId: string, leaseId: string) {
-    await this.leasesService.findOne(ownerId, leaseId);
+  async ensureLeaseAccessible(userId: string, role: import('@prisma/client').UserRole, leaseId: string) {
+    await this.leasesService.findOne(userId, role, leaseId);
   }
 
   private getLeaseDir(leaseId: string): string {
     return path.join(UPLOAD_DIR, 'leases', leaseId);
   }
 
-  async upload(ownerId: string, leaseId: string, file: Express.Multer.File, displayName?: string | null) {
-    await this.ensureLeaseOwned(ownerId, leaseId);
+  async upload(userId: string, role: import('@prisma/client').UserRole, leaseId: string, file: Express.Multer.File, displayName?: string | null) {
+    await this.ensureLeaseAccessible(userId, role, leaseId);
     if (!file || !file.buffer) throw new BadRequestException('No file provided');
     if (file.size > MAX_FILE_SIZE) throw new BadRequestException('File too large (max 10 MB)');
 
@@ -57,16 +57,16 @@ export class LeaseDocumentsService {
     return doc;
   }
 
-  async listByLease(ownerId: string, leaseId: string) {
-    await this.ensureLeaseOwned(ownerId, leaseId);
+  async listByLease(userId: string, role: import('@prisma/client').UserRole, leaseId: string) {
+    await this.ensureLeaseAccessible(userId, role, leaseId);
     return this.prisma.leaseDocument.findMany({
       where: { leaseId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(ownerId: string, leaseId: string, docId: string) {
-    await this.ensureLeaseOwned(ownerId, leaseId);
+  async findOne(userId: string, role: import('@prisma/client').UserRole, leaseId: string, docId: string) {
+    await this.ensureLeaseAccessible(userId, role, leaseId);
     const doc = await this.prisma.leaseDocument.findFirst({
       where: { id: docId, leaseId },
     });
@@ -74,8 +74,8 @@ export class LeaseDocumentsService {
     return doc;
   }
 
-  async getDownloadStream(ownerId: string, leaseId: string, docId: string): Promise<{ stream: Readable; doc: { downloadFileName: string; mimeType: string | null } }> {
-    const doc = await this.findOne(ownerId, leaseId, docId);
+  async getDownloadStream(userId: string, role: import('@prisma/client').UserRole, leaseId: string, docId: string): Promise<{ stream: Readable; doc: { downloadFileName: string; mimeType: string | null } }> {
+    const doc = await this.findOne(userId, role, leaseId, docId);
     const absolutePath = path.join(UPLOAD_DIR, doc.storedPath);
     try {
       await fs.access(absolutePath);
@@ -87,8 +87,8 @@ export class LeaseDocumentsService {
     return { stream, doc: { downloadFileName, mimeType: doc.mimeType } };
   }
 
-  async update(ownerId: string, leaseId: string, docId: string, data: { displayName?: string | null }) {
-    await this.findOne(ownerId, leaseId, docId);
+  async update(userId: string, role: import('@prisma/client').UserRole, leaseId: string, docId: string, data: { displayName?: string | null }) {
+    await this.findOne(userId, role, leaseId, docId);
     const displayName = data.displayName === undefined ? undefined : (data.displayName?.trim() || null);
     return this.prisma.leaseDocument.update({
       where: { id: docId },
@@ -96,8 +96,8 @@ export class LeaseDocumentsService {
     });
   }
 
-  async remove(ownerId: string, leaseId: string, docId: string) {
-    const doc = await this.findOne(ownerId, leaseId, docId);
+  async remove(userId: string, role: import('@prisma/client').UserRole, leaseId: string, docId: string) {
+    const doc = await this.findOne(userId, role, leaseId, docId);
     const absolutePath = path.join(UPLOAD_DIR, doc.storedPath);
     try {
       await fs.unlink(absolutePath);

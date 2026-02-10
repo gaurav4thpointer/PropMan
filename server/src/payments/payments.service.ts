@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { UserRole, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccessService } from '../access/access.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { MatchScheduleItemDto } from './dto/match-payment.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -9,17 +11,20 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private accessService: AccessService,
+  ) {}
 
-  async create(ownerId: string, dto: CreatePaymentDto) {
-    await this.ensureLeaseOwned(ownerId, dto.leaseId);
+  async create(userId: string, role: UserRole, dto: CreatePaymentDto) {
+    const lease = await this.ensureLeaseAccessible(userId, role, dto.leaseId);
+    const ownerId = role === UserRole.USER || role === UserRole.SUPER_ADMIN ? userId : lease.ownerId;
     return this.prisma.payment.create({
       data: {
         ownerId,
         leaseId: dto.leaseId,
         tenantId: dto.tenantId,
         propertyId: dto.propertyId,
-        unitId: dto.unitId,
         date: new Date(dto.date),
         amount: new Decimal(dto.amount),
         method: dto.method,
@@ -27,13 +32,24 @@ export class PaymentsService {
         notes: dto.notes,
         chequeId: dto.chequeId,
       },
-      include: { lease: true, tenant: true, property: true, unit: true },
+      include: { lease: true, tenant: true, property: true },
     });
   }
 
-  async findAll(ownerId: string, pagination: PaginationDto, filters?: { leaseId?: string; propertyId?: string; tenantId?: string; search?: string }) {
+  async findAll(
+    userId: string,
+    role: UserRole,
+    pagination: PaginationDto,
+    filters?: { leaseId?: string; propertyId?: string; tenantId?: string; search?: string },
+  ) {
     const { page = 1, limit = 20 } = pagination;
-    const where: Record<string, unknown> = { ownerId };
+    const where: Record<string, unknown> =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN
+        ? { ownerId: userId }
+        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) } };
+    if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && (where.propertyId as { in: string[] }).in.length === 0) {
+      return paginatedResponse([], 0, page, limit);
+    }
     if (filters?.leaseId) where.leaseId = filters.leaseId;
     if (filters?.propertyId) where.propertyId = filters.propertyId;
     if (filters?.tenantId) where.tenantId = filters.tenantId;
@@ -46,33 +62,39 @@ export class PaymentsService {
     }
     const [data, total] = await Promise.all([
       this.prisma.payment.findMany({
-        where: where as { ownerId: string },
-        include: { lease: true, tenant: true, property: true, unit: true },
+        where: where as Prisma.PaymentWhereInput,
+        include: { lease: true, tenant: true, property: true },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { date: 'desc' },
       }),
-      this.prisma.payment.count({ where: where as { ownerId: string } }),
+      this.prisma.payment.count({ where: where as Prisma.PaymentWhereInput }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }
 
-  async findOne(ownerId: string, id: string) {
-    const payment = await this.prisma.payment.findFirst({
-      where: { id, ownerId },
-      include: { lease: true, tenant: true, property: true, unit: true, scheduleMatches: { include: { rentSchedule: true } } },
+  async findOne(userId: string, role: UserRole, id: string) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id },
+      include: { lease: true, tenant: true, property: true, scheduleMatches: { include: { rentSchedule: true } } },
     });
     if (!payment) throw new NotFoundException('Payment not found');
+    const canAccess = await this.accessService.canAccessProperty(userId, role, payment.propertyId);
+    if (!canAccess) throw new NotFoundException('Payment not found');
     return payment;
   }
 
-  async matchToSchedule(ownerId: string, paymentId: string, matches: MatchScheduleItemDto[]) {
-    const payment = await this.findOne(ownerId, paymentId);
+  async matchToSchedule(userId: string, role: UserRole, paymentId: string, matches: MatchScheduleItemDto[]) {
+    const payment = await this.findOne(userId, role, paymentId);
     const totalPayment = Number(payment.amount);
+    const accessibleIds = await this.accessService.getAccessiblePropertyIds(userId, role);
     let applied = 0;
     for (const m of matches) {
       const schedule = await this.prisma.rentSchedule.findFirst({
-        where: { id: m.rentScheduleId, lease: { ownerId } },
+        where: {
+          id: m.rentScheduleId,
+          lease: { propertyId: { in: accessibleIds } },
+        },
       });
       if (!schedule) throw new NotFoundException(`RentSchedule ${m.rentScheduleId} not found`);
       if (schedule.leaseId !== payment.leaseId) throw new BadRequestException('RentSchedule must belong to same lease as payment');
@@ -112,18 +134,21 @@ export class PaymentsService {
         },
       });
     }
-    return this.findOne(ownerId, paymentId);
+    return this.findOne(userId, role, paymentId);
   }
 
-  async remove(ownerId: string, id: string) {
-    const payment = await this.findOne(ownerId, id);
+  async remove(userId: string, role: UserRole, id: string) {
+    const payment = await this.findOne(userId, role, id);
     await this.prisma.paymentScheduleMatch.deleteMany({ where: { paymentId: id } });
     await this.prisma.payment.delete({ where: { id } });
     return { deleted: true };
   }
 
-  private async ensureLeaseOwned(ownerId: string, leaseId: string) {
-    const lease = await this.prisma.lease.findFirst({ where: { id: leaseId, ownerId } });
+  private async ensureLeaseAccessible(userId: string, role: UserRole, leaseId: string) {
+    const lease = await this.prisma.lease.findUnique({ where: { id: leaseId } });
     if (!lease) throw new NotFoundException('Lease not found');
+    const canAccess = await this.accessService.canAccessProperty(userId, role, lease.propertyId);
+    if (!canAccess) throw new NotFoundException('Lease not found');
+    return lease;
   }
 }
