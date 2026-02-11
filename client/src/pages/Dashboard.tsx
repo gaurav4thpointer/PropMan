@@ -218,16 +218,6 @@ export default function Dashboard() {
   const leaseCount = data.expiringLeases?.length ?? 0
   const totalAlerts = overdueCount + data.bouncedCount + leaseCount
 
-  /* chart data */
-  const monthBarData = [
-    { name: 'Expected', value: data.month.expected, fill: '#6366f1' },
-    { name: 'Received', value: data.month.received, fill: '#10b981' },
-  ]
-  const quarterBarData = [
-    { name: 'Expected', value: data.quarter.expected, fill: '#818cf8' },
-    { name: 'Received', value: data.quarter.received, fill: '#34d399' },
-  ]
-
   const incomeBreakdownData = [
     { name: 'Collected', value: data.month.received, fill: '#10b981' },
     { name: 'Overdue', value: data.overdueAmount, fill: '#ef4444' },
@@ -476,7 +466,7 @@ export default function Dashboard() {
               <XAxis dataKey="period" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={fmtShort} axisLine={false} tickLine={false} />
               <Tooltip
-                formatter={(v: number) => fmt(v)}
+                formatter={(v: number | undefined) => (v == null ? '' : fmt(v))}
                 contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.07)' }}
               />
               <Bar dataKey="expected" name="Expected" fill="#6366f1" radius={[6, 6, 0, 0]} />
@@ -511,7 +501,7 @@ export default function Dashboard() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(v: number) => fmt(v)}
+                    formatter={(v: number | undefined) => (v == null ? '' : fmt(v))}
                     contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.07)' }}
                   />
                 </PieChart>
