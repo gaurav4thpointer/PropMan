@@ -108,11 +108,7 @@ export default function ChequeDetail() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <Link to="/cheques" className="text-sm font-medium text-slate-500 hover:text-slate-700">
-          ← Cheques
-        </Link>
-      </div>
+      <Link to="/cheques" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Cheques</Link>
 
       <div className="mb-8 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -129,7 +125,7 @@ export default function ChequeDetail() {
           {cheque.propertyId && (
             <span>
               <span className="text-slate-500">Property</span>{' '}
-              <Link to={`/properties/${cheque.propertyId}`} className="font-medium text-indigo-600 hover:underline">
+              <Link to={`/properties/${cheque.propertyId}`} className="text-indigo-600 hover:underline">
                 {cheque.property?.name ?? 'Property'}
               </Link>
             </span>
@@ -137,13 +133,13 @@ export default function ChequeDetail() {
           {cheque.property?.unitNo && (
             <span>
               <span className="text-slate-500">Unit</span>{' '}
-              <span className="font-medium text-slate-700">{cheque.property.unitNo}</span>
+              <span className="text-slate-700">{cheque.property.unitNo}</span>
             </span>
           )}
           {cheque.tenantId && (
             <span>
               <span className="text-slate-500">Tenant</span>{' '}
-              <Link to={`/tenants/${cheque.tenantId}`} className="font-medium text-indigo-600 hover:underline">
+              <Link to={`/tenants/${cheque.tenantId}`} className="text-indigo-600 hover:underline">
                 {cheque.tenant?.name ?? 'Tenant'}
               </Link>
             </span>
@@ -151,7 +147,7 @@ export default function ChequeDetail() {
           {cheque.leaseId && (
             <span>
               <span className="text-slate-500">Lease</span>{' '}
-              <Link to={`/leases/${cheque.leaseId}`} className="font-medium text-indigo-600 hover:underline">
+              <Link to={`/leases/${cheque.leaseId}`} className="text-indigo-600 hover:underline">
                 View lease
               </Link>
             </span>

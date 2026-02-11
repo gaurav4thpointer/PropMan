@@ -3,7 +3,8 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { leases, leaseDocuments } from '../api/client'
 import type { Lease, LeaseDocument } from '../api/types'
-import { isLeaseExpired, isLeaseTerminated, getDaysOverdue } from '../utils/lease'
+import { isLeaseExpired, isLeaseTerminated, isLeaseFuture, getDaysOverdue } from '../utils/lease'
+import { formatLeaseCode } from '../utils/ids'
 
 export default function LeaseDetail() {
   const { id } = useParams<{ id: string }>()
@@ -185,7 +186,8 @@ export default function LeaseDetail() {
   const schedules = lease.rentSchedules ?? []
   const expired = isLeaseExpired(lease.endDate)
   const terminated = isLeaseTerminated(lease)
-  const canTerminateEarly = !expired && !terminated
+  const future = isLeaseFuture(lease.startDate)
+  const canTerminateEarly = !expired && !terminated && !future
 
   return (
     <div>
@@ -200,9 +202,17 @@ export default function LeaseDetail() {
           This lease was terminated early on {formatDate(lease.terminationDate)} (original end: {formatDate(lease.endDate)}).
         </div>
       )}
+      {future && !terminated && (
+        <div className="mb-4 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-800">
+          This lease hasn't started yet (starts: {formatDate(lease.startDate)}).
+        </div>
+      )}
       <div className="card mb-8 overflow-hidden p-0">
-        <div className={`border-b border-slate-100 px-4 py-5 sm:px-6 ${expired ? 'bg-rose-50/50' : 'bg-gradient-to-r from-violet-50 to-indigo-50/50'}`}>
+        <div className={`border-b border-slate-100 px-4 py-5 sm:px-6 ${expired ? 'bg-rose-50/50' : future ? 'bg-sky-50/50' : 'bg-gradient-to-r from-violet-50 to-indigo-50/50'}`}>
           <h1 className="text-2xl font-bold text-slate-800">Lease details</h1>
+          <p className="mt-1 text-xs text-slate-500">
+            Lease code: {formatLeaseCode(lease.id)}
+          </p>
           <p className="mt-1 text-slate-600">
             {lease.propertyId ? (
               <Link to={`/properties/${lease.propertyId}`} className="text-indigo-600 hover:underline">{lease.property?.name ?? 'Property'}</Link>
@@ -311,7 +321,7 @@ export default function LeaseDetail() {
               return (
                 <tr key={s.id} className={cancelled ? 'bg-slate-50/80' : ''}>
                   <td className={cancelled ? 'text-slate-400' : 'text-slate-700'}>{formatDate(s.dueDate)}</td>
-                  <td className={cancelled ? 'text-slate-400' : 'font-medium'}>{formatNum(Number(s.expectedAmount))}</td>
+                  <td className={cancelled ? 'text-slate-400' : 'text-slate-700'}>{formatNum(Number(s.expectedAmount))}</td>
                   <td className="text-slate-600">{s.paidAmount ? formatNum(Number(s.paidAmount)) : '–'}</td>
                   <td>
                     {cancelled ? (
@@ -344,7 +354,7 @@ export default function LeaseDetail() {
         {schedules.length === 0 && <p className="px-5 py-12 text-center text-slate-500">No schedule entries.</p>}
       </div>
 
-      <h2 className="mb-3 text-lg font-bold text-slate-800">Documents</h2>
+      <h2 className="mb-3 mt-8 text-lg font-bold text-slate-800">Documents</h2>
       <div className="card overflow-hidden p-0">
         <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5">
           <input

@@ -19,35 +19,35 @@ const cheques_service_1 = require("./cheques.service");
 const create_cheque_dto_1 = require("./dto/create-cheque.dto");
 const update_cheque_dto_1 = require("./dto/update-cheque.dto");
 const cheque_status_dto_1 = require("./dto/cheque-status.dto");
-const pagination_dto_1 = require("../common/dto/pagination.dto");
+const cheque_query_dto_1 = require("./dto/cheque-query.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
-const client_1 = require("@prisma/client");
 let ChequesController = class ChequesController {
     constructor(chequesService) {
         this.chequesService = chequesService;
     }
     create(user, dto) {
-        return this.chequesService.create(user.id, dto);
+        return this.chequesService.create(user.id, user.role, dto);
     }
-    findAll(user, pagination, propertyId, status) {
-        return this.chequesService.findAll(user.id, pagination, { propertyId, status });
+    findAll(user, query) {
+        const { page, limit, ...filters } = query;
+        return this.chequesService.findAll(user.id, user.role, { page, limit }, filters);
     }
     upcoming(user, days, propertyId) {
         const d = days === '60' ? 60 : days === '90' ? 90 : 30;
-        return this.chequesService.upcoming(user.id, d, propertyId);
+        return this.chequesService.upcoming(user.id, user.role, d, propertyId);
     }
     findOne(user, id) {
-        return this.chequesService.findOne(user.id, id);
+        return this.chequesService.findOne(user.id, user.role, id);
     }
     update(user, id, dto) {
-        return this.chequesService.update(user.id, id, dto);
+        return this.chequesService.update(user.id, user.role, id, dto);
     }
     updateStatus(user, id, dto) {
-        return this.chequesService.updateStatus(user.id, id, dto);
+        return this.chequesService.updateStatus(user.id, user.role, id, dto);
     }
     remove(user, id) {
-        return this.chequesService.remove(user.id, id);
+        return this.chequesService.remove(user.id, user.role, id);
     }
 };
 exports.ChequesController = ChequesController;
@@ -65,10 +65,8 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'List cheques with filters' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),
-    __param(2, (0, common_1.Query)('propertyId')),
-    __param(3, (0, common_1.Query)('status')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, pagination_dto_1.PaginationDto, String, String]),
+    __metadata("design:paramtypes", [Object, cheque_query_dto_1.ChequeQueryDto]),
     __metadata("design:returntype", void 0)
 ], ChequesController.prototype, "findAll", null);
 __decorate([

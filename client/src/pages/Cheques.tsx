@@ -71,7 +71,7 @@ export default function Cheques() {
       label: 'Cheque no',
       searchable: true,
       render: (c) => (
-        <Link to={`/cheques/${c.id}`} className="font-semibold text-indigo-600 hover:underline">
+        <Link to={`/cheques/${c.id}`} className="text-indigo-600 hover:underline">
           {c.chequeNumber}
         </Link>
       ),
@@ -94,7 +94,7 @@ export default function Cheques() {
       sortKey: 'amount',
       getSortValue: (c) => Number(c.amount),
       align: 'right',
-      render: (c) => <span className="font-medium">{formatNum(Number(c.amount))}</span>,
+      render: (c) => <span className="text-slate-700">{formatNum(Number(c.amount))}</span>,
     },
     {
       key: 'coversPeriod',
@@ -143,7 +143,7 @@ export default function Cheques() {
       align: 'right',
       render: (c) =>
         ['RECEIVED', 'DEPOSITED', 'BOUNCED'].includes(c.status) ? (
-          <button type="button" onClick={() => setStatusModal(c)} className="text-sm font-medium text-indigo-600 hover:underline">Update status</button>
+          <button type="button" onClick={() => setStatusModal(c)} className="text-sm text-indigo-600 hover:underline">Update status</button>
         ) : null,
     },
   ]

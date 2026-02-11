@@ -33,17 +33,14 @@ __decorate([
 ], CreateChequeDto.prototype, "propertyId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)(),
-    (0, class_validator_1.IsUUID)(),
-    __metadata("design:type", String)
-], CreateChequeDto.prototype, "unitId", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1, { message: 'Cheque number is required' }),
     __metadata("design:type", String)
 ], CreateChequeDto.prototype, "chequeNumber", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1, { message: 'Bank name is required' }),
     __metadata("design:type", String)
 ], CreateChequeDto.prototype, "bankName", void 0);
 __decorate([

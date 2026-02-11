@@ -56,7 +56,7 @@ export default function Tenants() {
       label: 'Name',
       searchable: true,
       render: (t) => (
-        <Link to={`/tenants/${t.id}`} className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
+        <Link to={`/tenants/${t.id}`} className="text-indigo-600 hover:text-indigo-700 hover:underline">
           {t.name}
         </Link>
       ),
@@ -79,14 +79,9 @@ export default function Tenants() {
       sortable: false,
       align: 'right',
       render: (t) => (
-        <span className="flex items-center justify-end gap-2">
-          <Link to={`/tenants/${t.id}`} className="text-sm font-medium text-indigo-600 hover:underline">
-            View
-          </Link>
-          <button type="button" onClick={() => { setEditing(t); setShowForm(true) }} className="text-sm font-medium text-slate-600 hover:underline">
-            Edit
-          </button>
-        </span>
+        <button type="button" onClick={() => { setEditing(t); setShowForm(true) }} className="text-sm text-indigo-600 hover:underline">
+          Edit
+        </button>
       ),
     },
   ]

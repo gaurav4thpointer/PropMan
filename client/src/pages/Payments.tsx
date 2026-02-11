@@ -67,7 +67,7 @@ export default function Payments() {
       sortKey: 'amount',
       getSortValue: (p) => Number(p.amount),
       align: 'right',
-      render: (p) => <span className="font-semibold text-slate-800">{formatNum(Number(p.amount))}</span>,
+      render: (p) => <span className="text-slate-700">{formatNum(Number(p.amount))}</span>,
     },
     {
       key: 'method',
@@ -116,7 +116,7 @@ export default function Payments() {
       align: 'right',
       render: (p) =>
         p.leaseId ? (
-          <Link to={`/leases/${p.leaseId}`} className="text-sm font-medium text-indigo-600 hover:underline">View lease</Link>
+          <Link to={`/leases/${p.leaseId}`} className="text-sm text-indigo-600 hover:underline">View lease</Link>
         ) : null,
     },
   ]

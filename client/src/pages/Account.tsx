@@ -125,7 +125,7 @@ export default function Account() {
               <input
                 type="email"
                 {...profileForm.register('email')}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none"
                 placeholder="you@example.com"
               />
               {profileForm.formState.errors.email && (
@@ -137,7 +137,7 @@ export default function Account() {
               <input
                 type="text"
                 {...profileForm.register('name')}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none"
                 placeholder="Your name"
               />
               {profileForm.formState.errors.name && (
@@ -149,7 +149,7 @@ export default function Account() {
               <input
                 type="tel"
                 {...profileForm.register('mobile')}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none"
                 placeholder="+91 98765 43210"
               />
               {profileForm.formState.errors.mobile && (
@@ -158,7 +158,7 @@ export default function Account() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Gender</label>
-              <select {...profileForm.register('gender')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
+              <select {...profileForm.register('gender')} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none">
                 <option value="">Select</option>
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>
@@ -191,7 +191,7 @@ export default function Account() {
               <input
                 type="password"
                 {...passwordForm.register('currentPassword')}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none"
                 autoComplete="current-password"
               />
               {passwordForm.formState.errors.currentPassword && (
@@ -203,7 +203,7 @@ export default function Account() {
               <input
                 type="password"
                 {...passwordForm.register('newPassword')}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none"
                 autoComplete="new-password"
               />
               {passwordForm.formState.errors.newPassword && (
@@ -215,7 +215,7 @@ export default function Account() {
               <input
                 type="password"
                 {...passwordForm.register('confirmPassword')}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none"
                 autoComplete="new-password"
               />
               {passwordForm.formState.errors.confirmPassword && (

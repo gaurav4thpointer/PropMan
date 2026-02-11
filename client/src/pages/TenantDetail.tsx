@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom'
 import { tenants, leases, payments, cheques } from '../api/client'
 import type { Tenant, Lease, Payment, Cheque } from '../api/types'
 import TenantForm from '../components/TenantForm'
-import { isLeaseExpired } from '../utils/lease'
+import { isLeaseExpired, isLeaseFuture } from '../utils/lease'
 
 function formatDate(s: string) {
   return new Date(s).toLocaleDateString(undefined, { dateStyle: 'medium' })
@@ -165,25 +165,27 @@ export default function TenantDetail() {
               ) : (
                 tenantLeases.map((l) => {
                   const expired = isLeaseExpired(l.endDate)
+                  const future = isLeaseFuture(l.startDate)
                   return (
                     <tr key={l.id}>
                       <td>
                         {l.propertyId ? (
-                          <Link to={`/properties/${l.propertyId}`} className="font-semibold text-indigo-600 hover:underline">
+                          <Link to={`/properties/${l.propertyId}`} className="text-indigo-600 hover:underline">
                             {l.property?.name ?? 'Property'}
                           </Link>
                         ) : (
-                          <span className="font-semibold text-slate-800">{l.property?.name ?? '–'}</span>
+                          <span className="text-slate-800">{l.property?.name ?? '–'}</span>
                         )}
                         <span className="text-slate-500"> / {l.property?.unitNo ?? '–'}</span>
                       </td>
                       <td className="text-slate-600">
                         {formatDate(l.startDate)} – {formatDate(l.endDate)}
                         {expired && <span className="ml-2 inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800">Expired</span>}
+                        {future && !expired && <span className="ml-2 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">Future</span>}
                       </td>
-                      <td className="font-medium">{formatNum(Number(l.installmentAmount))} / {l.rentFrequency}</td>
+                      <td className="text-slate-700">{formatNum(Number(l.installmentAmount))} / {l.rentFrequency}</td>
                       <td className="text-right">
-                        <Link to={`/leases/${l.id}`} className="text-sm font-medium text-indigo-600 hover:underline">View lease</Link>
+                        <Link to={`/leases/${l.id}`} className="text-sm text-indigo-600 hover:underline">View lease</Link>
                       </td>
                     </tr>
                   )
@@ -224,7 +226,7 @@ export default function TenantDetail() {
                 tenantPayments.map((p) => (
                   <tr key={p.id}>
                     <td className="text-slate-700">{formatDate(p.date)}</td>
-                    <td className="font-semibold">{formatNum(Number(p.amount))}</td>
+                    <td className="text-slate-700">{formatNum(Number(p.amount))}</td>
                     <td><span className="badge badge-neutral">{METHOD_LABELS[p.method] ?? p.method}</span></td>
                     <td>
                       {p.propertyId ? (
@@ -234,7 +236,7 @@ export default function TenantDetail() {
                       )}
                     </td>
                     <td className="text-right">
-                      {p.leaseId && <Link to={`/leases/${p.leaseId}`} className="text-sm font-medium text-indigo-600 hover:underline">View lease</Link>}
+                      {p.leaseId && <Link to={`/leases/${p.leaseId}`} className="text-sm text-indigo-600 hover:underline">View lease</Link>}
                     </td>
                   </tr>
                 ))
@@ -276,17 +278,17 @@ export default function TenantDetail() {
                 tenantCheques.map((c) => (
                   <tr key={c.id}>
                     <td>
-                      <Link to={`/cheques/${c.id}`} className="font-semibold text-indigo-600 hover:underline">{c.chequeNumber}</Link>
+                      <Link to={`/cheques/${c.id}`} className="text-indigo-600 hover:underline">{c.chequeNumber}</Link>
                     </td>
                     <td className="text-slate-600">{c.bankName}</td>
                     <td className="text-slate-600">{formatDate(c.chequeDate)}</td>
-                    <td className="font-medium">{formatNum(Number(c.amount))}</td>
+                    <td className="text-slate-700">{formatNum(Number(c.amount))}</td>
                     <td className="text-slate-600">{c.coversPeriod}</td>
                     <td><span className={`badge ${CHEQUE_STATUS_CLASS[c.status] ?? 'badge-neutral'}`}>{c.status}</span></td>
                     <td className="text-right">
                       <span className="flex flex-wrap items-center justify-end gap-2">
-                        <Link to={`/cheques/${c.id}`} className="text-sm font-medium text-indigo-600 hover:underline">View cheque</Link>
-                        {c.leaseId && <Link to={`/leases/${c.leaseId}`} className="text-sm font-medium text-slate-600 hover:underline">View lease</Link>}
+                        <Link to={`/cheques/${c.id}`} className="text-sm text-indigo-600 hover:underline">View cheque</Link>
+                        {c.leaseId && <Link to={`/leases/${c.leaseId}`} className="text-sm text-slate-600 hover:underline">View lease</Link>}
                       </span>
                     </td>
                   </tr>

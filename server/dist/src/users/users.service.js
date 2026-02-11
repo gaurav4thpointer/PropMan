@@ -24,7 +24,7 @@ let UsersService = class UsersService {
         const hashed = await bcrypt.hash(dto.password, 10);
         return this.prisma.user.create({
             data: { email: dto.email, password: hashed, name: dto.name },
-            select: { id: true, email: true, name: true, mobile: true, gender: true, createdAt: true },
+            select: { id: true, email: true, name: true, mobile: true, gender: true, role: true, createdAt: true },
         });
     }
     async findByEmail(email) {
@@ -33,11 +33,36 @@ let UsersService = class UsersService {
     async findOne(id) {
         const user = await this.prisma.user.findUnique({
             where: { id },
-            select: { id: true, email: true, name: true, mobile: true, gender: true, createdAt: true },
+            select: { id: true, email: true, name: true, mobile: true, gender: true, role: true, createdAt: true },
         });
         if (!user)
             throw new common_1.NotFoundException('User not found');
         return user;
+    }
+    async findAll(page = 1, limit = 20, search) {
+        const skip = (page - 1) * limit;
+        const where = {};
+        if (search?.trim()) {
+            const q = search.trim();
+            where.OR = [
+                { email: { contains: q, mode: 'insensitive' } },
+                { name: { contains: q, mode: 'insensitive' } },
+            ];
+        }
+        const [data, total] = await Promise.all([
+            this.prisma.user.findMany({
+                where: where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                select: { id: true, email: true, name: true, mobile: true, role: true, createdAt: true },
+            }),
+            this.prisma.user.count({ where: where }),
+        ]);
+        return {
+            data,
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+        };
     }
     async updateProfile(id, dto) {
         const user = await this.findOne(id);
@@ -72,6 +97,17 @@ let UsersService = class UsersService {
             data: { password: hashed },
         });
         return { message: 'Password updated' };
+    }
+    async resetPassword(userId, newPassword) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { password: hashed },
+        });
+        return { message: 'Password reset successfully' };
     }
 };
 exports.UsersService = UsersService;

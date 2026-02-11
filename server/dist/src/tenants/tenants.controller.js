@@ -18,7 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const tenants_service_1 = require("./tenants.service");
 const create_tenant_dto_1 = require("./dto/create-tenant.dto");
 const update_tenant_dto_1 = require("./dto/update-tenant.dto");
-const pagination_dto_1 = require("../common/dto/pagination.dto");
+const tenant_query_dto_1 = require("./dto/tenant-query.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 let TenantsController = class TenantsController {
@@ -26,19 +26,20 @@ let TenantsController = class TenantsController {
         this.tenantsService = tenantsService;
     }
     create(user, dto) {
-        return this.tenantsService.create(user.id, dto);
+        return this.tenantsService.create(user.id, user.role, dto);
     }
-    findAll(user, pagination) {
-        return this.tenantsService.findAll(user.id, pagination);
+    findAll(user, query) {
+        const { page, limit, search } = query;
+        return this.tenantsService.findAll(user.id, user.role, { page, limit }, search);
     }
     findOne(user, id) {
-        return this.tenantsService.findOne(user.id, id);
+        return this.tenantsService.findOne(user.id, user.role, id);
     }
     update(user, id, dto) {
-        return this.tenantsService.update(user.id, id, dto);
+        return this.tenantsService.update(user.id, user.role, id, dto);
     }
     remove(user, id) {
-        return this.tenantsService.remove(user.id, id);
+        return this.tenantsService.remove(user.id, user.role, id);
     }
 };
 exports.TenantsController = TenantsController;
@@ -57,7 +58,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, pagination_dto_1.PaginationDto]),
+    __metadata("design:paramtypes", [Object, tenant_query_dto_1.TenantQueryDto]),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "findAll", null);
 __decorate([

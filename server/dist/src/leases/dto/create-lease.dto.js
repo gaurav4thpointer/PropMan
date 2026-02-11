@@ -26,11 +26,6 @@ __decorate([
     (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
-], CreateLeaseDto.prototype, "unitId", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)(),
-    (0, class_validator_1.IsUUID)(),
-    __metadata("design:type", String)
 ], CreateLeaseDto.prototype, "tenantId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ example: '2026-01-01' }),

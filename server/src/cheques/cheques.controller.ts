@@ -4,11 +4,10 @@ import { ChequesService } from './cheques.service';
 import { CreateChequeDto } from './dto/create-cheque.dto';
 import { UpdateChequeDto } from './dto/update-cheque.dto';
 import { ChequeStatusUpdateDto } from './dto/cheque-status.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { ChequeQueryDto } from './dto/cheque-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
-import { ChequeStatus } from '@prisma/client';
 
 @ApiTags('cheques')
 @ApiBearerAuth()
@@ -25,15 +24,9 @@ export class ChequesController {
 
   @Get()
   @ApiOperation({ summary: 'List cheques with filters' })
-  findAll(
-    @CurrentUser() user: User,
-    @Query() pagination: PaginationDto,
-    @Query('propertyId') propertyId?: string,
-    @Query('tenantId') tenantId?: string,
-    @Query('status') status?: ChequeStatus,
-    @Query('search') search?: string,
-  ) {
-    return this.chequesService.findAll(user.id, user.role, pagination, { propertyId, tenantId, status, search });
+  findAll(@CurrentUser() user: User, @Query() query: ChequeQueryDto) {
+    const { page, limit, ...filters } = query;
+    return this.chequesService.findAll(user.id, user.role, { page, limit }, filters);
   }
 
   @Get('upcoming')

@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { MatchPaymentDto } from './dto/match-payment.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaymentQueryDto } from './dto/payment-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
@@ -23,15 +23,9 @@ export class PaymentsController {
 
   @Get()
   @ApiOperation({ summary: 'List payments' })
-  findAll(
-    @CurrentUser() user: User,
-    @Query() pagination: PaginationDto,
-    @Query('leaseId') leaseId?: string,
-    @Query('propertyId') propertyId?: string,
-    @Query('tenantId') tenantId?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.paymentsService.findAll(user.id, user.role, pagination, { leaseId, propertyId, tenantId, search });
+  findAll(@CurrentUser() user: User, @Query() query: PaymentQueryDto) {
+    const { page, limit, ...filters } = query;
+    return this.paymentsService.findAll(user.id, user.role, { page, limit }, filters);
   }
 
   @Get(':id')

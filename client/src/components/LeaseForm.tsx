@@ -109,6 +109,7 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
           {showAddProperty && (
             <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
               <PropertyForm
+                inline
                 onSaved={() => setShowAddProperty(false)}
                 onCancel={() => setShowAddProperty(false)}
                 onSavedWithNew={(p) => {
@@ -141,6 +142,7 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
           {showAddTenant && (
             <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
               <TenantForm
+                inline
                 onSaved={() => setShowAddTenant(false)}
                 onCancel={() => setShowAddTenant(false)}
                 onSavedWithNew={(t) => {
@@ -154,13 +156,23 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Start date *</label>
-            <input type="date" {...register('startDate')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            <label htmlFor="lease-start-date" className="block text-sm font-medium text-slate-700 mb-1">Start date *</label>
+            <input
+              id="lease-start-date"
+              type="date"
+              {...register('startDate')}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
             {errors.startDate && <p className="text-red-600 text-sm mt-1">{errors.startDate.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">End date *</label>
-            <input type="date" {...register('endDate')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            <label htmlFor="lease-end-date" className="block text-sm font-medium text-slate-700 mb-1">End date *</label>
+            <input
+              id="lease-end-date"
+              type="date"
+              {...register('endDate')}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
             {errors.endDate && <p className="text-red-600 text-sm mt-1">{errors.endDate.message}</p>}
           </div>
         </div>
@@ -175,20 +187,39 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Due day (1–28)</label>
-            <input type="number" {...register('dueDay')} min={1} max={28} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            <label htmlFor="lease-due-day" className="block text-sm font-medium text-slate-700 mb-1">Due day (1–28)</label>
+            <input
+              id="lease-due-day"
+              type="number"
+              {...register('dueDay')}
+              min={1}
+              max={28}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
             {errors.dueDay && <p className="text-red-600 text-sm mt-1">{errors.dueDay.message}</p>}
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Installment amount *</label>
-            <input type="number" step="0.01" {...register('installmentAmount')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            <label htmlFor="lease-installment-amount" className="block text-sm font-medium text-slate-700 mb-1">Installment amount *</label>
+            <input
+              id="lease-installment-amount"
+              type="number"
+              step="0.01"
+              {...register('installmentAmount')}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
             {errors.installmentAmount && <p className="text-red-600 text-sm mt-1">{errors.installmentAmount.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Security deposit</label>
-            <input type="number" step="0.01" {...register('securityDeposit')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            <label htmlFor="lease-security-deposit" className="block text-sm font-medium text-slate-700 mb-1">Security deposit</label>
+            <input
+              id="lease-security-deposit"
+              type="number"
+              step="0.01"
+              {...register('securityDeposit')}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
           </div>
         </div>
         <div>
@@ -202,6 +233,7 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
           <button type="button" onClick={onCancel} className="btn-secondary" disabled={submitting}>Cancel</button>
         </div>
       </form>
+
     </div>
   )
 }

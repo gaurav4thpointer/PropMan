@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 export interface JwtPayload {
     sub: string;
     email: string;
+    role?: string;
 }
 declare const JwtStrategy_base: new (...args: any[]) => Strategy;
 export declare class JwtStrategy extends JwtStrategy_base {
@@ -16,6 +17,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
         name: string | null;
         mobile: string | null;
         gender: import(".prisma/client").$Enums.Gender | null;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
     }>;
 }

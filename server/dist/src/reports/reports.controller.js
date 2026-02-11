@@ -23,15 +23,15 @@ let ReportsController = class ReportsController {
         this.reportsService = reportsService;
     }
     dashboard(user, propertyId) {
-        return this.reportsService.dashboard(user.id, propertyId);
+        return this.reportsService.dashboard(user.id, user.role, propertyId);
     }
     async chequesCsv(user, res, propertyId, from, to) {
-        const csv = await this.reportsService.chequesCsv(user.id, propertyId, from, to);
+        const csv = await this.reportsService.chequesCsv(user.id, user.role, propertyId, from, to);
         res.setHeader('Content-Disposition', 'attachment; filename=cheques.csv');
         res.send(csv);
     }
     async rentScheduleCsv(user, res, propertyId, from, to) {
-        const csv = await this.reportsService.rentScheduleCsv(user.id, propertyId, from, to);
+        const csv = await this.reportsService.rentScheduleCsv(user.id, user.role, propertyId, from, to);
         res.setHeader('Content-Disposition', 'attachment; filename=rent-schedule.csv');
         res.send(csv);
     }

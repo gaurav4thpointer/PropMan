@@ -25,18 +25,11 @@ export declare class ReportsController {
                     country: import(".prisma/client").$Enums.Country;
                     emirateOrState: string | null;
                     currency: import(".prisma/client").$Enums.Currency;
+                    unitNo: string | null;
+                    bedrooms: number | null;
+                    status: import(".prisma/client").$Enums.UnitStatus | null;
                     notes: string | null;
                     ownerId: string;
-                };
-                unit: {
-                    id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    notes: string | null;
-                    unitNo: string;
-                    bedrooms: number | null;
-                    status: import(".prisma/client").$Enums.UnitStatus;
-                    propertyId: string;
                 };
                 tenant: {
                     id: string;
@@ -55,14 +48,14 @@ export declare class ReportsController {
                 updatedAt: Date;
                 notes: string | null;
                 ownerId: string;
-                propertyId: string;
                 startDate: Date;
                 endDate: Date;
+                terminationDate: Date | null;
                 rentFrequency: import(".prisma/client").$Enums.RentFrequency;
                 installmentAmount: import("@prisma/client/runtime/library").Decimal;
                 dueDay: number;
                 securityDeposit: import("@prisma/client/runtime/library").Decimal | null;
-                unitId: string;
+                propertyId: string;
                 tenantId: string;
             };
         } & {
@@ -85,18 +78,11 @@ export declare class ReportsController {
                 country: import(".prisma/client").$Enums.Country;
                 emirateOrState: string | null;
                 currency: import(".prisma/client").$Enums.Currency;
+                unitNo: string | null;
+                bedrooms: number | null;
+                status: import(".prisma/client").$Enums.UnitStatus | null;
                 notes: string | null;
                 ownerId: string;
-            };
-            unit: {
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                notes: string | null;
-                unitNo: string;
-                bedrooms: number | null;
-                status: import(".prisma/client").$Enums.UnitStatus;
-                propertyId: string;
             };
             tenant: {
                 id: string;
@@ -115,25 +101,24 @@ export declare class ReportsController {
                 updatedAt: Date;
                 notes: string | null;
                 ownerId: string;
-                propertyId: string;
                 startDate: Date;
                 endDate: Date;
+                terminationDate: Date | null;
                 rentFrequency: import(".prisma/client").$Enums.RentFrequency;
                 installmentAmount: import("@prisma/client/runtime/library").Decimal;
                 dueDay: number;
                 securityDeposit: import("@prisma/client/runtime/library").Decimal | null;
-                unitId: string;
+                propertyId: string;
                 tenantId: string;
             };
         } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            status: import(".prisma/client").$Enums.ChequeStatus;
             notes: string | null;
             ownerId: string;
-            status: import(".prisma/client").$Enums.ChequeStatus;
             propertyId: string;
-            unitId: string;
             tenantId: string;
             leaseId: string;
             replacedByChequeId: string | null;
@@ -161,18 +146,11 @@ export declare class ReportsController {
                 country: import(".prisma/client").$Enums.Country;
                 emirateOrState: string | null;
                 currency: import(".prisma/client").$Enums.Currency;
+                unitNo: string | null;
+                bedrooms: number | null;
+                status: import(".prisma/client").$Enums.UnitStatus | null;
                 notes: string | null;
                 ownerId: string;
-            };
-            unit: {
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                notes: string | null;
-                unitNo: string;
-                bedrooms: number | null;
-                status: import(".prisma/client").$Enums.UnitStatus;
-                propertyId: string;
             };
             tenant: {
                 id: string;
@@ -191,16 +169,20 @@ export declare class ReportsController {
             updatedAt: Date;
             notes: string | null;
             ownerId: string;
-            propertyId: string;
             startDate: Date;
             endDate: Date;
+            terminationDate: Date | null;
             rentFrequency: import(".prisma/client").$Enums.RentFrequency;
             installmentAmount: import("@prisma/client/runtime/library").Decimal;
             dueDay: number;
             securityDeposit: import("@prisma/client/runtime/library").Decimal | null;
-            unitId: string;
+            propertyId: string;
             tenantId: string;
         })[];
+        totalTrackedExpected: number;
+        totalTrackedReceived: number;
+        totalChequeValueTracked: number;
+        totalSecurityDepositsTracked: number;
     }>;
     chequesCsv(user: User, res: Response, propertyId?: string, from?: string, to?: string): Promise<void>;
     rentScheduleCsv(user: User, res: Response, propertyId?: string, from?: string, to?: string): Promise<void>;

@@ -11,51 +11,85 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PropertiesService = void 0;
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
+const access_service_1 = require("../access/access.service");
 const pagination_dto_1 = require("../common/dto/pagination.dto");
 let PropertiesService = class PropertiesService {
-    constructor(prisma) {
+    constructor(prisma, accessService) {
         this.prisma = prisma;
+        this.accessService = accessService;
     }
-    async create(ownerId, dto) {
+    async create(userId, role, dto) {
+        let ownerId;
+        if (role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN) {
+            ownerId = userId;
+        }
+        else {
+            throw new common_1.ForbiddenException('Only owners can create properties');
+        }
+        const { ownerId: _omit, ...propertyData } = dto;
         return this.prisma.property.create({
-            data: { ...dto, ownerId },
-            include: { units: true },
+            data: {
+                ...propertyData,
+                ownerId,
+                status: propertyData.status ?? 'VACANT',
+            },
         });
     }
-    async findAll(ownerId, pagination) {
+    async findAll(userId, role, pagination, filters) {
+        const accessibleIds = await this.accessService.getAccessiblePropertyIds(userId, role);
+        if (accessibleIds.length === 0) {
+            return (0, pagination_dto_1.paginatedResponse)([], 0, pagination.page ?? 1, pagination.limit ?? 20);
+        }
         const { page = 1, limit = 20 } = pagination;
+        const where = { id: { in: accessibleIds } };
+        if (filters?.country)
+            where.country = filters.country;
+        if (filters?.currency)
+            where.currency = filters.currency;
+        if (filters?.search?.trim()) {
+            const q = filters.search.trim();
+            where.AND = [
+                { id: { in: accessibleIds } },
+                { OR: [{ name: { contains: q, mode: 'insensitive' } }, { address: { contains: q, mode: 'insensitive' } }] },
+            ];
+            delete where.id;
+        }
         const [data, total] = await Promise.all([
             this.prisma.property.findMany({
-                where: { ownerId },
-                include: { units: true },
+                where: where,
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { createdAt: 'desc' },
             }),
-            this.prisma.property.count({ where: { ownerId } }),
+            this.prisma.property.count({ where: where }),
         ]);
         return (0, pagination_dto_1.paginatedResponse)(data, total, page, limit);
     }
-    async findOne(ownerId, id) {
-        const property = await this.prisma.property.findFirst({
-            where: { id, ownerId },
-            include: { units: true },
+    async findOne(userId, role, id) {
+        const canAccess = await this.accessService.canAccessProperty(userId, role, id);
+        if (!canAccess)
+            throw new common_1.NotFoundException('Property not found');
+        const property = await this.prisma.property.findUnique({
+            where: { id },
         });
         if (!property)
             throw new common_1.NotFoundException('Property not found');
         return property;
     }
-    async update(ownerId, id, dto) {
-        await this.findOne(ownerId, id);
+    async update(userId, role, id, dto) {
+        await this.findOne(userId, role, id);
         return this.prisma.property.update({
             where: { id },
             data: dto,
-            include: { units: true },
         });
     }
-    async remove(ownerId, id) {
-        await this.findOne(ownerId, id);
+    async remove(userId, role, id) {
+        await this.findOne(userId, role, id);
+        const isOwner = await this.accessService.isPropertyOwner(userId, id);
+        if (!isOwner)
+            throw new common_1.ForbiddenException('Only the property owner can delete the property');
         await this.prisma.property.delete({ where: { id } });
         return { deleted: true };
     }
@@ -63,6 +97,7 @@ let PropertiesService = class PropertiesService {
 exports.PropertiesService = PropertiesService;
 exports.PropertiesService = PropertiesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        access_service_1.AccessService])
 ], PropertiesService);
 //# sourceMappingURL=properties.service.js.map

@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { TenantQueryDto } from './dto/tenant-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
@@ -23,8 +23,9 @@ export class TenantsController {
 
   @Get()
   @ApiOperation({ summary: 'List tenants' })
-  findAll(@CurrentUser() user: User, @Query() pagination: PaginationDto, @Query('search') search?: string) {
-    return this.tenantsService.findAll(user.id, user.role, pagination, search);
+  findAll(@CurrentUser() user: User, @Query() query: TenantQueryDto) {
+    const { page, limit, search } = query;
+    return this.tenantsService.findAll(user.id, user.role, { page, limit }, search);
   }
 
   @Get(':id')

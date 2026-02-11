@@ -5,6 +5,7 @@ import { properties as propertiesApi } from '../api/client'
 import type { Property } from '../api/types'
 import PropertyForm from '../components/PropertyForm'
 import DataTable, { type DataTableColumn } from '../components/DataTable'
+import { formatPropertyCode } from '../utils/ids'
 
 const FETCH_LIMIT = 100
 
@@ -70,14 +71,24 @@ export default function Properties() {
 
   const columns: DataTableColumn<Property>[] = [
     {
+      key: 'id',
+      label: 'Code',
+      searchable: true,
+      render: (p) => (
+        <Link
+          to={`/properties/${p.id}`}
+          className="text-xs text-indigo-600 hover:text-indigo-700 hover:underline"
+          title={p.id}
+        >
+          {formatPropertyCode(p.id)}
+        </Link>
+      ),
+    },
+    {
       key: 'name',
       label: 'Name',
       searchable: true,
-      render: (p) => (
-        <Link to={`/properties/${p.id}`} className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
-          {p.name}
-        </Link>
-      ),
+      render: (p) => <span className="text-slate-800">{p.name}</span>,
     },
     {
       key: 'address',
@@ -95,7 +106,7 @@ export default function Properties() {
       key: 'currency',
       label: 'Currency',
       searchable: true,
-      render: (p) => <span className="font-medium">{p.currency}</span>,
+      render: (p) => <span className="text-slate-700">{p.currency}</span>,
     },
     {
       key: 'unitNo',
@@ -110,7 +121,7 @@ export default function Properties() {
       sortable: false,
       align: 'right',
       render: (p) => (
-        <button type="button" onClick={() => handleEdit(p)} className="text-sm font-medium text-indigo-600 hover:underline">
+        <button type="button" onClick={() => handleEdit(p)} className="text-sm text-indigo-600 hover:underline">
           Edit
         </button>
       ),

@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const rent_schedule_service_1 = require("./rent-schedule.service");
 const pagination_dto_1 = require("../common/dto/pagination.dto");
+const rent_schedule_query_dto_1 = require("./dto/rent-schedule-query.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 let RentScheduleController = class RentScheduleController {
@@ -24,13 +25,14 @@ let RentScheduleController = class RentScheduleController {
         this.rentScheduleService = rentScheduleService;
     }
     findByLease(user, leaseId, pagination) {
-        return this.rentScheduleService.findByLease(user.id, leaseId, pagination);
+        return this.rentScheduleService.findByLease(user.id, user.role, leaseId, pagination);
     }
-    findOverdue(user, propertyId, pagination) {
-        return this.rentScheduleService.findOverdue(user.id, propertyId, pagination);
+    findOverdue(user, query) {
+        const { page, limit, propertyId } = query;
+        return this.rentScheduleService.findOverdue(user.id, user.role, propertyId, { page, limit });
     }
     findOutstanding(user, propertyId, from, to) {
-        return this.rentScheduleService.findOutstanding(user.id, propertyId, from, to);
+        return this.rentScheduleService.findOutstanding(user.id, user.role, propertyId, from, to);
     }
 };
 exports.RentScheduleController = RentScheduleController;
@@ -48,10 +50,9 @@ __decorate([
     (0, common_1.Get)('overdue'),
     (0, swagger_1.ApiOperation)({ summary: 'List overdue installments' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Query)('propertyId')),
-    __param(2, (0, common_1.Query)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, pagination_dto_1.PaginationDto]),
+    __metadata("design:paramtypes", [Object, rent_schedule_query_dto_1.OverdueQueryDto]),
     __metadata("design:returntype", void 0)
 ], RentScheduleController.prototype, "findOverdue", null);
 __decorate([

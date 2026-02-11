@@ -10,13 +10,15 @@ exports.LeasesModule = void 0;
 const common_1 = require("@nestjs/common");
 const leases_service_1 = require("./leases.service");
 const leases_controller_1 = require("./leases.controller");
+const lease_documents_service_1 = require("./lease-documents.service");
+const lease_documents_controller_1 = require("./lease-documents.controller");
 let LeasesModule = class LeasesModule {
 };
 exports.LeasesModule = LeasesModule;
 exports.LeasesModule = LeasesModule = __decorate([
     (0, common_1.Module)({
-        controllers: [leases_controller_1.LeasesController],
-        providers: [leases_service_1.LeasesService],
+        controllers: [leases_controller_1.LeasesController, lease_documents_controller_1.LeaseDocumentsController],
+        providers: [leases_service_1.LeasesService, lease_documents_service_1.LeaseDocumentsService],
         exports: [leases_service_1.LeasesService],
     })
 ], LeasesModule);

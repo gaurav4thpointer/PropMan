@@ -18,7 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const payments_service_1 = require("./payments.service");
 const create_payment_dto_1 = require("./dto/create-payment.dto");
 const match_payment_dto_1 = require("./dto/match-payment.dto");
-const pagination_dto_1 = require("../common/dto/pagination.dto");
+const payment_query_dto_1 = require("./dto/payment-query.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 let PaymentsController = class PaymentsController {
@@ -26,19 +26,20 @@ let PaymentsController = class PaymentsController {
         this.paymentsService = paymentsService;
     }
     create(user, dto) {
-        return this.paymentsService.create(user.id, dto);
+        return this.paymentsService.create(user.id, user.role, dto);
     }
-    findAll(user, pagination, leaseId) {
-        return this.paymentsService.findAll(user.id, pagination, leaseId);
+    findAll(user, query) {
+        const { page, limit, ...filters } = query;
+        return this.paymentsService.findAll(user.id, user.role, { page, limit }, filters);
     }
     findOne(user, id) {
-        return this.paymentsService.findOne(user.id, id);
+        return this.paymentsService.findOne(user.id, user.role, id);
     }
     matchToSchedule(user, id, dto) {
-        return this.paymentsService.matchToSchedule(user.id, id, dto.matches);
+        return this.paymentsService.matchToSchedule(user.id, user.role, id, dto.matches);
     }
     remove(user, id) {
-        return this.paymentsService.remove(user.id, id);
+        return this.paymentsService.remove(user.id, user.role, id);
     }
 };
 exports.PaymentsController = PaymentsController;
@@ -56,9 +57,8 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'List payments' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),
-    __param(2, (0, common_1.Query)('leaseId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, pagination_dto_1.PaginationDto, String]),
+    __metadata("design:paramtypes", [Object, payment_query_dto_1.PaymentQueryDto]),
     __metadata("design:returntype", void 0)
 ], PaymentsController.prototype, "findAll", null);
 __decorate([

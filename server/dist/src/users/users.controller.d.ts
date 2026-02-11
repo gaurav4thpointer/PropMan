@@ -11,6 +11,7 @@ export declare class UsersController {
         name: string | null;
         mobile: string | null;
         gender: import(".prisma/client").$Enums.Gender | null;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
     }>;
     updateMe(user: User, dto: UpdateProfileDto): Promise<{
@@ -19,6 +20,7 @@ export declare class UsersController {
         name: string | null;
         mobile: string | null;
         gender: import(".prisma/client").$Enums.Gender | null;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
     }>;
     changePassword(user: User, dto: ChangePasswordDto): Promise<{

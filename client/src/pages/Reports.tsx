@@ -46,18 +46,17 @@ export default function Reports() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <Link to="/" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Dashboard</Link>
-      </div>
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold text-slate-800">Reports</h1>
-        <Link to="/" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">Dashboard</Link>
-        <Link to="/leases" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">Leases</Link>
-        <Link to="/cheques" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">Cheques</Link>
-        <Link to="/payments" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900">Payments</Link>
-      </div>
-      <div className="mb-8">
-        <p className="text-slate-500">Export and filter by property</p>
+      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Link to="/" className="mb-2 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Dashboard</Link>
+          <h1 className="text-2xl font-bold text-slate-800">Reports</h1>
+          <p className="mt-1 text-slate-500">Overview of rent collection, overdue schedules and CSV exports</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to="/leases" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900">Leases</Link>
+          <Link to="/cheques" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900">Cheques</Link>
+          <Link to="/payments" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900">Payments</Link>
+        </div>
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">

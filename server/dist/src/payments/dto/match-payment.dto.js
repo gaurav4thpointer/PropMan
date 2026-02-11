@@ -33,6 +33,9 @@ class MatchPaymentDto {
 exports.MatchPaymentDto = MatchPaymentDto;
 __decorate([
     (0, swagger_1.ApiProperty)({ type: [MatchScheduleItemDto] }),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => MatchScheduleItemDto),
     __metadata("design:type", Array)
 ], MatchPaymentDto.prototype, "matches", void 0);
 //# sourceMappingURL=match-payment.dto.js.map

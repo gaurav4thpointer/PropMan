@@ -18,7 +18,8 @@ const swagger_1 = require("@nestjs/swagger");
 const leases_service_1 = require("./leases.service");
 const create_lease_dto_1 = require("./dto/create-lease.dto");
 const update_lease_dto_1 = require("./dto/update-lease.dto");
-const pagination_dto_1 = require("../common/dto/pagination.dto");
+const terminate_lease_dto_1 = require("./dto/terminate-lease.dto");
+const lease_query_dto_1 = require("./dto/lease-query.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 let LeasesController = class LeasesController {
@@ -26,19 +27,23 @@ let LeasesController = class LeasesController {
         this.leasesService = leasesService;
     }
     create(user, dto) {
-        return this.leasesService.create(user.id, dto);
+        return this.leasesService.create(user.id, user.role, dto);
     }
-    findAll(user, pagination) {
-        return this.leasesService.findAll(user.id, pagination);
+    findAll(user, query) {
+        const { page, limit, ...filters } = query;
+        return this.leasesService.findAll(user.id, user.role, { page, limit }, filters);
     }
     findOne(user, id) {
-        return this.leasesService.findOne(user.id, id);
+        return this.leasesService.findOne(user.id, user.role, id);
+    }
+    terminateEarly(user, id, dto) {
+        return this.leasesService.terminateEarly(user.id, user.role, id, dto);
     }
     update(user, id, dto) {
-        return this.leasesService.update(user.id, id, dto);
+        return this.leasesService.update(user.id, user.role, id, dto);
     }
     remove(user, id) {
-        return this.leasesService.remove(user.id, id);
+        return this.leasesService.remove(user.id, user.role, id);
     }
 };
 exports.LeasesController = LeasesController;
@@ -57,7 +62,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, pagination_dto_1.PaginationDto]),
+    __metadata("design:paramtypes", [Object, lease_query_dto_1.LeaseQueryDto]),
     __metadata("design:returntype", void 0)
 ], LeasesController.prototype, "findAll", null);
 __decorate([
@@ -69,6 +74,16 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], LeasesController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id/terminate'),
+    (0, swagger_1.ApiOperation)({ summary: 'Terminate lease early' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, terminate_lease_dto_1.TerminateLeaseDto]),
+    __metadata("design:returntype", void 0)
+], LeasesController.prototype, "terminateEarly", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Update lease (regenerates rent schedule)' }),

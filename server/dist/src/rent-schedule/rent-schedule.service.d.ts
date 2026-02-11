@@ -1,21 +1,29 @@
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccessService } from '../access/access.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
 export declare class RentScheduleService {
     private prisma;
-    constructor(prisma: PrismaService);
-    findByLease(ownerId: string, leaseId: string, pagination: PaginationDto): Promise<{
+    private accessService;
+    constructor(prisma: PrismaService, accessService: AccessService);
+    findByLease(userId: string, role: UserRole, leaseId: string, pagination: PaginationDto): Promise<{
         data: ({
             lease: {
                 id: string;
-                unit: {
+                property: {
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    notes: string | null;
-                    unitNo: string;
+                    address: string | null;
+                    country: import(".prisma/client").$Enums.Country;
+                    emirateOrState: string | null;
+                    currency: import(".prisma/client").$Enums.Currency;
+                    unitNo: string | null;
                     bedrooms: number | null;
-                    status: import(".prisma/client").$Enums.UnitStatus;
-                    propertyId: string;
+                    status: import(".prisma/client").$Enums.UnitStatus | null;
+                    notes: string | null;
+                    ownerId: string;
                 };
                 tenant: {
                     id: string;
@@ -46,7 +54,7 @@ export declare class RentScheduleService {
             totalPages: number;
         };
     }>;
-    findOverdue(ownerId: string, propertyId?: string, pagination?: PaginationDto): Promise<{
+    findOverdue(userId: string, role: UserRole, propertyId?: string, pagination?: PaginationDto): Promise<{
         data: ({
             lease: {
                 property: {
@@ -58,18 +66,11 @@ export declare class RentScheduleService {
                     country: import(".prisma/client").$Enums.Country;
                     emirateOrState: string | null;
                     currency: import(".prisma/client").$Enums.Currency;
+                    unitNo: string | null;
+                    bedrooms: number | null;
+                    status: import(".prisma/client").$Enums.UnitStatus | null;
                     notes: string | null;
                     ownerId: string;
-                };
-                unit: {
-                    id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    notes: string | null;
-                    unitNo: string;
-                    bedrooms: number | null;
-                    status: import(".prisma/client").$Enums.UnitStatus;
-                    propertyId: string;
                 };
                 tenant: {
                     id: string;
@@ -88,14 +89,14 @@ export declare class RentScheduleService {
                 updatedAt: Date;
                 notes: string | null;
                 ownerId: string;
-                propertyId: string;
                 startDate: Date;
                 endDate: Date;
+                terminationDate: Date | null;
                 rentFrequency: import(".prisma/client").$Enums.RentFrequency;
                 installmentAmount: import("@prisma/client/runtime/library").Decimal;
                 dueDay: number;
                 securityDeposit: import("@prisma/client/runtime/library").Decimal | null;
-                unitId: string;
+                propertyId: string;
                 tenantId: string;
             };
         } & {
@@ -115,7 +116,7 @@ export declare class RentScheduleService {
             totalPages: number;
         };
     }>;
-    findOutstanding(ownerId: string, propertyId?: string, from?: string, to?: string): Promise<({
+    findOutstanding(userId: string, role: UserRole, propertyId?: string, from?: string, to?: string): Promise<({
         lease: {
             property: {
                 id: string;
@@ -126,18 +127,11 @@ export declare class RentScheduleService {
                 country: import(".prisma/client").$Enums.Country;
                 emirateOrState: string | null;
                 currency: import(".prisma/client").$Enums.Currency;
+                unitNo: string | null;
+                bedrooms: number | null;
+                status: import(".prisma/client").$Enums.UnitStatus | null;
                 notes: string | null;
                 ownerId: string;
-            };
-            unit: {
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                notes: string | null;
-                unitNo: string;
-                bedrooms: number | null;
-                status: import(".prisma/client").$Enums.UnitStatus;
-                propertyId: string;
             };
             tenant: {
                 id: string;
@@ -156,14 +150,14 @@ export declare class RentScheduleService {
             updatedAt: Date;
             notes: string | null;
             ownerId: string;
-            propertyId: string;
             startDate: Date;
             endDate: Date;
+            terminationDate: Date | null;
             rentFrequency: import(".prisma/client").$Enums.RentFrequency;
             installmentAmount: import("@prisma/client/runtime/library").Decimal;
             dueDay: number;
             securityDeposit: import("@prisma/client/runtime/library").Decimal | null;
-            unitId: string;
+            propertyId: string;
             tenantId: string;
         };
     } & {

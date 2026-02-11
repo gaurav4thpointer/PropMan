@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PropertiesService } from './properties.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { PropertyQueryDto } from './dto/property-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
@@ -23,14 +23,9 @@ export class PropertiesController {
 
   @Get()
   @ApiOperation({ summary: 'List properties' })
-  findAll(
-    @CurrentUser() user: User,
-    @Query() pagination: PaginationDto,
-    @Query('search') search?: string,
-    @Query('country') country?: string,
-    @Query('currency') currency?: string,
-  ) {
-    return this.propertiesService.findAll(user.id, user.role, pagination, { search, country, currency });
+  findAll(@CurrentUser() user: User, @Query() query: PropertyQueryDto) {
+    const { page, limit, ...filters } = query;
+    return this.propertiesService.findAll(user.id, user.role, { page, limit }, filters);
   }
 
   @Get(':id')

@@ -8,6 +8,5 @@ export declare class CreatePaymentDto {
     leaseId: string;
     tenantId: string;
     propertyId: string;
-    unitId: string;
     chequeId?: string;
 }

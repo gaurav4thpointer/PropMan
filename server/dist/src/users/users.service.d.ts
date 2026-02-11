@@ -11,6 +11,7 @@ export declare class UsersService {
         name: string | null;
         mobile: string | null;
         gender: import(".prisma/client").$Enums.Gender | null;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
     }>;
     findByEmail(email: string): Promise<{
@@ -20,6 +21,7 @@ export declare class UsersService {
         name: string | null;
         mobile: string | null;
         gender: import(".prisma/client").$Enums.Gender | null;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
         updatedAt: Date;
     } | null>;
@@ -29,7 +31,24 @@ export declare class UsersService {
         name: string | null;
         mobile: string | null;
         gender: import(".prisma/client").$Enums.Gender | null;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
+    }>;
+    findAll(page?: number, limit?: number, search?: string): Promise<{
+        data: {
+            id: string;
+            email: string;
+            name: string | null;
+            mobile: string | null;
+            role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
+        }[];
+        meta: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
     }>;
     updateProfile(id: string, dto: UpdateProfileDto): Promise<{
         id: string;
@@ -37,9 +56,13 @@ export declare class UsersService {
         name: string | null;
         mobile: string | null;
         gender: import(".prisma/client").$Enums.Gender | null;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
     }>;
     changePassword(id: string, dto: ChangePasswordDto): Promise<{
+        message: string;
+    }>;
+    resetPassword(userId: string, newPassword: string): Promise<{
         message: string;
     }>;
 }

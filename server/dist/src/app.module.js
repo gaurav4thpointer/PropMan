@@ -10,16 +10,18 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_module_1 = require("./prisma/prisma.module");
+const access_module_1 = require("./access/access.module");
 const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
 const properties_module_1 = require("./properties/properties.module");
-const units_module_1 = require("./units/units.module");
 const tenants_module_1 = require("./tenants/tenants.module");
 const leases_module_1 = require("./leases/leases.module");
 const rent_schedule_module_1 = require("./rent-schedule/rent-schedule.module");
 const cheques_module_1 = require("./cheques/cheques.module");
 const payments_module_1 = require("./payments/payments.module");
 const reports_module_1 = require("./reports/reports.module");
+const admin_module_1 = require("./admin/admin.module");
+const config_module_1 = require("./config/config.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -28,10 +30,12 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             prisma_module_1.PrismaModule,
+            access_module_1.AccessModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
+            admin_module_1.AdminModule,
+            config_module_1.AppConfigModule,
             properties_module_1.PropertiesModule,
-            units_module_1.UnitsModule,
             tenants_module_1.TenantsModule,
             leases_module_1.LeasesModule,
             rent_schedule_module_1.RentScheduleModule,

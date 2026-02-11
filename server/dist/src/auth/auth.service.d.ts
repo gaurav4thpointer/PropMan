@@ -11,6 +11,7 @@ export declare class AuthService {
             id: string;
             email: string;
             name: string | null;
+            role: import(".prisma/client").$Enums.UserRole;
         };
         access_token: string;
     }>;
@@ -18,6 +19,8 @@ export declare class AuthService {
         user: {
             id: string;
             email: string;
+            name: string | null;
+            role: import(".prisma/client").$Enums.UserRole;
         };
         access_token: string;
     }>;
@@ -27,6 +30,7 @@ export declare class AuthService {
         name: string | null;
         mobile: string | null;
         gender: import(".prisma/client").$Enums.Gender | null;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
     }>;
 }

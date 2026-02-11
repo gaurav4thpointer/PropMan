@@ -12,6 +12,15 @@ export function isLeaseTerminated(lease: { terminationDate?: string | null }): b
   return Boolean(lease.terminationDate)
 }
 
+/** True if the lease start date is after today (hasn't started yet). */
+export function isLeaseFuture(startDate: string): boolean {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const start = new Date(startDate)
+  start.setHours(0, 0, 0, 0)
+  return start > today
+}
+
 /** Days overdue from due date (0 if not overdue). Date-only comparison with today. */
 export function getDaysOverdue(dueDate: string): number {
   const today = new Date()

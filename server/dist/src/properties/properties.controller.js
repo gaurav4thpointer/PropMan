@@ -18,7 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const properties_service_1 = require("./properties.service");
 const create_property_dto_1 = require("./dto/create-property.dto");
 const update_property_dto_1 = require("./dto/update-property.dto");
-const pagination_dto_1 = require("../common/dto/pagination.dto");
+const property_query_dto_1 = require("./dto/property-query.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 let PropertiesController = class PropertiesController {
@@ -26,19 +26,20 @@ let PropertiesController = class PropertiesController {
         this.propertiesService = propertiesService;
     }
     create(user, dto) {
-        return this.propertiesService.create(user.id, dto);
+        return this.propertiesService.create(user.id, user.role, dto);
     }
-    findAll(user, pagination) {
-        return this.propertiesService.findAll(user.id, pagination);
+    findAll(user, query) {
+        const { page, limit, ...filters } = query;
+        return this.propertiesService.findAll(user.id, user.role, { page, limit }, filters);
     }
     findOne(user, id) {
-        return this.propertiesService.findOne(user.id, id);
+        return this.propertiesService.findOne(user.id, user.role, id);
     }
     update(user, id, dto) {
-        return this.propertiesService.update(user.id, id, dto);
+        return this.propertiesService.update(user.id, user.role, id, dto);
     }
     remove(user, id) {
-        return this.propertiesService.remove(user.id, id);
+        return this.propertiesService.remove(user.id, user.role, id);
     }
 };
 exports.PropertiesController = PropertiesController;
@@ -57,7 +58,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, pagination_dto_1.PaginationDto]),
+    __metadata("design:paramtypes", [Object, property_query_dto_1.PropertyQueryDto]),
     __metadata("design:returntype", void 0)
 ], PropertiesController.prototype, "findAll", null);
 __decorate([

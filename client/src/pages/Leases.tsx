@@ -4,7 +4,8 @@ import { leases as leasesApi, properties as propertiesApi } from '../api/client'
 import type { Lease, Property } from '../api/types'
 import LeaseForm from '../components/LeaseForm'
 import DataTable, { type DataTableColumn } from '../components/DataTable'
-import { isLeaseExpired, isLeaseTerminated } from '../utils/lease'
+import { isLeaseExpired, isLeaseTerminated, isLeaseFuture } from '../utils/lease'
+import { formatLeaseCode } from '../utils/ids'
 
 const FETCH_LIMIT = 100
 
@@ -56,6 +57,20 @@ export default function Leases() {
 
   const columns: DataTableColumn<Lease>[] = [
     {
+      key: 'id',
+      label: 'Lease code',
+      searchable: true,
+      render: (l) => (
+        <Link
+          to={`/leases/${l.id}`}
+          className="text-xs text-indigo-600 hover:text-indigo-700 hover:underline"
+          title={l.id}
+        >
+          {formatLeaseCode(l.id)}
+        </Link>
+      ),
+    },
+    {
       key: 'propertyUnit',
       label: 'Property / Unit',
       searchable: true,
@@ -64,9 +79,9 @@ export default function Leases() {
       render: (l) => (
         <>
           {l.propertyId ? (
-            <Link to={`/properties/${l.propertyId}`} className="font-semibold text-indigo-600 hover:underline">{l.property?.name ?? 'Property'}</Link>
+            <Link to={`/properties/${l.propertyId}`} className="text-indigo-600 hover:underline">{l.property?.name ?? 'Property'}</Link>
           ) : (
-            <span className="font-semibold text-slate-800">{l.property?.name ?? '–'}</span>
+            <span className="text-slate-800">{l.property?.name ?? '–'}</span>
           )}
           <span className="text-slate-500"> / {l.property?.unitNo ?? '–'}</span>
         </>
@@ -93,6 +108,7 @@ export default function Leases() {
       render: (l) => {
         const expired = isLeaseExpired(l.endDate)
         const terminated = isLeaseTerminated(l)
+        const future = isLeaseFuture(l.startDate)
         return (
           <span className="text-slate-600">
             {formatDate(l.startDate)} – {formatDate(l.endDate)}
@@ -101,6 +117,9 @@ export default function Leases() {
             )}
             {terminated && !expired && (
               <span className="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">Terminated early</span>
+            )}
+            {future && !expired && !terminated && (
+              <span className="ml-2 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">Future</span>
             )}
           </span>
         )
@@ -111,16 +130,7 @@ export default function Leases() {
       label: 'Rent',
       sortKey: 'installmentAmount',
       getSortValue: (l) => Number(l.installmentAmount),
-      render: (l) => <span className="font-medium">{formatNum(Number(l.installmentAmount))} / {l.rentFrequency}</span>,
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      sortable: false,
-      align: 'right',
-      render: (l) => (
-        <Link to={`/leases/${l.id}`} className="text-sm font-medium text-indigo-600 hover:underline">View lease</Link>
-      ),
+      render: (l) => <span className="text-slate-700">{formatNum(Number(l.installmentAmount))} / {l.rentFrequency}</span>,
     },
   ]
 

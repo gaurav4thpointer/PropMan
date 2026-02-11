@@ -11,23 +11,26 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentsService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
-const pagination_dto_1 = require("../common/dto/pagination.dto");
 const client_1 = require("@prisma/client");
+const prisma_service_1 = require("../prisma/prisma.service");
+const access_service_1 = require("../access/access.service");
+const pagination_dto_1 = require("../common/dto/pagination.dto");
+const client_2 = require("@prisma/client");
 const library_1 = require("@prisma/client/runtime/library");
 let PaymentsService = class PaymentsService {
-    constructor(prisma) {
+    constructor(prisma, accessService) {
         this.prisma = prisma;
+        this.accessService = accessService;
     }
-    async create(ownerId, dto) {
-        await this.ensureLeaseOwned(ownerId, dto.leaseId);
+    async create(userId, role, dto) {
+        const lease = await this.ensureLeaseAccessible(userId, role, dto.leaseId);
+        const ownerId = role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN ? userId : lease.ownerId;
         return this.prisma.payment.create({
             data: {
                 ownerId,
                 leaseId: dto.leaseId,
                 tenantId: dto.tenantId,
                 propertyId: dto.propertyId,
-                unitId: dto.unitId,
                 date: new Date(dto.date),
                 amount: new library_1.Decimal(dto.amount),
                 method: dto.method,
@@ -35,40 +38,65 @@ let PaymentsService = class PaymentsService {
                 notes: dto.notes,
                 chequeId: dto.chequeId,
             },
-            include: { lease: true, tenant: true, property: true, unit: true },
+            include: { lease: true, tenant: true, property: true },
         });
     }
-    async findAll(ownerId, pagination, leaseId) {
+    async findAll(userId, role, pagination, filters) {
         const { page = 1, limit = 20 } = pagination;
-        const where = { ownerId, ...(leaseId && { leaseId }) };
+        const where = role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN
+            ? { ownerId: userId }
+            : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) } };
+        if (role !== client_1.UserRole.USER && role !== client_1.UserRole.SUPER_ADMIN && where.propertyId.in.length === 0) {
+            return (0, pagination_dto_1.paginatedResponse)([], 0, page, limit);
+        }
+        if (filters?.leaseId)
+            where.leaseId = filters.leaseId;
+        if (filters?.propertyId)
+            where.propertyId = filters.propertyId;
+        if (filters?.tenantId)
+            where.tenantId = filters.tenantId;
+        if (filters?.search?.trim()) {
+            const q = filters.search.trim();
+            where.OR = [
+                { reference: { contains: q, mode: 'insensitive' } },
+                { tenant: { name: { contains: q, mode: 'insensitive' } } },
+            ];
+        }
         const [data, total] = await Promise.all([
             this.prisma.payment.findMany({
-                where,
-                include: { lease: true, tenant: true, property: true, unit: true },
+                where: where,
+                include: { lease: true, tenant: true, property: true },
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { date: 'desc' },
             }),
-            this.prisma.payment.count({ where }),
+            this.prisma.payment.count({ where: where }),
         ]);
         return (0, pagination_dto_1.paginatedResponse)(data, total, page, limit);
     }
-    async findOne(ownerId, id) {
-        const payment = await this.prisma.payment.findFirst({
-            where: { id, ownerId },
-            include: { lease: true, tenant: true, property: true, unit: true, scheduleMatches: { include: { rentSchedule: true } } },
+    async findOne(userId, role, id) {
+        const payment = await this.prisma.payment.findUnique({
+            where: { id },
+            include: { lease: true, tenant: true, property: true, scheduleMatches: { include: { rentSchedule: true } } },
         });
         if (!payment)
             throw new common_1.NotFoundException('Payment not found');
+        const canAccess = await this.accessService.canAccessProperty(userId, role, payment.propertyId);
+        if (!canAccess)
+            throw new common_1.NotFoundException('Payment not found');
         return payment;
     }
-    async matchToSchedule(ownerId, paymentId, matches) {
-        const payment = await this.findOne(ownerId, paymentId);
+    async matchToSchedule(userId, role, paymentId, matches) {
+        const payment = await this.findOne(userId, role, paymentId);
         const totalPayment = Number(payment.amount);
+        const accessibleIds = await this.accessService.getAccessiblePropertyIds(userId, role);
         let applied = 0;
         for (const m of matches) {
             const schedule = await this.prisma.rentSchedule.findFirst({
-                where: { id: m.rentScheduleId, lease: { ownerId } },
+                where: {
+                    id: m.rentScheduleId,
+                    lease: { propertyId: { in: accessibleIds } },
+                },
             });
             if (!schedule)
                 throw new common_1.NotFoundException(`RentSchedule ${m.rentScheduleId} not found`);
@@ -101,7 +129,7 @@ let PaymentsService = class PaymentsService {
                 _sum: { amount: true },
             });
             const totalPaid = Number(agg._sum.amount ?? 0);
-            let status = totalPaid >= expected ? client_1.ScheduleStatus.PAID : totalPaid > 0 ? client_1.ScheduleStatus.PARTIAL : new Date(schedule.dueDate) < new Date() ? client_1.ScheduleStatus.OVERDUE : client_1.ScheduleStatus.DUE;
+            let status = totalPaid >= expected ? client_2.ScheduleStatus.PAID : totalPaid > 0 ? client_2.ScheduleStatus.PARTIAL : new Date(schedule.dueDate) < new Date() ? client_2.ScheduleStatus.OVERDUE : client_2.ScheduleStatus.DUE;
             await this.prisma.rentSchedule.update({
                 where: { id: rentScheduleId },
                 data: {
@@ -110,23 +138,28 @@ let PaymentsService = class PaymentsService {
                 },
             });
         }
-        return this.findOne(ownerId, paymentId);
+        return this.findOne(userId, role, paymentId);
     }
-    async remove(ownerId, id) {
-        const payment = await this.findOne(ownerId, id);
+    async remove(userId, role, id) {
+        const payment = await this.findOne(userId, role, id);
         await this.prisma.paymentScheduleMatch.deleteMany({ where: { paymentId: id } });
         await this.prisma.payment.delete({ where: { id } });
         return { deleted: true };
     }
-    async ensureLeaseOwned(ownerId, leaseId) {
-        const lease = await this.prisma.lease.findFirst({ where: { id: leaseId, ownerId } });
+    async ensureLeaseAccessible(userId, role, leaseId) {
+        const lease = await this.prisma.lease.findUnique({ where: { id: leaseId } });
         if (!lease)
             throw new common_1.NotFoundException('Lease not found');
+        const canAccess = await this.accessService.canAccessProperty(userId, role, lease.propertyId);
+        if (!canAccess)
+            throw new common_1.NotFoundException('Lease not found');
+        return lease;
     }
 };
 exports.PaymentsService = PaymentsService;
 exports.PaymentsService = PaymentsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        access_service_1.AccessService])
 ], PaymentsService);
 //# sourceMappingURL=payments.service.js.map

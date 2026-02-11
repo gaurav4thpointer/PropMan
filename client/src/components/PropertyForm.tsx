@@ -38,11 +38,13 @@ export default function PropertyForm({
   onSaved,
   onCancel,
   onSavedWithNew,
+  inline,
 }: {
   property?: Property
   onSaved: () => void
   onCancel: () => void
   onSavedWithNew?: (property: Property) => void
+  inline?: boolean
 }) {
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -137,81 +139,94 @@ export default function PropertyForm({
     <div className="card mb-8 p-6">
       <h2 className="mb-5 text-lg font-bold text-slate-800">{property ? 'Edit property' : 'New property'}</h2>
       {apiError && <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{apiError}</div>}
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-xl space-y-4">
-        <div>
-          <label className="mb-1.5 block text-sm font-semibold text-slate-700">Name *</label>
-          <input {...register('name')} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none transition-all duration-200" placeholder="Property name" />
-          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Unit number</label>
-            <input {...register('unitNo')} placeholder="e.g. 101, A-1" className="w-full rounded-lg border border-slate-300 px-3 py-2" />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Bedrooms</label>
-            <input type="number" min={0} step={1} {...register('bedrooms', { setValueAs: (v) => (v === '' || v === undefined ? undefined : Number(v)) })} className="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="0" />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
-            <select {...register('status')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
-              <option value="VACANT">Vacant</option>
-              <option value="OCCUPIED">Occupied</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
-          <input {...register('address')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
-            <select {...register('country')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
-              {availableCountries.map((c) => (
-                <option key={c} value={c}>
-                  {c === 'IN'
-                    ? 'India'
-                    : c === 'AE'
-                    ? 'UAE'
-                    : c === 'US'
-                    ? 'United States'
-                    : c === 'GB'
-                    ? 'United Kingdom'
-                    : c === 'SG'
-                    ? 'Singapore'
-                    : c === 'SA'
-                    ? 'Saudi Arabia'
-                    : c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
-            <select {...register('currency')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
-              {availableCurrencies.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">State / Emirate</label>
-          <input {...register('emirateOrState')} className="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="e.g. Maharashtra or Dubai" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-          <textarea {...register('notes')} rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
-        </div>
+      {(() => {
+        const Wrapper = inline ? 'div' : 'form'
+        const wrapperProps = inline ? {} : { onSubmit: handleSubmit(onSubmit) }
+        return (
+          <Wrapper {...(wrapperProps as React.HTMLAttributes<HTMLElement>)} className="max-w-xl space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Name *</label>
+              <input {...register('name')} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none transition-all duration-200" placeholder="Property name" />
+              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Unit number</label>
+                <input {...register('unitNo')} placeholder="e.g. 101, A-1" className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Bedrooms</label>
+                <input type="number" min={0} step={1} {...register('bedrooms', { setValueAs: (v) => (v === '' || v === undefined ? undefined : Number(v)) })} className="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="0" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
+                <select {...register('status')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
+                  <option value="VACANT">Vacant</option>
+                  <option value="OCCUPIED">Occupied</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+              <input {...register('address')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
+                <select {...register('country')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
+                  {availableCountries.map((c) => (
+                    <option key={c} value={c}>
+                      {c === 'IN'
+                        ? 'India'
+                        : c === 'AE'
+                        ? 'UAE'
+                        : c === 'US'
+                        ? 'United States'
+                        : c === 'GB'
+                        ? 'United Kingdom'
+                        : c === 'SG'
+                        ? 'Singapore'
+                        : c === 'SA'
+                        ? 'Saudi Arabia'
+                        : c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
+                <select {...register('currency')} className="w-full rounded-lg border border-slate-300 px-3 py-2">
+                  {availableCurrencies.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">State / Emirate</label>
+              <input {...register('emirateOrState')} className="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="e.g. Maharashtra or Dubai" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+              <textarea {...register('notes')} rows={2} className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            </div>
 
-        <div className="flex gap-3">
-          <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? 'Saving…' : 'Save'}</button>
-          <button type="button" onClick={onCancel} className="btn-secondary" disabled={submitting}>Cancel</button>
-        </div>
-      </form>
+            <div className="flex gap-3">
+              <button
+                type={inline ? 'button' : 'submit'}
+                onClick={inline ? handleSubmit(onSubmit) : undefined}
+                className="btn-primary"
+                disabled={submitting}
+              >
+                {submitting ? 'Saving…' : 'Save'}
+              </button>
+              <button type="button" onClick={onCancel} className="btn-secondary" disabled={submitting}>Cancel</button>
+            </div>
+          </Wrapper>
+        )
+      })()}
     </div>
   )
 }

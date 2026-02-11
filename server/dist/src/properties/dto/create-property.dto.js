@@ -11,11 +11,18 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreatePropertyDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const client_1 = require("@prisma/client");
 class CreatePropertyDto {
 }
 exports.CreatePropertyDto = CreatePropertyDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Required when creating as property manager (on behalf of owner)' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreatePropertyDto.prototype, "ownerId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsString)(),
@@ -43,6 +50,26 @@ __decorate([
     (0, class_validator_1.IsEnum)(client_1.Currency),
     __metadata("design:type", String)
 ], CreatePropertyDto.prototype, "currency", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Unit number e.g. 101, A-2 (one property = one rentable unit)' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreatePropertyDto.prototype, "unitNo", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], CreatePropertyDto.prototype, "bedrooms", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: client_1.UnitStatus, default: client_1.UnitStatus.VACANT }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.UnitStatus),
+    __metadata("design:type", String)
+], CreatePropertyDto.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),

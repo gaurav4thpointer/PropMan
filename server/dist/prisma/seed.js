@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const prisma = new client_1.PrismaClient();
 async function main() {
     const hashed = await bcrypt.hash('password123', 10);
+    const adminHashed = await bcrypt.hash('admin123', 10);
     const user = await prisma.user.upsert({
         where: { email: 'owner@example.com' },
         update: {},
@@ -14,136 +15,161 @@ async function main() {
             name: 'Demo Owner',
         },
     });
-    const propMumbai = await prisma.property.upsert({
-        where: { id: 'seed-property-in-1' },
+    await prisma.user.upsert({
+        where: { email: 'admin@propman.com' },
+        update: { role: client_1.UserRole.SUPER_ADMIN, password: adminHashed, name: 'Super Admin' },
+        create: {
+            email: 'admin@propman.com',
+            password: adminHashed,
+            name: 'Super Admin',
+            role: client_1.UserRole.SUPER_ADMIN,
+        },
+    });
+    const propMumbai101 = await prisma.property.upsert({
+        where: { id: 'seed-property-in-101' },
         update: {},
         create: {
-            id: 'seed-property-in-1',
-            name: 'Mumbai Apartment',
+            id: 'seed-property-in-101',
+            name: 'Mumbai Apartment - 101',
             address: 'Andheri West, Mumbai 400058',
             country: client_1.Country.IN,
             emirateOrState: 'Maharashtra',
             currency: client_1.Currency.INR,
+            unitNo: '101',
+            bedrooms: 2,
+            status: client_1.UnitStatus.OCCUPIED,
             notes: 'India property - monthly rent',
             ownerId: user.id,
         },
     });
-    const unitMumbai101 = await prisma.unit.upsert({
-        where: { id: 'seed-unit-mum-101' },
+    const propMumbai102 = await prisma.property.upsert({
+        where: { id: 'seed-property-in-102' },
         update: {},
         create: {
-            id: 'seed-unit-mum-101',
-            unitNo: '101',
-            bedrooms: 2,
-            status: client_1.UnitStatus.OCCUPIED,
-            propertyId: propMumbai.id,
-        },
-    });
-    const unitMumbai102 = await prisma.unit.upsert({
-        where: { id: 'seed-unit-mum-102' },
-        update: {},
-        create: {
-            id: 'seed-unit-mum-102',
+            id: 'seed-property-in-102',
+            name: 'Mumbai Apartment - 102',
+            address: 'Andheri West, Mumbai 400058',
+            country: client_1.Country.IN,
+            emirateOrState: 'Maharashtra',
+            currency: client_1.Currency.INR,
             unitNo: '102',
             bedrooms: 3,
             status: client_1.UnitStatus.OCCUPIED,
-            propertyId: propMumbai.id,
+            notes: 'India property',
+            ownerId: user.id,
         },
     });
-    const unitMumbai201 = await prisma.unit.upsert({
-        where: { id: 'seed-unit-mum-201' },
+    const propMumbai201 = await prisma.property.upsert({
+        where: { id: 'seed-property-in-201' },
         update: {},
         create: {
-            id: 'seed-unit-mum-201',
+            id: 'seed-property-in-201',
+            name: 'Mumbai Apartment - 201',
+            address: 'Andheri West, Mumbai 400058',
+            country: client_1.Country.IN,
+            emirateOrState: 'Maharashtra',
+            currency: client_1.Currency.INR,
             unitNo: '201',
             bedrooms: 2,
             status: client_1.UnitStatus.VACANT,
-            propertyId: propMumbai.id,
+            ownerId: user.id,
         },
     });
-    const propBangalore = await prisma.property.create({
+    const propBlr1 = await prisma.property.create({
         data: {
-            name: 'Koramangala Residency',
+            name: 'Koramangala Residency - A-101',
             address: 'Koramangala 5th Block, Bengaluru 560034',
             country: client_1.Country.IN,
             emirateOrState: 'Karnataka',
             currency: client_1.Currency.INR,
+            unitNo: 'A-101',
+            bedrooms: 2,
+            status: client_1.UnitStatus.OCCUPIED,
             notes: 'Bangalore property',
             ownerId: user.id,
         },
     });
-    const unitBlr1 = await prisma.unit.create({
-        data: { unitNo: 'A-101', bedrooms: 2, status: client_1.UnitStatus.OCCUPIED, propertyId: propBangalore.id },
-    });
-    const unitBlr2 = await prisma.unit.create({
-        data: { unitNo: 'A-102', bedrooms: 2, status: client_1.UnitStatus.OCCUPIED, propertyId: propBangalore.id },
-    });
-    const propDelhi = await prisma.property.create({
+    const propBlr2 = await prisma.property.create({
         data: {
-            name: 'Saket Greens',
+            name: 'Koramangala Residency - A-102',
+            address: 'Koramangala 5th Block, Bengaluru 560034',
+            country: client_1.Country.IN,
+            emirateOrState: 'Karnataka',
+            currency: client_1.Currency.INR,
+            unitNo: 'A-102',
+            bedrooms: 2,
+            status: client_1.UnitStatus.OCCUPIED,
+            ownerId: user.id,
+        },
+    });
+    const propDelhi1 = await prisma.property.create({
+        data: {
+            name: 'Saket Greens - 101',
             address: 'Saket, New Delhi 110017',
             country: client_1.Country.IN,
             emirateOrState: 'Delhi',
             currency: client_1.Currency.INR,
+            unitNo: '101',
+            bedrooms: 3,
+            status: client_1.UnitStatus.OCCUPIED,
             ownerId: user.id,
         },
     });
-    const unitDelhi1 = await prisma.unit.create({
-        data: { unitNo: '101', bedrooms: 3, status: client_1.UnitStatus.OCCUPIED, propertyId: propDelhi.id },
-    });
-    const propDubaiMarina = await prisma.property.upsert({
-        where: { id: 'seed-property-ae-1' },
+    const propMarina2201 = await prisma.property.upsert({
+        where: { id: 'seed-property-ae-2201' },
         update: {},
         create: {
-            id: 'seed-property-ae-1',
-            name: 'Dubai Marina Tower',
+            id: 'seed-property-ae-2201',
+            name: 'Dubai Marina Tower - 2201',
             address: 'Marina, Dubai',
             country: client_1.Country.AE,
             emirateOrState: 'Dubai',
             currency: client_1.Currency.AED,
+            unitNo: '2201',
+            bedrooms: 3,
+            status: client_1.UnitStatus.OCCUPIED,
             notes: 'Dubai property - quarterly rent',
             ownerId: user.id,
         },
     });
-    const unitMarina2201 = await prisma.unit.upsert({
-        where: { id: 'seed-unit-ae-2201' },
-        update: {},
-        create: {
-            id: 'seed-unit-ae-2201',
-            unitNo: '2201',
-            bedrooms: 3,
+    const propMarina2202 = await prisma.property.create({
+        data: {
+            name: 'Dubai Marina Tower - 2202',
+            address: 'Marina, Dubai',
+            country: client_1.Country.AE,
+            emirateOrState: 'Dubai',
+            currency: client_1.Currency.AED,
+            unitNo: '2202',
+            bedrooms: 2,
             status: client_1.UnitStatus.OCCUPIED,
-            propertyId: propDubaiMarina.id,
+            ownerId: user.id,
         },
     });
-    const unitMarina2202 = await prisma.unit.create({
-        data: { unitNo: '2202', bedrooms: 2, status: client_1.UnitStatus.OCCUPIED, propertyId: propDubaiMarina.id },
-    });
-    const propJBR = await prisma.property.create({
+    const propJBR1 = await prisma.property.create({
         data: {
-            name: 'JBR The Walk',
+            name: 'JBR The Walk - 1505',
             address: 'Jumeirah Beach Residence, Dubai',
             country: client_1.Country.AE,
             emirateOrState: 'Dubai',
             currency: client_1.Currency.AED,
+            unitNo: '1505',
+            bedrooms: 2,
+            status: client_1.UnitStatus.OCCUPIED,
             ownerId: user.id,
         },
     });
-    const unitJBR1 = await prisma.unit.create({
-        data: { unitNo: '1505', bedrooms: 2, status: client_1.UnitStatus.OCCUPIED, propertyId: propJBR.id },
-    });
-    const propDowntown = await prisma.property.create({
+    const propDowntown1 = await prisma.property.create({
         data: {
-            name: 'Downtown Boulevard',
+            name: 'Downtown Boulevard - 3201',
             address: 'Downtown Dubai',
             country: client_1.Country.AE,
             emirateOrState: 'Dubai',
             currency: client_1.Currency.AED,
+            unitNo: '3201',
+            bedrooms: 4,
+            status: client_1.UnitStatus.VACANT,
             ownerId: user.id,
         },
-    });
-    const unitDowntown1 = await prisma.unit.create({
-        data: { unitNo: '3201', bedrooms: 4, status: client_1.UnitStatus.VACANT, propertyId: propDowntown.id },
     });
     const tenantRaj = await prisma.tenant.upsert({
         where: { id: 'seed-tenant-raj' },
@@ -214,8 +240,7 @@ async function main() {
         update: {},
         create: {
             id: 'seed-lease-mum-101',
-            propertyId: propMumbai.id,
-            unitId: unitMumbai101.id,
+            propertyId: propMumbai101.id,
             tenantId: tenantRaj.id,
             ownerId: user.id,
             startDate: new Date('2026-01-01'),
@@ -259,8 +284,7 @@ async function main() {
     }
     const leaseMumbai102 = await prisma.lease.create({
         data: {
-            propertyId: propMumbai.id,
-            unitId: unitMumbai102.id,
+            propertyId: propMumbai102.id,
             tenantId: tenantPriya.id,
             ownerId: user.id,
             startDate: new Date('2026-02-01'),
@@ -285,8 +309,7 @@ async function main() {
     }
     const leaseBlr = await prisma.lease.create({
         data: {
-            propertyId: propBangalore.id,
-            unitId: unitBlr1.id,
+            propertyId: propBlr1.id,
             tenantId: tenantVikram.id,
             ownerId: user.id,
             startDate: new Date('2026-01-01'),
@@ -310,8 +333,7 @@ async function main() {
     }
     const leaseBlr2 = await prisma.lease.create({
         data: {
-            propertyId: propBangalore.id,
-            unitId: unitBlr2.id,
+            propertyId: propBlr2.id,
             tenantId: tenantSuresh.id,
             ownerId: user.id,
             startDate: new Date('2026-03-01'),
@@ -333,8 +355,7 @@ async function main() {
     }
     const leaseDelhi = await prisma.lease.create({
         data: {
-            propertyId: propDelhi.id,
-            unitId: unitDelhi1.id,
+            propertyId: propDelhi1.id,
             tenantId: tenantVikram.id,
             ownerId: user.id,
             startDate: new Date('2026-01-01'),
@@ -359,8 +380,7 @@ async function main() {
         update: {},
         create: {
             id: 'seed-lease-ae-marina',
-            propertyId: propDubaiMarina.id,
-            unitId: unitMarina2201.id,
+            propertyId: propMarina2201.id,
             tenantId: tenantAhmed.id,
             ownerId: user.id,
             startDate: new Date('2026-01-01'),
@@ -387,8 +407,7 @@ async function main() {
     }
     const leaseMarina2202 = await prisma.lease.create({
         data: {
-            propertyId: propDubaiMarina.id,
-            unitId: unitMarina2202.id,
+            propertyId: propMarina2202.id,
             tenantId: tenantFatima.id,
             ownerId: user.id,
             startDate: new Date('2026-02-01'),
@@ -406,8 +425,7 @@ async function main() {
     }
     const leaseJBR = await prisma.lease.create({
         data: {
-            propertyId: propJBR.id,
-            unitId: unitJBR1.id,
+            propertyId: propJBR1.id,
             tenantId: tenantOmar.id,
             ownerId: user.id,
             startDate: new Date('2026-01-15'),
@@ -435,8 +453,7 @@ async function main() {
             id: 'seed-cheque-dq1',
             leaseId: leaseDubaiMarina.id,
             tenantId: tenantAhmed.id,
-            propertyId: propDubaiMarina.id,
-            unitId: unitMarina2201.id,
+            propertyId: propMarina2201.id,
             ownerId: user.id,
             chequeNumber: 'DQ001',
             bankName: 'Emirates NBD',
@@ -455,8 +472,7 @@ async function main() {
             id: 'seed-cheque-dq2',
             leaseId: leaseDubaiMarina.id,
             tenantId: tenantAhmed.id,
-            propertyId: propDubaiMarina.id,
-            unitId: unitMarina2201.id,
+            propertyId: propMarina2201.id,
             ownerId: user.id,
             chequeNumber: 'DQ002',
             bankName: 'Emirates NBD',
@@ -474,8 +490,7 @@ async function main() {
             id: 'seed-cheque-dq3',
             leaseId: leaseDubaiMarina.id,
             tenantId: tenantAhmed.id,
-            propertyId: propDubaiMarina.id,
-            unitId: unitMarina2201.id,
+            propertyId: propMarina2201.id,
             ownerId: user.id,
             chequeNumber: 'DQ003',
             bankName: 'Emirates NBD',
@@ -490,8 +505,7 @@ async function main() {
             {
                 leaseId: leaseMumbai101.id,
                 tenantId: tenantRaj.id,
-                propertyId: propMumbai.id,
-                unitId: unitMumbai101.id,
+                propertyId: propMumbai101.id,
                 ownerId: user.id,
                 chequeNumber: 'INR-001',
                 bankName: 'HDFC Bank',
@@ -505,8 +519,7 @@ async function main() {
             {
                 leaseId: leaseMumbai101.id,
                 tenantId: tenantRaj.id,
-                propertyId: propMumbai.id,
-                unitId: unitMumbai101.id,
+                propertyId: propMumbai101.id,
                 ownerId: user.id,
                 chequeNumber: 'INR-002',
                 bankName: 'HDFC Bank',
@@ -520,8 +533,7 @@ async function main() {
             {
                 leaseId: leaseMumbai101.id,
                 tenantId: tenantRaj.id,
-                propertyId: propMumbai.id,
-                unitId: unitMumbai101.id,
+                propertyId: propMumbai101.id,
                 ownerId: user.id,
                 chequeNumber: 'INR-003',
                 bankName: 'HDFC Bank',
@@ -533,8 +545,7 @@ async function main() {
             {
                 leaseId: leaseMumbai102.id,
                 tenantId: tenantPriya.id,
-                propertyId: propMumbai.id,
-                unitId: unitMumbai102.id,
+                propertyId: propMumbai102.id,
                 ownerId: user.id,
                 chequeNumber: 'INR-P01',
                 bankName: 'ICICI Bank',
@@ -552,8 +563,7 @@ async function main() {
         data: {
             leaseId: leaseMumbai101.id,
             tenantId: tenantRaj.id,
-            propertyId: propMumbai.id,
-            unitId: unitMumbai101.id,
+            propertyId: propMumbai101.id,
             ownerId: user.id,
             date: new Date(2026, 0, 5),
             amount: 45000,
@@ -566,8 +576,7 @@ async function main() {
         data: {
             leaseId: leaseBlr.id,
             tenantId: tenantVikram.id,
-            propertyId: propBangalore.id,
-            unitId: unitBlr1.id,
+            propertyId: propBlr1.id,
             ownerId: user.id,
             date: new Date(2026, 0, 2),
             amount: 38000,
@@ -579,8 +588,7 @@ async function main() {
         data: {
             leaseId: leaseJBR.id,
             tenantId: tenantOmar.id,
-            propertyId: propJBR.id,
-            unitId: unitJBR1.id,
+            propertyId: propJBR1.id,
             ownerId: user.id,
             date: new Date(2026, 0, 15),
             amount: 12000,
@@ -592,8 +600,7 @@ async function main() {
         data: {
             leaseId: leaseDelhi.id,
             tenantId: tenantVikram.id,
-            propertyId: propDelhi.id,
-            unitId: unitDelhi1.id,
+            propertyId: propDelhi1.id,
             ownerId: user.id,
             date: new Date(2026, 0, 1),
             amount: 600000,
@@ -681,7 +688,7 @@ async function main() {
             data: { status: client_1.ScheduleStatus.PAID, paidAmount: 600000 },
         });
     }
-    console.log('Seed completed. User:', user.email, '| 5 properties, multiple units, 8 tenants, 8 leases, cheques (incl. bounced), payments + matches.');
+    console.log('Seed completed. Owner:', user.email, '/ password123 | Super admin: admin@propman.com / admin123 | 10 properties, 8 tenants, 8 leases, cheques, payments.');
 }
 main()
     .catch((e) => {

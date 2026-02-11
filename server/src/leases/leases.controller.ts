@@ -4,7 +4,7 @@ import { LeasesService } from './leases.service';
 import { CreateLeaseDto } from './dto/create-lease.dto';
 import { UpdateLeaseDto } from './dto/update-lease.dto';
 import { TerminateLeaseDto } from './dto/terminate-lease.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { LeaseQueryDto } from './dto/lease-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
@@ -24,14 +24,9 @@ export class LeasesController {
 
   @Get()
   @ApiOperation({ summary: 'List leases' })
-  findAll(
-    @CurrentUser() user: User,
-    @Query() pagination: PaginationDto,
-    @Query('propertyId') propertyId?: string,
-    @Query('tenantId') tenantId?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.leasesService.findAll(user.id, user.role, pagination, { propertyId, tenantId, search });
+  findAll(@CurrentUser() user: User, @Query() query: LeaseQueryDto) {
+    const { page, limit, ...filters } = query;
+    return this.leasesService.findAll(user.id, user.role, { page, limit }, filters);
   }
 
   @Get(':id')

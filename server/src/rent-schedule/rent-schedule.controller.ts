@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { RentScheduleService } from './rent-schedule.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { OverdueQueryDto } from './dto/rent-schedule-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
@@ -25,12 +26,9 @@ export class RentScheduleController {
 
   @Get('overdue')
   @ApiOperation({ summary: 'List overdue installments' })
-  findOverdue(
-    @CurrentUser() user: User,
-    @Query('propertyId') propertyId?: string,
-    @Query() pagination?: PaginationDto,
-  ) {
-    return this.rentScheduleService.findOverdue(user.id, user.role, propertyId, pagination);
+  findOverdue(@CurrentUser() user: User, @Query() query: OverdueQueryDto) {
+    const { page, limit, propertyId } = query;
+    return this.rentScheduleService.findOverdue(user.id, user.role, propertyId, { page, limit });
   }
 
   @Get('outstanding')

@@ -1,58 +1,42 @@
 import { PropertiesService } from './properties.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { PropertyQueryDto } from './dto/property-query.dto';
 import { User } from '@prisma/client';
 export declare class PropertiesController {
     private propertiesService;
     constructor(propertiesService: PropertiesService);
     create(user: User, dto: CreatePropertyDto): Promise<{
-        units: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            notes: string | null;
-            unitNo: string;
-            bedrooms: number | null;
-            status: import(".prisma/client").$Enums.UnitStatus;
-            propertyId: string;
-        }[];
-    } & {
-        id: string;
         name: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
         address: string | null;
         country: import(".prisma/client").$Enums.Country;
         emirateOrState: string | null;
         currency: import(".prisma/client").$Enums.Currency;
+        unitNo: string | null;
+        bedrooms: number | null;
+        status: import(".prisma/client").$Enums.UnitStatus | null;
         notes: string | null;
         ownerId: string;
     }>;
-    findAll(user: User, pagination: PaginationDto): Promise<{
-        data: ({
-            units: {
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                notes: string | null;
-                unitNo: string;
-                bedrooms: number | null;
-                status: import(".prisma/client").$Enums.UnitStatus;
-                propertyId: string;
-            }[];
-        } & {
-            id: string;
+    findAll(user: User, query: PropertyQueryDto): Promise<{
+        data: {
             name: string;
+            id: string;
             createdAt: Date;
             updatedAt: Date;
             address: string | null;
             country: import(".prisma/client").$Enums.Country;
             emirateOrState: string | null;
             currency: import(".prisma/client").$Enums.Currency;
+            unitNo: string | null;
+            bedrooms: number | null;
+            status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
             ownerId: string;
-        })[];
+        }[];
         meta: {
             total: number;
             page: number;
@@ -61,48 +45,32 @@ export declare class PropertiesController {
         };
     }>;
     findOne(user: User, id: string): Promise<{
-        units: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            notes: string | null;
-            unitNo: string;
-            bedrooms: number | null;
-            status: import(".prisma/client").$Enums.UnitStatus;
-            propertyId: string;
-        }[];
-    } & {
-        id: string;
         name: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
         address: string | null;
         country: import(".prisma/client").$Enums.Country;
         emirateOrState: string | null;
         currency: import(".prisma/client").$Enums.Currency;
+        unitNo: string | null;
+        bedrooms: number | null;
+        status: import(".prisma/client").$Enums.UnitStatus | null;
         notes: string | null;
         ownerId: string;
     }>;
     update(user: User, id: string, dto: UpdatePropertyDto): Promise<{
-        units: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            notes: string | null;
-            unitNo: string;
-            bedrooms: number | null;
-            status: import(".prisma/client").$Enums.UnitStatus;
-            propertyId: string;
-        }[];
-    } & {
-        id: string;
         name: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
         address: string | null;
         country: import(".prisma/client").$Enums.Country;
         emirateOrState: string | null;
         currency: import(".prisma/client").$Enums.Currency;
+        unitNo: string | null;
+        bedrooms: number | null;
+        status: import(".prisma/client").$Enums.UnitStatus | null;
         notes: string | null;
         ownerId: string;
     }>;

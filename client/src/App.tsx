@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import AdminRoute from './components/AdminRoute'
 import HomeOrApp from './components/HomeOrApp'
@@ -21,6 +21,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminActivity from './pages/admin/AdminActivity'
 import AdminCountries from './pages/admin/AdminCountries'
+import NotFound from './pages/NotFound'
 
 function App() {
   return (
@@ -56,7 +57,7 @@ function App() {
             <Route path="activity" element={<AdminActivity />} />
             <Route path="countries" element={<AdminCountries />} />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
