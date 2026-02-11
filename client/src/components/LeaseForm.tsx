@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -34,6 +35,8 @@ function getApiErrorMessage(err: unknown): string {
 }
 
 export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
+  const [searchParams] = useSearchParams()
+  const preselectedPropertyId = searchParams.get('propertyId') ?? undefined
   const [propertiesList, setPropertiesList] = useState<Property[]>([])
   const [tenantsList, setTenantsList] = useState<Tenant[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
@@ -43,11 +46,16 @@ export default function LeaseForm({ onSaved, onCancel }: { onSaved: () => void; 
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
-    defaultValues: { rentFrequency: 'MONTHLY', dueDay: 5 },
+    defaultValues: { rentFrequency: 'MONTHLY', dueDay: 5, propertyId: preselectedPropertyId },
   })
 
   useEffect(() => {
-    properties.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data))
+    properties.list({ limit: 100 }).then((r) => {
+      setPropertiesList(r.data.data)
+      if (preselectedPropertyId && r.data.data.some((p: Property) => p.id === preselectedPropertyId)) {
+        setValue('propertyId', preselectedPropertyId)
+      }
+    })
     tenants.list({ limit: 100 }).then((r) => setTenantsList(r.data.data))
   }, [])
 

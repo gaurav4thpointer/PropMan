@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { leases as leasesApi, properties as propertiesApi } from '../api/client'
 import type { Lease, Property } from '../api/types'
 import LeaseForm from '../components/LeaseForm'
@@ -57,7 +57,9 @@ function getDaysRemaining(endDate: string): number {
 }
 
 export default function Leases() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const isOnboarding = searchParams.get('onboarding') === 'new'
   const propertyIdFromUrl = searchParams.get('propertyId') ?? ''
   const tenantIdFromUrl = searchParams.get('tenantId') ?? ''
   const statusFromUrl = searchParams.get('status') ?? ''
@@ -318,23 +320,31 @@ export default function Leases() {
       {showForm && (
         <LeaseForm
           onSaved={() => {
-            setShowForm(false)
-            setSearchParams((prev) => {
-              const next = new URLSearchParams(prev)
-              next.delete('onboarding')
-              next.delete('next')
-              return next
-            })
-            load()
+            if (isOnboarding) {
+              navigate(-1)
+            } else {
+              setShowForm(false)
+              setSearchParams((prev) => {
+                const next = new URLSearchParams(prev)
+                next.delete('onboarding')
+                next.delete('next')
+                return next
+              })
+              load()
+            }
           }}
           onCancel={() => {
-            setShowForm(false)
-            setSearchParams((prev) => {
-              const next = new URLSearchParams(prev)
-              next.delete('onboarding')
-              next.delete('next')
-              return next
-            })
+            if (isOnboarding) {
+              navigate(-1)
+            } else {
+              setShowForm(false)
+              setSearchParams((prev) => {
+                const next = new URLSearchParams(prev)
+                next.delete('onboarding')
+                next.delete('next')
+                return next
+              })
+            }
           }}
         />
       )}

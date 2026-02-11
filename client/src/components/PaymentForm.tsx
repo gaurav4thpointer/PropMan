@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -18,21 +19,29 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function PaymentForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
+  const [searchParams] = useSearchParams()
+  const preselectedLeaseId = searchParams.get('leaseId') ?? undefined
   const [leasesList, setLeasesList] = useState<Lease[]>([])
   const [leasesError, setLeasesError] = useState<string | null>(null)
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
-    defaultValues: { method: 'BANK_TRANSFER' },
+    defaultValues: { method: 'BANK_TRANSFER', leaseId: preselectedLeaseId },
   })
 
   const leaseId = watch('leaseId')
 
   useEffect(() => {
     leases.list({ limit: 100 })
-      .then((r) => { setLeasesList(r.data.data); setLeasesError(null) })
+      .then((r) => {
+        setLeasesList(r.data.data)
+        setLeasesError(null)
+        if (preselectedLeaseId && r.data.data.some((l: Lease) => l.id === preselectedLeaseId)) {
+          setValue('leaseId', preselectedLeaseId)
+        }
+      })
       .catch(() => { setLeasesList([]); setLeasesError('Failed to load leases') })
   }, [])
 

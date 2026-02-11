@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -19,6 +20,8 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function ChequeForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
+  const [searchParams] = useSearchParams()
+  const preselectedLeaseId = searchParams.get('leaseId') ?? undefined
   const [leasesList, setLeasesList] = useState<Lease[]>([])
   const [selectedLease, setSelectedLease] = useState<Lease | null>(null)
   const [leasesLoading, setLeasesLoading] = useState(true)
@@ -26,8 +29,9 @@ export default function ChequeForm({ onSaved, onCancel }: { onSaved: () => void;
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
+    defaultValues: { leaseId: preselectedLeaseId },
   })
 
   const leaseId = watch('leaseId')
@@ -39,7 +43,11 @@ export default function ChequeForm({ onSaved, onCancel }: { onSaved: () => void;
       .list({ page: 1, limit: 100 })
       .then((r) => {
         const list = r.data?.data ?? r.data
-        setLeasesList(Array.isArray(list) ? list : [])
+        const items = Array.isArray(list) ? list : []
+        setLeasesList(items)
+        if (preselectedLeaseId && items.some((l: Lease) => l.id === preselectedLeaseId)) {
+          setValue('leaseId', preselectedLeaseId)
+        }
       })
       .catch((err) => {
         setLeasesList([])

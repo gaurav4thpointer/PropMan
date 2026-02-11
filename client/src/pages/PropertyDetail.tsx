@@ -355,7 +355,7 @@ export default function PropertyDetail() {
               </svg>
             </div>
             <p className="text-sm font-medium text-slate-600">No active lease on this property</p>
-            <Link to="/leases" className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:underline">
+            <Link to={`/leases?onboarding=new&propertyId=${id}`} className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:underline">
               Create a lease &rarr;
             </Link>
           </div>
@@ -378,12 +378,26 @@ export default function PropertyDetail() {
                     </Link>
                   )}
                 </div>
-                <Link
-                  to={`/leases/${currentLease.id}`}
-                  className="text-sm font-medium text-indigo-600 hover:underline"
-                >
-                  View lease details &rarr;
-                </Link>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    to={`/payments?onboarding=new&leaseId=${currentLease.id}`}
+                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+                  >
+                    + Add payment
+                  </Link>
+                  <Link
+                    to={`/cheques?onboarding=new&leaseId=${currentLease.id}`}
+                    className="inline-flex items-center gap-1 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100"
+                  >
+                    + Add cheque
+                  </Link>
+                  <Link
+                    to={`/leases/${currentLease.id}`}
+                    className="text-sm font-medium text-indigo-600 hover:underline"
+                  >
+                    View lease details &rarr;
+                  </Link>
+                </div>
               </div>
             </div>
 
