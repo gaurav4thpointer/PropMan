@@ -8,38 +8,14 @@ export declare class PaymentsService {
     private prisma;
     private accessService;
     constructor(prisma: PrismaService, accessService: AccessService);
-    create(userId: string, role: UserRole, dto: CreatePaymentDto): Promise<{
-        property: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-            address: string | null;
-            country: import(".prisma/client").$Enums.Country;
-            emirateOrState: string | null;
-            currency: import(".prisma/client").$Enums.Currency;
-            unitNo: string | null;
-            bedrooms: number | null;
-            status: import(".prisma/client").$Enums.UnitStatus | null;
-            notes: string | null;
-            ownerId: string;
-        };
-        tenant: {
-            id: string;
-            email: string | null;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-            notes: string | null;
-            ownerId: string;
-            phone: string | null;
-            idNumber: string | null;
-        };
+    create(userId: string, role: UserRole, dto: CreatePaymentDto): Promise<({
         lease: {
             id: string;
+            notes: string | null;
             createdAt: Date;
             updatedAt: Date;
-            notes: string | null;
+            tenantId: string;
+            propertyId: string;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -48,24 +24,66 @@ export declare class PaymentsService {
             installmentAmount: Prisma.Decimal;
             dueDay: number;
             securityDeposit: Prisma.Decimal | null;
-            propertyId: string;
-            tenantId: string;
         };
+        tenant: {
+            id: string;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerId: string;
+            name: string;
+            phone: string | null;
+            email: string | null;
+            idNumber: string | null;
+        };
+        property: {
+            id: string;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerId: string;
+            name: string;
+            address: string | null;
+            country: import(".prisma/client").$Enums.Country;
+            emirateOrState: string | null;
+            currency: import(".prisma/client").$Enums.Currency;
+            unitNo: string | null;
+            bedrooms: number | null;
+            status: import(".prisma/client").$Enums.UnitStatus | null;
+        };
+        scheduleMatches: ({
+            rentSchedule: {
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                leaseId: string;
+                status: import(".prisma/client").$Enums.ScheduleStatus;
+                dueDate: Date;
+                expectedAmount: Prisma.Decimal;
+                paidAmount: Prisma.Decimal | null;
+            };
+        } & {
+            id: string;
+            amount: Prisma.Decimal;
+            createdAt: Date;
+            paymentId: string;
+            rentScheduleId: string;
+        })[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        notes: string | null;
-        ownerId: string;
-        propertyId: string;
-        tenantId: string;
-        leaseId: string;
-        amount: Prisma.Decimal;
         date: Date;
+        amount: Prisma.Decimal;
         method: import(".prisma/client").$Enums.PaymentMethod;
         reference: string | null;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        leaseId: string;
+        tenantId: string;
+        propertyId: string;
+        ownerId: string;
         chequeId: string | null;
-    }>;
+    }) | null>;
     findAll(userId: string, role: UserRole, pagination: PaginationDto, filters?: {
         leaseId?: string;
         propertyId?: string;
@@ -73,37 +91,13 @@ export declare class PaymentsService {
         search?: string;
     }): Promise<{
         data: ({
-            property: {
-                id: string;
-                name: string;
-                createdAt: Date;
-                updatedAt: Date;
-                address: string | null;
-                country: import(".prisma/client").$Enums.Country;
-                emirateOrState: string | null;
-                currency: import(".prisma/client").$Enums.Currency;
-                unitNo: string | null;
-                bedrooms: number | null;
-                status: import(".prisma/client").$Enums.UnitStatus | null;
-                notes: string | null;
-                ownerId: string;
-            };
-            tenant: {
-                id: string;
-                email: string | null;
-                name: string;
-                createdAt: Date;
-                updatedAt: Date;
-                notes: string | null;
-                ownerId: string;
-                phone: string | null;
-                idNumber: string | null;
-            };
             lease: {
                 id: string;
+                notes: string | null;
                 createdAt: Date;
                 updatedAt: Date;
-                notes: string | null;
+                tenantId: string;
+                propertyId: string;
                 ownerId: string;
                 startDate: Date;
                 endDate: Date;
@@ -112,22 +106,46 @@ export declare class PaymentsService {
                 installmentAmount: Prisma.Decimal;
                 dueDay: number;
                 securityDeposit: Prisma.Decimal | null;
-                propertyId: string;
-                tenantId: string;
+            };
+            tenant: {
+                id: string;
+                notes: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                ownerId: string;
+                name: string;
+                phone: string | null;
+                email: string | null;
+                idNumber: string | null;
+            };
+            property: {
+                id: string;
+                notes: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                ownerId: string;
+                name: string;
+                address: string | null;
+                country: import(".prisma/client").$Enums.Country;
+                emirateOrState: string | null;
+                currency: import(".prisma/client").$Enums.Currency;
+                unitNo: string | null;
+                bedrooms: number | null;
+                status: import(".prisma/client").$Enums.UnitStatus | null;
             };
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            notes: string | null;
-            ownerId: string;
-            propertyId: string;
-            tenantId: string;
-            leaseId: string;
-            amount: Prisma.Decimal;
             date: Date;
+            amount: Prisma.Decimal;
             method: import(".prisma/client").$Enums.PaymentMethod;
             reference: string | null;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            leaseId: string;
+            tenantId: string;
+            propertyId: string;
+            ownerId: string;
             chequeId: string | null;
         })[];
         meta: {
@@ -138,37 +156,13 @@ export declare class PaymentsService {
         };
     }>;
     findOne(userId: string, role: UserRole, id: string): Promise<{
-        property: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-            address: string | null;
-            country: import(".prisma/client").$Enums.Country;
-            emirateOrState: string | null;
-            currency: import(".prisma/client").$Enums.Currency;
-            unitNo: string | null;
-            bedrooms: number | null;
-            status: import(".prisma/client").$Enums.UnitStatus | null;
-            notes: string | null;
-            ownerId: string;
-        };
-        tenant: {
-            id: string;
-            email: string | null;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-            notes: string | null;
-            ownerId: string;
-            phone: string | null;
-            idNumber: string | null;
-        };
         lease: {
             id: string;
+            notes: string | null;
             createdAt: Date;
             updatedAt: Date;
-            notes: string | null;
+            tenantId: string;
+            propertyId: string;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -177,74 +171,74 @@ export declare class PaymentsService {
             installmentAmount: Prisma.Decimal;
             dueDay: number;
             securityDeposit: Prisma.Decimal | null;
-            propertyId: string;
-            tenantId: string;
+        };
+        tenant: {
+            id: string;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerId: string;
+            name: string;
+            phone: string | null;
+            email: string | null;
+            idNumber: string | null;
+        };
+        property: {
+            id: string;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerId: string;
+            name: string;
+            address: string | null;
+            country: import(".prisma/client").$Enums.Country;
+            emirateOrState: string | null;
+            currency: import(".prisma/client").$Enums.Currency;
+            unitNo: string | null;
+            bedrooms: number | null;
+            status: import(".prisma/client").$Enums.UnitStatus | null;
         };
         scheduleMatches: ({
             rentSchedule: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                leaseId: string;
                 status: import(".prisma/client").$Enums.ScheduleStatus;
                 dueDate: Date;
                 expectedAmount: Prisma.Decimal;
                 paidAmount: Prisma.Decimal | null;
-                leaseId: string;
             };
         } & {
             id: string;
-            createdAt: Date;
             amount: Prisma.Decimal;
+            createdAt: Date;
             paymentId: string;
             rentScheduleId: string;
         })[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        notes: string | null;
-        ownerId: string;
-        propertyId: string;
-        tenantId: string;
-        leaseId: string;
-        amount: Prisma.Decimal;
         date: Date;
+        amount: Prisma.Decimal;
         method: import(".prisma/client").$Enums.PaymentMethod;
         reference: string | null;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        leaseId: string;
+        tenantId: string;
+        propertyId: string;
+        ownerId: string;
         chequeId: string | null;
     }>;
     matchToSchedule(userId: string, role: UserRole, paymentId: string, matches: MatchScheduleItemDto[]): Promise<{
-        property: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-            address: string | null;
-            country: import(".prisma/client").$Enums.Country;
-            emirateOrState: string | null;
-            currency: import(".prisma/client").$Enums.Currency;
-            unitNo: string | null;
-            bedrooms: number | null;
-            status: import(".prisma/client").$Enums.UnitStatus | null;
-            notes: string | null;
-            ownerId: string;
-        };
-        tenant: {
-            id: string;
-            email: string | null;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-            notes: string | null;
-            ownerId: string;
-            phone: string | null;
-            idNumber: string | null;
-        };
         lease: {
             id: string;
+            notes: string | null;
             createdAt: Date;
             updatedAt: Date;
-            notes: string | null;
+            tenantId: string;
+            propertyId: string;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -253,44 +247,70 @@ export declare class PaymentsService {
             installmentAmount: Prisma.Decimal;
             dueDay: number;
             securityDeposit: Prisma.Decimal | null;
-            propertyId: string;
-            tenantId: string;
+        };
+        tenant: {
+            id: string;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerId: string;
+            name: string;
+            phone: string | null;
+            email: string | null;
+            idNumber: string | null;
+        };
+        property: {
+            id: string;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerId: string;
+            name: string;
+            address: string | null;
+            country: import(".prisma/client").$Enums.Country;
+            emirateOrState: string | null;
+            currency: import(".prisma/client").$Enums.Currency;
+            unitNo: string | null;
+            bedrooms: number | null;
+            status: import(".prisma/client").$Enums.UnitStatus | null;
         };
         scheduleMatches: ({
             rentSchedule: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                leaseId: string;
                 status: import(".prisma/client").$Enums.ScheduleStatus;
                 dueDate: Date;
                 expectedAmount: Prisma.Decimal;
                 paidAmount: Prisma.Decimal | null;
-                leaseId: string;
             };
         } & {
             id: string;
-            createdAt: Date;
             amount: Prisma.Decimal;
+            createdAt: Date;
             paymentId: string;
             rentScheduleId: string;
         })[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        notes: string | null;
-        ownerId: string;
-        propertyId: string;
-        tenantId: string;
-        leaseId: string;
-        amount: Prisma.Decimal;
         date: Date;
+        amount: Prisma.Decimal;
         method: import(".prisma/client").$Enums.PaymentMethod;
         reference: string | null;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        leaseId: string;
+        tenantId: string;
+        propertyId: string;
+        ownerId: string;
         chequeId: string | null;
     }>;
     remove(userId: string, role: UserRole, id: string): Promise<{
         deleted: boolean;
     }>;
+    private autoMatchPayment;
+    private recalcScheduleStatuses;
     private ensureLeaseAccessible;
 }

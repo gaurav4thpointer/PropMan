@@ -21,12 +21,21 @@ export function isLeaseFuture(startDate: string): boolean {
   return start > today
 }
 
-/** Days overdue from due date (0 if not overdue). Date-only comparison with today. */
-export function getDaysOverdue(dueDate: string): number {
+/** True if the due date is strictly before today (date-only comparison). */
+export function isDueDatePast(dueDate: string): boolean {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const due = new Date(dueDate)
   due.setHours(0, 0, 0, 0)
-  if (due >= today) return 0
-  return Math.floor((today.getTime() - due.getTime()) / 86400000)
+  return due < today
+}
+
+/** Days overdue from due date (0 if not overdue). Uses UTC to avoid DST errors. */
+export function getDaysOverdue(dueDate: string): number {
+  const today = new Date()
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  const due = new Date(dueDate)
+  const dueUtc = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate())
+  if (dueUtc >= todayUtc) return 0
+  return Math.round((todayUtc - dueUtc) / 86400000)
 }

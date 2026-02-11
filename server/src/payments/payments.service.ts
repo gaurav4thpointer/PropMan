@@ -19,7 +19,7 @@ export class PaymentsService {
   async create(userId: string, role: UserRole, dto: CreatePaymentDto) {
     const lease = await this.ensureLeaseAccessible(userId, role, dto.leaseId);
     const ownerId = role === UserRole.USER || role === UserRole.SUPER_ADMIN ? userId : lease.ownerId;
-    return this.prisma.payment.create({
+    const payment = await this.prisma.payment.create({
       data: {
         ownerId,
         leaseId: dto.leaseId,
@@ -32,7 +32,14 @@ export class PaymentsService {
         notes: dto.notes,
         chequeId: dto.chequeId,
       },
-      include: { lease: true, tenant: true, property: true },
+    });
+
+    // Auto-match payment to the oldest unpaid rent schedule entries
+    await this.autoMatchPayment(payment.id, payment.leaseId, Number(payment.amount));
+
+    return this.prisma.payment.findUnique({
+      where: { id: payment.id },
+      include: { lease: true, tenant: true, property: true, scheduleMatches: { include: { rentSchedule: true } } },
     });
   }
 
@@ -115,25 +122,7 @@ export class PaymentsService {
         },
       });
     }
-    for (const rentScheduleId of scheduleIds) {
-      const schedule = await this.prisma.rentSchedule.findUnique({ where: { id: rentScheduleId } });
-      if (!schedule) continue;
-      const expected = Number(schedule.expectedAmount);
-      const agg = await this.prisma.paymentScheduleMatch.aggregate({
-        where: { rentScheduleId },
-        _sum: { amount: true },
-      });
-      const totalPaid = Number(agg._sum.amount ?? 0);
-      let status: ScheduleStatus =
-        totalPaid >= expected ? ScheduleStatus.PAID : totalPaid > 0 ? ScheduleStatus.PARTIAL : new Date(schedule.dueDate) < new Date() ? ScheduleStatus.OVERDUE : ScheduleStatus.DUE;
-      await this.prisma.rentSchedule.update({
-        where: { id: rentScheduleId },
-        data: {
-          status,
-          paidAmount: totalPaid > 0 ? new Decimal(totalPaid) : null,
-        },
-      });
-    }
+    await this.recalcScheduleStatuses(scheduleIds);
     return this.findOne(userId, role, paymentId);
   }
 
@@ -142,6 +131,90 @@ export class PaymentsService {
     await this.prisma.paymentScheduleMatch.deleteMany({ where: { paymentId: id } });
     await this.prisma.payment.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  /**
+   * Auto-match a payment to the oldest unpaid/partially-paid rent schedule
+   * entries for the same lease, allocating the full payment amount.
+   */
+  private async autoMatchPayment(paymentId: string, leaseId: string, paymentAmount: number) {
+    const schedules = await this.prisma.rentSchedule.findMany({
+      where: { leaseId },
+      orderBy: { dueDate: 'asc' },
+    });
+
+    let remaining = paymentAmount;
+    const matches: { rentScheduleId: string; amount: number }[] = [];
+
+    for (const schedule of schedules) {
+      if (remaining <= 0) break;
+
+      const expected = Number(schedule.expectedAmount);
+
+      // How much is already matched from other payments?
+      const agg = await this.prisma.paymentScheduleMatch.aggregate({
+        where: { rentScheduleId: schedule.id },
+        _sum: { amount: true },
+      });
+      const alreadyPaid = Number(agg._sum.amount ?? 0);
+      const stillOwed = expected - alreadyPaid;
+
+      if (stillOwed <= 0) continue; // Already fully covered
+
+      const toApply = Math.min(remaining, stillOwed);
+      matches.push({ rentScheduleId: schedule.id, amount: toApply });
+      remaining -= toApply;
+    }
+
+    // Create match records
+    for (const m of matches) {
+      await this.prisma.paymentScheduleMatch.create({
+        data: {
+          paymentId,
+          rentScheduleId: m.rentScheduleId,
+          amount: new Decimal(m.amount),
+        },
+      });
+    }
+
+    // Recalculate status for each affected schedule
+    await this.recalcScheduleStatuses(matches.map((m) => m.rentScheduleId));
+  }
+
+  /**
+   * Recalculate paidAmount + status for the given rent schedule IDs
+   * based on their current PaymentScheduleMatch totals.
+   */
+  private async recalcScheduleStatuses(scheduleIds: string[]) {
+    const uniqueIds = [...new Set(scheduleIds)];
+    for (const rentScheduleId of uniqueIds) {
+      const schedule = await this.prisma.rentSchedule.findUnique({ where: { id: rentScheduleId } });
+      if (!schedule) continue;
+
+      const expected = Number(schedule.expectedAmount);
+      const agg = await this.prisma.paymentScheduleMatch.aggregate({
+        where: { rentScheduleId },
+        _sum: { amount: true },
+      });
+      const totalPaid = Number(agg._sum.amount ?? 0);
+
+      const status: ScheduleStatus =
+        totalPaid >= expected
+          ? ScheduleStatus.PAID
+          : totalPaid > 0
+            ? ScheduleStatus.PARTIAL
+            : new Date(schedule.dueDate) < new Date()
+              ? ScheduleStatus.OVERDUE
+              : ScheduleStatus.DUE;
+
+      await this.prisma.rentSchedule.update({
+        where: { id: rentScheduleId },
+        data: {
+          status,
+          paidAmount: totalPaid > 0 ? new Decimal(totalPaid) : null,
+        },
+      });
+    }
   }
 
   private async ensureLeaseAccessible(userId: string, role: UserRole, leaseId: string) {

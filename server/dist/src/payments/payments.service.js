@@ -25,7 +25,7 @@ let PaymentsService = class PaymentsService {
     async create(userId, role, dto) {
         const lease = await this.ensureLeaseAccessible(userId, role, dto.leaseId);
         const ownerId = role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN ? userId : lease.ownerId;
-        return this.prisma.payment.create({
+        const payment = await this.prisma.payment.create({
             data: {
                 ownerId,
                 leaseId: dto.leaseId,
@@ -38,7 +38,11 @@ let PaymentsService = class PaymentsService {
                 notes: dto.notes,
                 chequeId: dto.chequeId,
             },
-            include: { lease: true, tenant: true, property: true },
+        });
+        await this.autoMatchPayment(payment.id, payment.leaseId, Number(payment.amount));
+        return this.prisma.payment.findUnique({
+            where: { id: payment.id },
+            include: { lease: true, tenant: true, property: true, scheduleMatches: { include: { rentSchedule: true } } },
         });
     }
     async findAll(userId, role, pagination, filters) {
@@ -119,7 +123,52 @@ let PaymentsService = class PaymentsService {
                 },
             });
         }
-        for (const rentScheduleId of scheduleIds) {
+        await this.recalcScheduleStatuses(scheduleIds);
+        return this.findOne(userId, role, paymentId);
+    }
+    async remove(userId, role, id) {
+        const payment = await this.findOne(userId, role, id);
+        await this.prisma.paymentScheduleMatch.deleteMany({ where: { paymentId: id } });
+        await this.prisma.payment.delete({ where: { id } });
+        return { deleted: true };
+    }
+    async autoMatchPayment(paymentId, leaseId, paymentAmount) {
+        const schedules = await this.prisma.rentSchedule.findMany({
+            where: { leaseId },
+            orderBy: { dueDate: 'asc' },
+        });
+        let remaining = paymentAmount;
+        const matches = [];
+        for (const schedule of schedules) {
+            if (remaining <= 0)
+                break;
+            const expected = Number(schedule.expectedAmount);
+            const agg = await this.prisma.paymentScheduleMatch.aggregate({
+                where: { rentScheduleId: schedule.id },
+                _sum: { amount: true },
+            });
+            const alreadyPaid = Number(agg._sum.amount ?? 0);
+            const stillOwed = expected - alreadyPaid;
+            if (stillOwed <= 0)
+                continue;
+            const toApply = Math.min(remaining, stillOwed);
+            matches.push({ rentScheduleId: schedule.id, amount: toApply });
+            remaining -= toApply;
+        }
+        for (const m of matches) {
+            await this.prisma.paymentScheduleMatch.create({
+                data: {
+                    paymentId,
+                    rentScheduleId: m.rentScheduleId,
+                    amount: new library_1.Decimal(m.amount),
+                },
+            });
+        }
+        await this.recalcScheduleStatuses(matches.map((m) => m.rentScheduleId));
+    }
+    async recalcScheduleStatuses(scheduleIds) {
+        const uniqueIds = [...new Set(scheduleIds)];
+        for (const rentScheduleId of uniqueIds) {
             const schedule = await this.prisma.rentSchedule.findUnique({ where: { id: rentScheduleId } });
             if (!schedule)
                 continue;
@@ -129,7 +178,13 @@ let PaymentsService = class PaymentsService {
                 _sum: { amount: true },
             });
             const totalPaid = Number(agg._sum.amount ?? 0);
-            let status = totalPaid >= expected ? client_2.ScheduleStatus.PAID : totalPaid > 0 ? client_2.ScheduleStatus.PARTIAL : new Date(schedule.dueDate) < new Date() ? client_2.ScheduleStatus.OVERDUE : client_2.ScheduleStatus.DUE;
+            const status = totalPaid >= expected
+                ? client_2.ScheduleStatus.PAID
+                : totalPaid > 0
+                    ? client_2.ScheduleStatus.PARTIAL
+                    : new Date(schedule.dueDate) < new Date()
+                        ? client_2.ScheduleStatus.OVERDUE
+                        : client_2.ScheduleStatus.DUE;
             await this.prisma.rentSchedule.update({
                 where: { id: rentScheduleId },
                 data: {
@@ -138,13 +193,6 @@ let PaymentsService = class PaymentsService {
                 },
             });
         }
-        return this.findOne(userId, role, paymentId);
-    }
-    async remove(userId, role, id) {
-        const payment = await this.findOne(userId, role, id);
-        await this.prisma.paymentScheduleMatch.deleteMany({ where: { paymentId: id } });
-        await this.prisma.payment.delete({ where: { id } });
-        return { deleted: true };
     }
     async ensureLeaseAccessible(userId, role, leaseId) {
         const lease = await this.prisma.lease.findUnique({ where: { id: leaseId } });
