@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { tenants, leases, cheques, payments, rentSchedule } from '../api/client'
 import type { Tenant, Lease, Cheque, Payment, RentSchedule } from '../api/types'
 import TenantForm from '../components/TenantForm'
 import LeasePaymentCard from '../components/LeasePaymentCard'
+import ArchiveDeleteMenu, { ArchivedBadge } from '../components/ArchiveDeleteMenu'
 import { isLeaseExpired, isLeaseTerminated, isLeaseFuture, getDaysOverdue, isDueDatePast } from '../utils/lease'
 import { formatLeaseCode } from '../utils/ids'
 
@@ -40,6 +41,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 export default function TenantDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [tenantLeases, setTenantLeases] = useState<Lease[]>([])
   const [tenantCheques, setTenantCheques] = useState<Cheque[]>([])
@@ -162,23 +164,55 @@ export default function TenantDetail() {
     <div className="space-y-8">
       <Link to="/tenants" className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">&larr; Tenants</Link>
 
+      {tenant.archivedAt && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+          This tenant is archived. It is hidden from lists and reports. Use the Actions menu to restore it.
+        </div>
+      )}
+
       <div className="card overflow-hidden p-0">
         <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50/50 px-4 py-5 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">{tenant.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-slate-800">{tenant.name}</h1>
+                {tenant.archivedAt && <ArchivedBadge />}
+              </div>
               {tenant.phone && <p className="mt-1 text-slate-600">Phone: {tenant.phone}</p>}
               {tenant.email && <p className="mt-0.5 text-slate-600">Email: {tenant.email}</p>}
               {tenant.idNumber && <p className="mt-0.5 text-slate-600">ID: {tenant.idNumber}</p>}
               {tenant.notes && <p className="mt-2 text-slate-600">{tenant.notes}</p>}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="btn-primary shrink-0 text-sm"
-            >
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="btn-primary shrink-0 text-sm"
+              >
               Edit tenant
             </button>
+              <ArchiveDeleteMenu
+                entityType="Tenant"
+                entityName={tenant.name}
+                isArchived={!!tenant.archivedAt}
+                onFetchCascadeInfo={async () => {
+                  const r = await tenants.cascadeInfo(id!)
+                  return r.data
+                }}
+                onArchive={async () => {
+                  await tenants.archive(id!)
+                  refresh()
+                }}
+                onRestore={async () => {
+                  await tenants.restore(id!)
+                  refresh()
+                }}
+                onDelete={async () => {
+                  await tenants.delete(id!)
+                  navigate('/tenants')
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

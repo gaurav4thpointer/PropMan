@@ -47,7 +47,7 @@ export class PaymentsService {
     userId: string,
     role: UserRole,
     pagination: PaginationDto,
-    filters?: { leaseId?: string; propertyId?: string; tenantId?: string; search?: string },
+    filters?: { leaseId?: string; propertyId?: string; tenantId?: string; search?: string; includeArchived?: boolean },
   ) {
     const { page = 1, limit = 20 } = pagination;
     const where: Record<string, unknown> =
@@ -57,6 +57,7 @@ export class PaymentsService {
     if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && (where.propertyId as { in: string[] }).in.length === 0) {
       return paginatedResponse([], 0, page, limit);
     }
+    if (!filters?.includeArchived) where.archivedAt = null;
     if (filters?.leaseId) where.leaseId = filters.leaseId;
     if (filters?.propertyId) where.propertyId = filters.propertyId;
     if (filters?.tenantId) where.tenantId = filters.tenantId;

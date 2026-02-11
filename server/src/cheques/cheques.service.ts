@@ -54,7 +54,7 @@ export class ChequesService {
     userId: string,
     role: UserRole,
     pagination: PaginationDto,
-    filters?: { propertyId?: string; tenantId?: string; status?: ChequeStatus; search?: string },
+    filters?: { propertyId?: string; tenantId?: string; status?: ChequeStatus; search?: string; includeArchived?: boolean },
   ) {
     const { page = 1, limit = 20 } = pagination;
     const where: Record<string, unknown> =
@@ -64,6 +64,7 @@ export class ChequesService {
     if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && (where.propertyId as { in: string[] }).in.length === 0) {
       return paginatedResponse([], 0, page, limit);
     }
+    if (!filters?.includeArchived) where.archivedAt = null;
     if (filters?.propertyId) where.propertyId = filters.propertyId;
     if (filters?.tenantId) where.tenantId = filters.tenantId;
     if (filters?.status) where.status = filters.status;
@@ -191,10 +192,10 @@ export class ChequesService {
     const from = new Date();
     const to = new Date();
     to.setDate(to.getDate() + days);
-    const where: { ownerId?: string; propertyId?: string | { in: string[] }; chequeDate: { gte: Date; lte: Date } } =
+    const where: { ownerId?: string; propertyId?: string | { in: string[] }; chequeDate: { gte: Date; lte: Date }; archivedAt: null } =
       role === UserRole.USER || role === UserRole.SUPER_ADMIN
-        ? { ownerId: userId, chequeDate: { gte: from, lte: to } }
-        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, chequeDate: { gte: from, lte: to } };
+        ? { ownerId: userId, chequeDate: { gte: from, lte: to }, archivedAt: null }
+        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, chequeDate: { gte: from, lte: to }, archivedAt: null };
     if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && (where.propertyId as { in: string[] }).in.length === 0) {
       return [];
     }
@@ -210,6 +211,16 @@ export class ChequesService {
     await this.findOne(userId, role, id);
     await this.prisma.cheque.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  async archive(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    return this.prisma.cheque.update({ where: { id }, data: { archivedAt: new Date() }, include: { lease: true, tenant: true, property: true } });
+  }
+
+  async restore(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    return this.prisma.cheque.update({ where: { id }, data: { archivedAt: null }, include: { lease: true, tenant: true, property: true } });
   }
 
   private assertValidTransition(current: ChequeStatus, next: ChequeStatus, replacedByChequeId?: string) {

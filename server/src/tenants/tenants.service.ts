@@ -27,9 +27,10 @@ export class TenantsService {
     });
   }
 
-  async findAll(userId: string, role: UserRole, pagination: PaginationDto, search?: string) {
+  async findAll(userId: string, role: UserRole, pagination: PaginationDto, search?: string, includeArchived?: boolean) {
     const { page = 1, limit = 20 } = pagination;
     const where: Record<string, unknown> = { ownerId: userId };
+    if (!includeArchived) where.archivedAt = null;
     if (search?.trim()) {
       const q = search.trim();
       where.OR = [
@@ -68,5 +69,38 @@ export class TenantsService {
     await this.findOne(userId, role, id);
     await this.prisma.tenant.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  async archive(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.tenant.update({ where: { id }, data: { archivedAt: now } }),
+      this.prisma.lease.updateMany({ where: { tenantId: id, archivedAt: null }, data: { archivedAt: now } }),
+      this.prisma.cheque.updateMany({ where: { tenantId: id, archivedAt: null }, data: { archivedAt: now } }),
+      this.prisma.payment.updateMany({ where: { tenantId: id, archivedAt: null }, data: { archivedAt: now } }),
+    ]);
+    return this.prisma.tenant.findUnique({ where: { id } });
+  }
+
+  async restore(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    await this.prisma.$transaction([
+      this.prisma.tenant.update({ where: { id }, data: { archivedAt: null } }),
+      this.prisma.lease.updateMany({ where: { tenantId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+      this.prisma.cheque.updateMany({ where: { tenantId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+      this.prisma.payment.updateMany({ where: { tenantId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+    ]);
+    return this.prisma.tenant.findUnique({ where: { id } });
+  }
+
+  async getCascadeInfo(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    const [leaseCount, chequeCount, paymentCount] = await Promise.all([
+      this.prisma.lease.count({ where: { tenantId: id } }),
+      this.prisma.cheque.count({ where: { tenantId: id } }),
+      this.prisma.payment.count({ where: { tenantId: id } }),
+    ]);
+    return { leases: leaseCount, cheques: chequeCount, payments: paymentCount };
   }
 }

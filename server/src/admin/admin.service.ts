@@ -12,6 +12,7 @@ export class AdminService {
   ) {}
 
   async getStats() {
+    const notArchived = { archivedAt: null };
     const [
       totalUsers,
       totalProperties,
@@ -30,25 +31,27 @@ export class AdminService {
       chequeValueByCurrency,
     ] = await Promise.all([
       this.prisma.user.count(),
-      this.prisma.property.count(),
-      this.prisma.lease.count(),
-      this.prisma.tenant.count(),
-      this.prisma.cheque.count(),
-      this.prisma.payment.count(),
+      this.prisma.property.count({ where: notArchived }),
+      this.prisma.lease.count({ where: notArchived }),
+      this.prisma.tenant.count({ where: notArchived }),
+      this.prisma.cheque.count({ where: notArchived }),
+      this.prisma.payment.count({ where: notArchived }),
       this.prisma.user.groupBy({
         by: ['role'],
         _count: { id: true },
       }),
       this.prisma.property.groupBy({
         by: ['country'],
+        where: notArchived,
         _count: { id: true },
       }),
-      this.prisma.rentSchedule.aggregate({ _sum: { expectedAmount: true } }),
-      this.prisma.payment.aggregate({ _sum: { amount: true } }),
-      this.prisma.cheque.aggregate({ _sum: { amount: true } }),
-      this.prisma.lease.aggregate({ _sum: { securityDeposit: true } }),
+      this.prisma.rentSchedule.aggregate({ where: { lease: notArchived }, _sum: { expectedAmount: true } }),
+      this.prisma.payment.aggregate({ where: notArchived, _sum: { amount: true } }),
+      this.prisma.cheque.aggregate({ where: notArchived, _sum: { amount: true } }),
+      this.prisma.lease.aggregate({ where: notArchived, _sum: { securityDeposit: true } }),
       this.prisma.rentSchedule.groupBy({
         by: ['leaseId'],
+        where: { lease: notArchived },
         _sum: { expectedAmount: true },
       }).then(async (byLease) => {
         const leaseIds = byLease.map((x) => x.leaseId);
@@ -67,6 +70,7 @@ export class AdminService {
       }),
       this.prisma.payment.groupBy({
         by: ['propertyId'],
+        where: notArchived,
         _sum: { amount: true },
       }).then(async (byProp) => {
         const propIds = byProp.map((x) => x.propertyId);
@@ -85,6 +89,7 @@ export class AdminService {
       }),
       this.prisma.cheque.groupBy({
         by: ['propertyId'],
+        where: notArchived,
         _sum: { amount: true },
       }).then(async (byProp) => {
         const propIds = byProp.map((x) => x.propertyId);
@@ -132,6 +137,7 @@ export class AdminService {
   async getRecentActivity(limit = 10) {
     const [recentLeases, recentPayments, recentUsers] = await Promise.all([
       this.prisma.lease.findMany({
+        where: { archivedAt: null },
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -140,6 +146,7 @@ export class AdminService {
         },
       }),
       this.prisma.payment.findMany({
+        where: { archivedAt: null },
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {

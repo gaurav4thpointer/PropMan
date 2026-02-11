@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Property, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload } from './types'
+import type { Property, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload, CascadeInfo } from './types'
 
 const baseURL = import.meta.env.VITE_API_URL ?? '/api'
 
@@ -61,29 +61,38 @@ export const users = {
 }
 
 export const properties = {
-  list: (params?: { page?: number; limit?: number; search?: string; country?: string; currency?: string }) =>
+  list: (params?: { page?: number; limit?: number; search?: string; country?: string; currency?: string; includeArchived?: boolean }) =>
     api.get<Paginated<Property>>('/properties', { params }),
   get: (id: string) => api.get<Property>(`/properties/${id}`),
   create: (data: CreatePropertyPayload) => api.post<Property>('/properties', data),
   update: (id: string, data: Partial<Property>) => api.patch<Property>(`/properties/${id}`, data),
   delete: (id: string) => api.delete(`/properties/${id}`),
+  archive: (id: string) => api.patch<Property>(`/properties/${id}/archive`),
+  restore: (id: string) => api.patch<Property>(`/properties/${id}/restore`),
+  cascadeInfo: (id: string) => api.get<CascadeInfo>(`/properties/${id}/cascade-info`),
 }
 
 export const tenants = {
-  list: (params?: { page?: number; limit?: number; search?: string }) => api.get<Paginated<Tenant>>('/tenants', { params }),
+  list: (params?: { page?: number; limit?: number; search?: string; includeArchived?: boolean }) => api.get<Paginated<Tenant>>('/tenants', { params }),
   get: (id: string) => api.get<Tenant>(`/tenants/${id}`),
   create: (data: Partial<Tenant>) => api.post<Tenant>('/tenants', data),
   update: (id: string, data: Partial<Tenant>) => api.patch<Tenant>(`/tenants/${id}`, data),
   delete: (id: string) => api.delete(`/tenants/${id}`),
+  archive: (id: string) => api.patch<Tenant>(`/tenants/${id}/archive`),
+  restore: (id: string) => api.patch<Tenant>(`/tenants/${id}/restore`),
+  cascadeInfo: (id: string) => api.get<CascadeInfo>(`/tenants/${id}/cascade-info`),
 }
 
 export const leases = {
-  list: (params?: { page?: number; limit?: number; propertyId?: string; tenantId?: string; search?: string }) => api.get<Paginated<Lease>>('/leases', { params }),
+  list: (params?: { page?: number; limit?: number; propertyId?: string; tenantId?: string; search?: string; includeArchived?: boolean }) => api.get<Paginated<Lease>>('/leases', { params }),
   get: (id: string) => api.get<Lease>(`/leases/${id}`),
   create: (data: Record<string, unknown>) => api.post<Lease>('/leases', data),
   update: (id: string, data: Record<string, unknown>) => api.patch<Lease>(`/leases/${id}`, data),
   terminate: (id: string, data: { terminationDate: string }) => api.patch<Lease>(`/leases/${id}/terminate`, data),
   delete: (id: string) => api.delete(`/leases/${id}`),
+  archive: (id: string) => api.patch<Lease>(`/leases/${id}/archive`),
+  restore: (id: string) => api.patch<Lease>(`/leases/${id}/restore`),
+  cascadeInfo: (id: string) => api.get<CascadeInfo>(`/leases/${id}/cascade-info`),
 }
 
 export const leaseDocuments = {
@@ -118,7 +127,7 @@ export const rentSchedule = {
 }
 
 export const cheques = {
-  list: (params?: { page?: number; limit?: number; propertyId?: string; tenantId?: string; status?: string; search?: string }) =>
+  list: (params?: { page?: number; limit?: number; propertyId?: string; tenantId?: string; status?: string; search?: string; includeArchived?: boolean }) =>
     api.get<Paginated<Cheque>>('/cheques', { params }),
   upcoming: (days?: number, propertyId?: string) =>
     api.get<Cheque[]>('/cheques/upcoming', { params: { days: days ?? 30, propertyId } }),
@@ -128,6 +137,8 @@ export const cheques = {
   updateStatus: (id: string, data: { status: ChequeStatus; depositDate?: string; clearedOrBounceDate?: string; bounceReason?: string; replacedByChequeId?: string }) =>
     api.patch<Cheque>(`/cheques/${id}/status`, data),
   delete: (id: string) => api.delete(`/cheques/${id}`),
+  archive: (id: string) => api.patch<Cheque>(`/cheques/${id}/archive`),
+  restore: (id: string) => api.patch<Cheque>(`/cheques/${id}/restore`),
 }
 
 export const payments = {

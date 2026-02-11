@@ -6,6 +6,7 @@ import LeaseForm from '../components/LeaseForm'
 import DataTable, { type DataTableColumn } from '../components/DataTable'
 import { isLeaseExpired, isLeaseTerminated, isLeaseFuture } from '../utils/lease'
 import { formatLeaseCode } from '../utils/ids'
+import { ArchivedBadge, ArchiveToggle } from '../components/ArchiveDeleteMenu'
 
 const FETCH_LIMIT = 100
 
@@ -70,6 +71,7 @@ export default function Leases() {
   const [filterPropertyId, setFilterPropertyId] = useState(propertyIdFromUrl)
   const [filterTenantId, setFilterTenantId] = useState(tenantIdFromUrl)
   const [filterStatus, setFilterStatus] = useState(statusFromUrl)
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => { setFilterPropertyId(propertyIdFromUrl) }, [propertyIdFromUrl])
   useEffect(() => { setFilterTenantId(tenantIdFromUrl) }, [tenantIdFromUrl])
@@ -77,12 +79,12 @@ export default function Leases() {
 
   const load = () => {
     setLoading(true)
-    leasesApi.list({ page: 1, limit: FETCH_LIMIT })
+    leasesApi.list({ page: 1, limit: FETCH_LIMIT, includeArchived: showArchived || undefined })
       .then((r) => setList(r.data.data))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [showArchived])
   useEffect(() => { propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data)) }, [])
 
   useEffect(() => {
@@ -90,6 +92,13 @@ export default function Leases() {
       setShowForm(true)
     }
   }, [searchParams])
+
+  const handleArchiveLease = async (id: string) => {
+    try { await leasesApi.archive(id); load() } catch { /* */ }
+  }
+  const handleRestoreLease = async (id: string) => {
+    try { await leasesApi.restore(id); load() } catch { /* */ }
+  }
 
   const setUrlParam = (key: string, value: string) => {
     setSearchParams((prev) => {
@@ -140,10 +149,14 @@ export default function Leases() {
       label: 'Status',
       sortable: true,
       getSortValue: (l) => {
+        if (l.archivedAt) return 5
         const order: Record<LeaseDisplayStatus, number> = { active: 0, expiring: 1, future: 2, terminated: 3, expired: 4 }
         return order[getLeaseDisplayStatus(l)]
       },
       render: (l) => {
+        if (l.archivedAt) {
+          return <ArchivedBadge />
+        }
         const status = getLeaseDisplayStatus(l)
         const config = STATUS_CONFIG[status]
         return (
@@ -250,6 +263,23 @@ export default function Leases() {
             >
               Cheques
             </Link>
+            {l.archivedAt ? (
+              <button
+                type="button"
+                onClick={() => handleRestoreLease(l.id)}
+                className="rounded-lg bg-emerald-50 px-2 py-1 font-medium text-emerald-600 transition-colors hover:bg-emerald-100"
+              >
+                Restore
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleArchiveLease(l.id)}
+                className="rounded-lg bg-amber-50 px-2 py-1 font-medium text-amber-600 transition-colors hover:bg-amber-100"
+              >
+                Archive
+              </button>
+            )}
           </div>
         </div>
       ),
@@ -302,6 +332,7 @@ export default function Leases() {
         <option value="expired">Expired</option>
         <option value="terminated">Terminated</option>
       </select>
+      <ArchiveToggle showArchived={showArchived} onChange={setShowArchived} />
     </>
   )
 

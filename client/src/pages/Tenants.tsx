@@ -5,6 +5,7 @@ import { tenants as tenantsApi } from '../api/client'
 import type { Tenant } from '../api/types'
 import TenantForm from '../components/TenantForm'
 import DataTable, { type DataTableColumn } from '../components/DataTable'
+import { ArchivedBadge, ArchiveToggle } from '../components/ArchiveDeleteMenu'
 
 const FETCH_LIMIT = 100
 
@@ -40,15 +41,16 @@ export default function Tenants() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Tenant | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   const load = () => {
     setLoading(true)
-    tenantsApi.list({ page: 1, limit: FETCH_LIMIT })
+    tenantsApi.list({ page: 1, limit: FETCH_LIMIT, includeArchived: showArchived || undefined })
       .then((r) => setList(r.data.data))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [showArchived])
   useEffect(() => {
     if (searchParams.get('onboarding') === 'new') {
       setEditing(null)
@@ -82,19 +84,22 @@ export default function Tenants() {
       searchable: true,
       getSearchValue: (t) => `${t.name} ${t.idNumber ?? ''}`.trim(),
       render: (t) => (
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${t.archivedAt ? 'opacity-60' : ''}`}>
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${getInitialColor(t.name)}`}
           >
             {getInitials(t.name)}
           </div>
           <div className="min-w-0">
-            <Link
-              to={`/tenants/${t.id}`}
-              className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
-            >
-              {t.name}
-            </Link>
+            <div className="flex items-center">
+              <Link
+                to={`/tenants/${t.id}`}
+                className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+              >
+                {t.name}
+              </Link>
+              {t.archivedAt && <ArchivedBadge />}
+            </div>
             {t.idNumber && (
               <p className="mt-0.5 truncate text-xs text-slate-400">ID: {t.idNumber}</p>
             )}
@@ -164,16 +169,45 @@ export default function Tenants() {
       sortable: false,
       align: 'right',
       render: (t) => (
-        <button
-          type="button"
-          onClick={() => { setEditing(t); setShowForm(true) }}
-          className="rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
-        >
-          Edit
-        </button>
+        <div className="flex items-center justify-end gap-1">
+          {!t.archivedAt && (
+            <button
+              type="button"
+              onClick={() => { setEditing(t); setShowForm(true) }}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+            >
+              Edit
+            </button>
+          )}
+          {t.archivedAt ? (
+            <button
+              type="button"
+              onClick={() => handleRestore(t.id)}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
+            >
+              Restore
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleArchive(t.id)}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-50"
+              title="Archive"
+            >
+              Archive
+            </button>
+          )}
+        </div>
       ),
     },
   ]
+
+  const handleArchive = async (id: string) => {
+    try { await tenantsApi.archive(id); load() } catch { /* */ }
+  }
+  const handleRestore = async (id: string) => {
+    try { await tenantsApi.restore(id); load() } catch { /* */ }
+  }
 
   return (
     <div>
@@ -236,6 +270,7 @@ export default function Tenants() {
           columns={columns}
           idKey="id"
           searchPlaceholder="Search by name, phone, email or ID..."
+          extraToolbar={<ArchiveToggle showArchived={showArchived} onChange={setShowArchived} />}
           emptyMessage="No tenants yet. Click &quot;+ Add tenant&quot; to add your first tenant."
         />
       )}

@@ -35,7 +35,7 @@ export class PropertiesService {
     userId: string,
     role: UserRole,
     pagination: PaginationDto,
-    filters?: { search?: string; country?: string; currency?: string },
+    filters?: { search?: string; country?: string; currency?: string; includeArchived?: boolean },
   ) {
     const accessibleIds = await this.accessService.getAccessiblePropertyIds(userId, role);
     if (accessibleIds.length === 0) {
@@ -43,15 +43,18 @@ export class PropertiesService {
     }
     const { page = 1, limit = 20 } = pagination;
     const where: Record<string, unknown> = { id: { in: accessibleIds } };
+    if (!filters?.includeArchived) where.archivedAt = null;
     if (filters?.country) where.country = filters.country;
     if (filters?.currency) where.currency = filters.currency;
     if (filters?.search?.trim()) {
       const q = filters.search.trim();
       where.AND = [
         { id: { in: accessibleIds } },
+        ...(filters?.includeArchived ? [] : [{ archivedAt: null }]),
         { OR: [{ name: { contains: q, mode: 'insensitive' } }, { address: { contains: q, mode: 'insensitive' } }] },
       ];
       delete where.id;
+      delete where.archivedAt;
     }
     const [data, total] = await Promise.all([
       this.prisma.property.findMany({
@@ -89,5 +92,38 @@ export class PropertiesService {
     if (!isOwner) throw new ForbiddenException('Only the property owner can delete the property');
     await this.prisma.property.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  async archive(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.property.update({ where: { id }, data: { archivedAt: now } }),
+      this.prisma.lease.updateMany({ where: { propertyId: id, archivedAt: null }, data: { archivedAt: now } }),
+      this.prisma.cheque.updateMany({ where: { propertyId: id, archivedAt: null }, data: { archivedAt: now } }),
+      this.prisma.payment.updateMany({ where: { propertyId: id, archivedAt: null }, data: { archivedAt: now } }),
+    ]);
+    return this.prisma.property.findUnique({ where: { id } });
+  }
+
+  async restore(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    await this.prisma.$transaction([
+      this.prisma.property.update({ where: { id }, data: { archivedAt: null } }),
+      this.prisma.lease.updateMany({ where: { propertyId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+      this.prisma.cheque.updateMany({ where: { propertyId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+      this.prisma.payment.updateMany({ where: { propertyId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+    ]);
+    return this.prisma.property.findUnique({ where: { id } });
+  }
+
+  async getCascadeInfo(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    const [leaseCount, chequeCount, paymentCount] = await Promise.all([
+      this.prisma.lease.count({ where: { propertyId: id } }),
+      this.prisma.cheque.count({ where: { propertyId: id } }),
+      this.prisma.payment.count({ where: { propertyId: id } }),
+    ]);
+    return { leases: leaseCount, cheques: chequeCount, payments: paymentCount };
   }
 }

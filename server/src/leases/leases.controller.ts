@@ -35,10 +35,28 @@ export class LeasesController {
     return this.leasesService.findOne(user.id, user.role, id);
   }
 
+  @Get(':id/cascade-info')
+  @ApiOperation({ summary: 'Get cascade info for lease' })
+  getCascadeInfo(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.leasesService.getCascadeInfo(user.id, user.role, id);
+  }
+
   @Patch(':id/terminate')
   @ApiOperation({ summary: 'Terminate lease early' })
   terminateEarly(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: TerminateLeaseDto) {
     return this.leasesService.terminateEarly(user.id, user.role, id, dto);
+  }
+
+  @Patch(':id/archive')
+  @ApiOperation({ summary: 'Archive lease with cascade' })
+  archive(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.leasesService.archive(user.id, user.role, id);
+  }
+
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Restore archived lease with cascade' })
+  restore(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.leasesService.restore(user.id, user.role, id);
   }
 
   @Patch(':id')
@@ -48,7 +66,7 @@ export class LeasesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete lease' })
+  @ApiOperation({ summary: 'Permanently delete lease' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.leasesService.remove(user.id, user.role, id);
   }

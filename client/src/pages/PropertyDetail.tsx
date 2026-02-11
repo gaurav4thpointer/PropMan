@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { properties, leases, cheques, payments, rentSchedule } from '../api/client'
 import type { Property, Lease, Cheque, Payment, RentSchedule } from '../api/types'
 import PropertyForm from '../components/PropertyForm'
 import LeasePaymentCard from '../components/LeasePaymentCard'
+import ArchiveDeleteMenu, { ArchivedBadge } from '../components/ArchiveDeleteMenu'
 import { useAuth } from '../context/AuthContext'
 import { formatPropertyCode, formatLeaseCode } from '../utils/ids'
 import { isLeaseExpired, isLeaseTerminated, isLeaseFuture, getDaysOverdue, isDueDatePast } from '../utils/lease'
@@ -50,6 +51,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
@@ -222,6 +224,12 @@ export default function PropertyDetail() {
       {/* Back link */}
       <Link to="/properties" className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">&larr; Properties</Link>
 
+      {property.archivedAt && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+          This property is archived. It is hidden from lists and reports. Use the Actions menu to restore it.
+        </div>
+      )}
+
       {/* Hero card */}
       <div className="card overflow-hidden p-0">
         <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50/50 px-5 py-6 sm:px-7">
@@ -229,6 +237,7 @@ export default function PropertyDetail() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-2xl font-bold text-slate-800">{property.name}</h1>
+                {property.archivedAt && <ArchivedBadge />}
                 {property.status && (
                   <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
                     property.status === 'OCCUPIED'
@@ -243,13 +252,36 @@ export default function PropertyDetail() {
                 <p className="mt-1.5 text-slate-600">{property.address}</p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="btn-primary shrink-0 text-sm"
-            >
-              Edit property
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="btn-primary shrink-0 text-sm"
+              >
+                Edit property
+              </button>
+              <ArchiveDeleteMenu
+                entityType="Property"
+                entityName={property.name}
+                isArchived={!!property.archivedAt}
+                onFetchCascadeInfo={async () => {
+                  const r = await properties.cascadeInfo(id!)
+                  return r.data
+                }}
+                onArchive={async () => {
+                  await properties.archive(id!)
+                  refresh()
+                }}
+                onRestore={async () => {
+                  await properties.restore(id!)
+                  refresh()
+                }}
+                onDelete={async () => {
+                  await properties.delete(id!)
+                  navigate('/properties')
+                }}
+              />
+            </div>
           </div>
         </div>
 

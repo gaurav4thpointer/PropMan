@@ -24,8 +24,8 @@ export class TenantsController {
   @Get()
   @ApiOperation({ summary: 'List tenants' })
   findAll(@CurrentUser() user: User, @Query() query: TenantQueryDto) {
-    const { page, limit, search } = query;
-    return this.tenantsService.findAll(user.id, user.role, { page, limit }, search);
+    const { page, limit, search, includeArchived } = query;
+    return this.tenantsService.findAll(user.id, user.role, { page, limit }, search, includeArchived);
   }
 
   @Get(':id')
@@ -34,14 +34,32 @@ export class TenantsController {
     return this.tenantsService.findOne(user.id, user.role, id);
   }
 
+  @Get(':id/cascade-info')
+  @ApiOperation({ summary: 'Get cascade info for tenant' })
+  getCascadeInfo(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.tenantsService.getCascadeInfo(user.id, user.role, id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update tenant' })
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateTenantDto) {
     return this.tenantsService.update(user.id, user.role, id, dto);
   }
 
+  @Patch(':id/archive')
+  @ApiOperation({ summary: 'Archive tenant with cascade' })
+  archive(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.tenantsService.archive(user.id, user.role, id);
+  }
+
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Restore archived tenant with cascade' })
+  restore(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.tenantsService.restore(user.id, user.role, id);
+  }
+
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete tenant' })
+  @ApiOperation({ summary: 'Permanently delete tenant' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.tenantsService.remove(user.id, user.role, id);
   }

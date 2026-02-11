@@ -34,14 +34,32 @@ export class PropertiesController {
     return this.propertiesService.findOne(user.id, user.role, id);
   }
 
+  @Get(':id/cascade-info')
+  @ApiOperation({ summary: 'Get cascade info for property (counts of related records)' })
+  getCascadeInfo(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.propertiesService.getCascadeInfo(user.id, user.role, id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update property' })
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdatePropertyDto) {
     return this.propertiesService.update(user.id, user.role, id, dto);
   }
 
+  @Patch(':id/archive')
+  @ApiOperation({ summary: 'Archive property with cascade' })
+  archive(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.propertiesService.archive(user.id, user.role, id);
+  }
+
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Restore archived property with cascade' })
+  restore(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.propertiesService.restore(user.id, user.role, id);
+  }
+
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete property' })
+  @ApiOperation({ summary: 'Permanently delete property' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.propertiesService.remove(user.id, user.role, id);
   }

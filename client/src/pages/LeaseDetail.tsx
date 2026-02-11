@@ -1,13 +1,15 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { leases, leaseDocuments } from '../api/client'
 import type { Lease, LeaseDocument } from '../api/types'
+import ArchiveDeleteMenu, { ArchivedBadge } from '../components/ArchiveDeleteMenu'
 import { isLeaseExpired, isLeaseTerminated, isLeaseFuture, getDaysOverdue } from '../utils/lease'
 import { formatLeaseCode } from '../utils/ids'
 
 export default function LeaseDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [lease, setLease] = useState<Lease | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -192,6 +194,11 @@ export default function LeaseDetail() {
   return (
     <div>
       <Link to="/leases" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Leases</Link>
+      {lease.archivedAt && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+          This lease is archived. It is hidden from lists and reports. Use the Actions menu to restore it.
+        </div>
+      )}
       {expired && (
         <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
           This lease has expired (end date: {formatDate(lease.endDate)}).
@@ -209,7 +216,33 @@ export default function LeaseDetail() {
       )}
       <div className="card mb-8 overflow-hidden p-0">
         <div className={`border-b border-slate-100 px-4 py-5 sm:px-6 ${expired ? 'bg-rose-50/50' : future ? 'bg-sky-50/50' : 'bg-gradient-to-r from-violet-50 to-indigo-50/50'}`}>
-          <h1 className="text-2xl font-bold text-slate-800">Lease details</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-slate-800">Lease details</h1>
+              {lease.archivedAt && <ArchivedBadge />}
+            </div>
+            <ArchiveDeleteMenu
+              entityType="Lease"
+              entityName={`Lease ${formatLeaseCode(lease.id)}`}
+              isArchived={!!lease.archivedAt}
+              onFetchCascadeInfo={async () => {
+                const r = await leases.cascadeInfo(id!)
+                return r.data
+              }}
+              onArchive={async () => {
+                await leases.archive(id!)
+                refresh()
+              }}
+              onRestore={async () => {
+                await leases.restore(id!)
+                refresh()
+              }}
+              onDelete={async () => {
+                await leases.delete(id!)
+                navigate('/leases')
+              }}
+            />
+          </div>
           <p className="mt-1 text-xs text-slate-500">
             Lease code: {formatLeaseCode(lease.id)}
           </p>

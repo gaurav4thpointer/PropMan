@@ -92,7 +92,7 @@ export class LeasesService {
     userId: string,
     role: UserRole,
     pagination: PaginationDto,
-    filters?: { propertyId?: string; tenantId?: string; search?: string },
+    filters?: { propertyId?: string; tenantId?: string; search?: string; includeArchived?: boolean },
   ) {
     const { page = 1, limit = 20 } = pagination;
     const where: Record<string, unknown> =
@@ -111,6 +111,7 @@ export class LeasesService {
         where.propertyId = filters.propertyId;
       }
     }
+    if (!filters?.includeArchived) where.archivedAt = null;
     if (filters?.tenantId) where.tenantId = filters.tenantId;
     if (filters?.search?.trim()) {
       const q = filters.search.trim();
@@ -203,6 +204,39 @@ export class LeasesService {
     return { deleted: true };
   }
 
+  async archive(userId: string, role: UserRole, id: string) {
+    const lease = await this.findOne(userId, role, id);
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.lease.update({ where: { id }, data: { archivedAt: now } }),
+      this.prisma.cheque.updateMany({ where: { leaseId: id, archivedAt: null }, data: { archivedAt: now } }),
+      this.prisma.payment.updateMany({ where: { leaseId: id, archivedAt: null }, data: { archivedAt: now } }),
+    ]);
+    await this.setPropertyVacantIfNoActiveLease(lease.propertyId, id);
+    return this.findOne(userId, role, id);
+  }
+
+  async restore(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    await this.prisma.$transaction([
+      this.prisma.lease.update({ where: { id }, data: { archivedAt: null } }),
+      this.prisma.cheque.updateMany({ where: { leaseId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+      this.prisma.payment.updateMany({ where: { leaseId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+    ]);
+    return this.findOne(userId, role, id);
+  }
+
+  async getCascadeInfo(userId: string, role: UserRole, id: string) {
+    await this.findOne(userId, role, id);
+    const [chequeCount, paymentCount, scheduleCount, documentCount] = await Promise.all([
+      this.prisma.cheque.count({ where: { leaseId: id } }),
+      this.prisma.payment.count({ where: { leaseId: id } }),
+      this.prisma.rentSchedule.count({ where: { leaseId: id } }),
+      this.prisma.leaseDocument.count({ where: { leaseId: id } }),
+    ]);
+    return { cheques: chequeCount, payments: paymentCount, schedules: scheduleCount, documents: documentCount };
+  }
+
   /** Set property to VACANT if it has no active (non-expired, not terminated) lease, excluding optional lease id. */
   private async setPropertyVacantIfNoActiveLease(propertyId: string, excludeLeaseId: string | null) {
     const now = new Date();
@@ -210,6 +244,7 @@ export class LeasesService {
     const leases = await this.prisma.lease.findMany({
       where: {
         propertyId,
+        archivedAt: null,
         ...(excludeLeaseId && { id: { not: excludeLeaseId } }),
         endDate: { gte: now },
       },
@@ -276,6 +311,7 @@ export class LeasesService {
     const overlapping = await this.prisma.lease.findFirst({
       where: {
         propertyId,
+        archivedAt: null,
         ...(excludeLeaseId && { id: { not: excludeLeaseId } }),
         startDate: { lte: endDate },
         endDate: { gte: startDate },

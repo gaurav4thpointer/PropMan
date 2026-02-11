@@ -23,10 +23,10 @@ export class ReportsService {
     const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
     const quarterEnd = new Date(quarterStart.getFullYear(), quarterStart.getMonth() + 3, 0);
 
-    const leaseWhere: { ownerId?: string; propertyId?: string | { in: string[] } } =
+    const leaseWhere: Record<string, unknown> =
       role === UserRole.USER || role === UserRole.SUPER_ADMIN
-        ? { ownerId: userId, ...(propertyId && { propertyId }) }
-        : { propertyId: propertyId ? propertyId : { in: accessibleIds } };
+        ? { ownerId: userId, archivedAt: null, ...(propertyId && { propertyId }) }
+        : { propertyId: propertyId ? propertyId : { in: accessibleIds }, archivedAt: null };
     if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && propertyId) {
       if (!accessibleIds.includes(propertyId)) {
         return this.emptyDashboardResponse();
@@ -35,10 +35,10 @@ export class ReportsService {
 
     const expiryEnd = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-    const propertyWhere: { ownerId?: string; id?: string | { in: string[] } } =
+    const propertyWhere: Record<string, unknown> =
       role === UserRole.USER || role === UserRole.SUPER_ADMIN
-        ? { ownerId: userId, ...(propertyId && { id: propertyId }) }
-        : { id: propertyId ? propertyId : { in: accessibleIds } };
+        ? { ownerId: userId, archivedAt: null, ...(propertyId && { id: propertyId }) }
+        : { id: propertyId ? propertyId : { in: accessibleIds }, archivedAt: null };
 
     const [monthExpected, monthPaid, quarterExpected, quarterPaid, overdueSchedules, upcomingCheques, bouncedCount, vacantCount, occupiedCount, expiringLeases] = await Promise.all([
       this.prisma.rentSchedule.aggregate({
@@ -86,6 +86,7 @@ export class ReportsService {
           ...(role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: propertyId ?? { in: accessibleIds } }),
           ...(propertyId && (role === UserRole.USER || role === UserRole.SUPER_ADMIN) ? { propertyId } : {}),
           chequeDate: { gte: now, lte: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000) },
+          archivedAt: null,
         },
         include: { lease: true, tenant: true, property: true },
         orderBy: { chequeDate: 'asc' },
@@ -95,6 +96,7 @@ export class ReportsService {
         where: {
           ...(role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: propertyId ?? { in: accessibleIds } }),
           status: ChequeStatus.BOUNCED,
+          archivedAt: null,
         },
       }),
       this.prisma.property.count({ where: { ...propertyWhere, status: 'VACANT' } }),
@@ -103,6 +105,7 @@ export class ReportsService {
         where: {
           ...(role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: propertyId ?? { in: accessibleIds } }),
           endDate: { gte: now, lte: expiryEnd },
+          archivedAt: null,
         },
         include: { property: true, tenant: true },
         orderBy: { endDate: 'asc' },
@@ -112,16 +115,16 @@ export class ReportsService {
 
     const paymentWhere =
       role === UserRole.USER || role === UserRole.SUPER_ADMIN
-        ? { ownerId: userId, ...(propertyId && { propertyId }) }
-        : { propertyId: propertyId ?? { in: accessibleIds } };
+        ? { ownerId: userId, archivedAt: null, ...(propertyId && { propertyId }) }
+        : { propertyId: propertyId ?? { in: accessibleIds }, archivedAt: null };
     const chequeWhere =
       role === UserRole.USER || role === UserRole.SUPER_ADMIN
-        ? { ownerId: userId, ...(propertyId && { propertyId }) }
-        : { propertyId: propertyId ?? { in: accessibleIds } };
+        ? { ownerId: userId, archivedAt: null, ...(propertyId && { propertyId }) }
+        : { propertyId: propertyId ?? { in: accessibleIds }, archivedAt: null };
     const leaseWhereForDeposits =
       role === UserRole.USER || role === UserRole.SUPER_ADMIN
-        ? { ownerId: userId, ...(propertyId && { propertyId }) }
-        : { propertyId: propertyId ?? { in: accessibleIds } };
+        ? { ownerId: userId, archivedAt: null, ...(propertyId && { propertyId }) }
+        : { propertyId: propertyId ?? { in: accessibleIds }, archivedAt: null };
 
     const [overdueAmount, totalTrackedExpected, totalTrackedReceived, totalChequeValueTracked, totalSecurityDepositsTracked] = await Promise.all([
       this.prisma.rentSchedule.aggregate({
@@ -189,8 +192,8 @@ export class ReportsService {
   }
 
   async chequesCsv(userId: string, role: UserRole, propertyId?: string, from?: string, to?: string) {
-    const where: { ownerId?: string; propertyId?: string | { in: string[] }; chequeDate?: { gte?: Date; lte?: Date } } =
-      role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) } };
+    const where: { ownerId?: string; propertyId?: string | { in: string[] }; chequeDate?: { gte?: Date; lte?: Date }; archivedAt: null } =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId, archivedAt: null } : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, archivedAt: null };
     if (propertyId) where.propertyId = propertyId;
     if (from || to) {
       where.chequeDate = {};
@@ -226,8 +229,8 @@ export class ReportsService {
   }
 
   async rentScheduleCsv(userId: string, role: UserRole, propertyId?: string, from?: string, to?: string) {
-    const leaseWhere: { ownerId?: string; propertyId?: string | { in: string[] } } =
-      role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId } : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) } };
+    const leaseWhere: { ownerId?: string; propertyId?: string | { in: string[] }; archivedAt: null } =
+      role === UserRole.USER || role === UserRole.SUPER_ADMIN ? { ownerId: userId, archivedAt: null } : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, archivedAt: null };
     if (propertyId) leaseWhere.propertyId = propertyId;
     const dueDateFilter: { gte?: Date; lte?: Date } = {};
     if (from) dueDateFilter.gte = new Date(from);

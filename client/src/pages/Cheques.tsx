@@ -6,6 +6,7 @@ import type { Cheque, Property } from '../api/types'
 import ChequeForm from '../components/ChequeForm'
 import ChequeStatusUpdate from '../components/ChequeStatusUpdate'
 import DataTable, { type DataTableColumn } from '../components/DataTable'
+import { ArchivedBadge, ArchiveToggle } from '../components/ArchiveDeleteMenu'
 
 const FETCH_LIMIT = 100
 
@@ -48,6 +49,7 @@ export default function Cheques() {
   const [filterTenantId, setFilterTenantId] = useState<string>(tenantIdFromUrl)
   const [showForm, setShowForm] = useState(false)
   const [statusModal, setStatusModal] = useState<Cheque | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     if (propertyIdFromUrl !== filterPropertyId) setFilterPropertyId(propertyIdFromUrl)
@@ -61,12 +63,12 @@ export default function Cheques() {
 
   const load = () => {
     setLoading(true)
-    chequesApi.list({ page: 1, limit: FETCH_LIMIT })
+    chequesApi.list({ page: 1, limit: FETCH_LIMIT, includeArchived: showArchived || undefined })
       .then((r) => setList(r.data.data))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [showArchived])
   useEffect(() => { propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data)) }, [])
 
   useEffect(() => {
@@ -84,6 +86,13 @@ export default function Cheques() {
 
   const handleSaved = () => { isOnboarding ? navigate(-1) : (setShowForm(false), load()) }
   const handleStatusSaved = () => { setStatusModal(null); load() }
+
+  const handleArchiveCheque = async (id: string) => {
+    try { await chequesApi.archive(id); load() } catch { /* */ }
+  }
+  const handleRestoreCheque = async (id: string) => {
+    try { await chequesApi.restore(id); load() } catch { /* */ }
+  }
 
   const setUrlParam = (key: string, value: string) => {
     setSearchParams((prev) => {
@@ -125,10 +134,13 @@ export default function Cheques() {
       searchable: true,
       getSearchValue: (c) => `${c.chequeNumber} ${c.bankName}`.trim(),
       render: (c) => (
-        <div>
-          <Link to={`/cheques/${c.id}`} className="font-medium text-indigo-600 hover:underline">
-            {c.chequeNumber}
-          </Link>
+        <div className={c.archivedAt ? 'opacity-60' : ''}>
+          <div className="flex items-center">
+            <Link to={`/cheques/${c.id}`} className="font-medium text-indigo-600 hover:underline">
+              {c.chequeNumber}
+            </Link>
+            {c.archivedAt && <ArchivedBadge />}
+          </div>
           <p className="mt-0.5 text-xs text-slate-500">{c.bankName}</p>
         </div>
       ),
@@ -204,16 +216,36 @@ export default function Cheques() {
       label: '',
       sortable: false,
       align: 'right',
-      render: (c) =>
-        ['RECEIVED', 'DEPOSITED', 'BOUNCED'].includes(c.status) ? (
-          <button
-            type="button"
-            onClick={() => setStatusModal(c)}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
-          >
-            Update status
-          </button>
-        ) : null,
+      render: (c) => (
+        <div className="flex items-center justify-end gap-1">
+          {!c.archivedAt && ['RECEIVED', 'DEPOSITED', 'BOUNCED'].includes(c.status) && (
+            <button
+              type="button"
+              onClick={() => setStatusModal(c)}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+            >
+              Update status
+            </button>
+          )}
+          {c.archivedAt ? (
+            <button
+              type="button"
+              onClick={() => handleRestoreCheque(c.id)}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
+            >
+              Restore
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleArchiveCheque(c.id)}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-50"
+            >
+              Archive
+            </button>
+          )}
+        </div>
+      ),
     },
   ]
 
@@ -249,6 +281,7 @@ export default function Cheques() {
         <option value="BOUNCED">Bounced</option>
         <option value="REPLACED">Replaced</option>
       </select>
+      <ArchiveToggle showArchived={showArchived} onChange={setShowArchived} />
     </>
   )
 

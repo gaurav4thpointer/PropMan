@@ -6,6 +6,7 @@ import type { Property } from '../api/types'
 import PropertyForm from '../components/PropertyForm'
 import DataTable, { type DataTableColumn } from '../components/DataTable'
 import { formatPropertyCode } from '../utils/ids'
+import { ArchivedBadge, ArchiveToggle } from '../components/ArchiveDeleteMenu'
 
 const FETCH_LIMIT = 100
 
@@ -31,15 +32,16 @@ export default function Properties() {
   const [filterCountry, setFilterCountry] = useState(countryFromUrl)
   const [filterCurrency, setFilterCurrency] = useState(currencyFromUrl)
   const [filterStatus, setFilterStatus] = useState(statusFromUrl)
+  const [showArchived, setShowArchived] = useState(false)
 
   const load = () => {
     setLoading(true)
-    propertiesApi.list({ page: 1, limit: FETCH_LIMIT })
+    propertiesApi.list({ page: 1, limit: FETCH_LIMIT, includeArchived: showArchived || undefined })
       .then((r) => setList(r.data.data))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [showArchived])
   useEffect(() => {
     setFilterCountry(countryFromUrl)
     setFilterCurrency(currencyFromUrl)
@@ -90,6 +92,20 @@ export default function Properties() {
     setShowForm(true)
   }
 
+  const handleArchive = async (id: string) => {
+    try {
+      await propertiesApi.archive(id)
+      load()
+    } catch { /* handled by reload */ }
+  }
+
+  const handleRestore = async (id: string) => {
+    try {
+      await propertiesApi.restore(id)
+      load()
+    } catch { /* handled by reload */ }
+  }
+
   const setUrlParam = (key: string, value: string) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
@@ -106,13 +122,16 @@ export default function Properties() {
       searchable: true,
       getSearchValue: (p) => `${p.name} ${p.address ?? ''} ${formatPropertyCode(p.id)}`.trim(),
       render: (p) => (
-        <div className="min-w-0">
-          <Link
-            to={`/properties/${p.id}`}
-            className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
-          >
-            {p.name}
-          </Link>
+        <div className={`min-w-0 ${p.archivedAt ? 'opacity-60' : ''}`}>
+          <div className="flex items-center">
+            <Link
+              to={`/properties/${p.id}`}
+              className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+            >
+              {p.name}
+            </Link>
+            {p.archivedAt && <ArchivedBadge />}
+          </div>
           {p.address && (
             <p className="mt-0.5 truncate text-xs text-slate-500">{p.address}</p>
           )}
@@ -199,13 +218,35 @@ export default function Properties() {
       sortable: false,
       align: 'right',
       render: (p) => (
-        <button
-          type="button"
-          onClick={() => handleEdit(p)}
-          className="rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
-        >
-          Edit
-        </button>
+        <div className="flex items-center justify-end gap-1">
+          {!p.archivedAt && (
+            <button
+              type="button"
+              onClick={() => handleEdit(p)}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+            >
+              Edit
+            </button>
+          )}
+          {p.archivedAt ? (
+            <button
+              type="button"
+              onClick={() => handleRestore(p.id)}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
+            >
+              Restore
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleArchive(p.id)}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-50"
+              title="Archive"
+            >
+              Archive
+            </button>
+          )}
+        </div>
       ),
     },
   ]
@@ -256,6 +297,7 @@ export default function Properties() {
         <option value="OCCUPIED">Occupied</option>
         <option value="VACANT">Vacant</option>
       </select>
+      <ArchiveToggle showArchived={showArchived} onChange={setShowArchived} />
     </>
   )
 

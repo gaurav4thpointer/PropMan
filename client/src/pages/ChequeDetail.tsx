@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { cheques as chequesApi } from '../api/client'
 import type { Cheque } from '../api/types'
+import ArchiveDeleteMenu, { ArchivedBadge } from '../components/ArchiveDeleteMenu'
 
 const STATUS_COLORS: Record<string, string> = {
   RECEIVED: 'badge-neutral',
@@ -74,6 +75,7 @@ function buildTimeline(c: Cheque): TimelineEvent[] {
 
 export default function ChequeDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [cheque, setCheque] = useState<Cheque | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -110,15 +112,45 @@ export default function ChequeDetail() {
     <div>
       <Link to="/cheques" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Cheques</Link>
 
+      {cheque.archivedAt && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+          This cheque is archived. It is hidden from lists and reports. Use the Actions menu to restore it.
+        </div>
+      )}
+
       <div className="mb-8 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Cheque {cheque.chequeNumber}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-slate-800">Cheque {cheque.chequeNumber}</h1>
+              {cheque.archivedAt && <ArchivedBadge />}
+            </div>
             <p className="mt-1 text-slate-600">{cheque.bankName}</p>
             <p className="mt-1 text-lg font-semibold text-slate-800">{formatNum(Number(cheque.amount))}</p>
             <p className="mt-0.5 text-sm text-slate-500">{cheque.coversPeriod}</p>
           </div>
-          <span className={`badge ${STATUS_COLORS[cheque.status] ?? 'badge-neutral'}`}>{cheque.status}</span>
+          <div className="flex items-center gap-2">
+            <span className={`badge ${STATUS_COLORS[cheque.status] ?? 'badge-neutral'}`}>{cheque.status}</span>
+            <ArchiveDeleteMenu
+              entityType="Cheque"
+              entityName={`Cheque ${cheque.chequeNumber}`}
+              isArchived={!!cheque.archivedAt}
+              onArchive={async () => {
+                await chequesApi.archive(id!)
+                const r = await chequesApi.get(id!)
+                setCheque(r.data)
+              }}
+              onRestore={async () => {
+                await chequesApi.restore(id!)
+                const r = await chequesApi.get(id!)
+                setCheque(r.data)
+              }}
+              onDelete={async () => {
+                await chequesApi.delete(id!)
+                navigate('/cheques')
+              }}
+            />
+          </div>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-4 text-sm">

@@ -58,8 +58,20 @@ export class ChequesController {
     return this.chequesService.updateStatus(user.id, user.role, id, dto);
   }
 
+  @Patch(':id/archive')
+  @ApiOperation({ summary: 'Archive cheque' })
+  archive(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.chequesService.archive(user.id, user.role, id);
+  }
+
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Restore archived cheque' })
+  restore(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.chequesService.restore(user.id, user.role, id);
+  }
+
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete cheque' })
+  @ApiOperation({ summary: 'Permanently delete cheque' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.chequesService.remove(user.id, user.role, id);
   }

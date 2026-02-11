@@ -34,10 +34,10 @@ export class RentScheduleService {
   async findOverdue(userId: string, role: UserRole, propertyId?: string, pagination?: PaginationDto) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const leaseWhere: { ownerId?: string; propertyId?: string | { in: string[] } } =
+    const leaseWhere: Record<string, unknown> =
       role === UserRole.USER || role === UserRole.SUPER_ADMIN
-        ? { ownerId: userId, ...(propertyId && { propertyId }) }
-        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, ...(propertyId && { propertyId }) };
+        ? { ownerId: userId, archivedAt: null, ...(propertyId && { propertyId }) }
+        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, archivedAt: null, ...(propertyId && { propertyId }) };
     if (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN && (leaseWhere.propertyId as { in: string[] })?.in?.length === 0) {
       return paginatedResponse([], 0, 1, 50);
     }
@@ -57,10 +57,10 @@ export class RentScheduleService {
   }
 
   async findOutstanding(userId: string, role: UserRole, propertyId?: string, from?: string, to?: string) {
-    const leaseWhere: { ownerId?: string; propertyId?: string | { in: string[] } } =
+    const leaseWhere: Record<string, unknown> =
       role === UserRole.USER || role === UserRole.SUPER_ADMIN
-        ? { ownerId: userId, ...(propertyId && { propertyId }) }
-        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, ...(propertyId && { propertyId }) };
+        ? { ownerId: userId, archivedAt: null, ...(propertyId && { propertyId }) }
+        : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, archivedAt: null, ...(propertyId && { propertyId }) };
     const dueDateFilter: { gte?: Date; lte?: Date } = {};
     if (from) dueDateFilter.gte = new Date(from);
     if (to) dueDateFilter.lte = new Date(to);

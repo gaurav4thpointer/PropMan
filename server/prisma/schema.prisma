@@ -107,6 +107,7 @@ model Property {
   bedrooms       Int?
   status         UnitStatus? @default(VACANT)
   notes          String?
+  archivedAt     DateTime?   // soft-delete / archive timestamp
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   ownerId        String
@@ -118,15 +119,16 @@ model Property {
 }
 
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String?
-  email     String?
-  idNumber  String?  // optional ID (Aadhaar, Emirates ID, etc.)
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ownerId   String
+  id         String    @id @default(uuid())
+  name       String
+  phone      String?
+  email      String?
+  idNumber   String?   // optional ID (Aadhaar, Emirates ID, etc.)
+  notes      String?
+  archivedAt DateTime? // soft-delete / archive timestamp
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  ownerId    String
 
   owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   leases  Lease[]
@@ -144,6 +146,7 @@ model Lease {
   dueDay            Int           // 1-28
   securityDeposit   Decimal?      @db.Decimal(14, 2)
   notes             String?
+  archivedAt        DateTime?     // soft-delete / archive timestamp
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   propertyId        String
@@ -202,6 +205,7 @@ model Cheque {
   clearedOrBounceDate DateTime?   @db.Date
   bounceReason       String?
   notes              String?
+  archivedAt         DateTime?    // soft-delete / archive timestamp
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   // Denormalized for filters
@@ -226,6 +230,7 @@ model Payment {
   method     PaymentMethod
   reference  String?
   notes      String?
+  archivedAt DateTime?     // soft-delete / archive timestamp
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
   leaseId    String

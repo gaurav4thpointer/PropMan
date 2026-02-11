@@ -30,6 +30,7 @@ export interface Property {
   bedrooms?: number | null
   status?: UnitStatus | null
   notes?: string
+  archivedAt?: string | null
   ownerId?: string
 }
 
@@ -53,6 +54,7 @@ export interface Tenant {
   email?: string
   idNumber?: string
   notes?: string
+  archivedAt?: string | null
 }
 
 export interface Lease {
@@ -65,6 +67,7 @@ export interface Lease {
   dueDay: number
   securityDeposit?: number | string
   notes?: string
+  archivedAt?: string | null
   propertyId: string
   tenantId: string
   property?: Property
@@ -104,6 +107,7 @@ export interface Cheque {
   clearedOrBounceDate?: string
   bounceReason?: string
   notes?: string
+  archivedAt?: string | null
   createdAt?: string
   updatedAt?: string
   leaseId: string
@@ -124,6 +128,7 @@ export interface Payment {
   method: PaymentMethod
   reference?: string
   notes?: string
+  archivedAt?: string | null
   leaseId: string
   tenantId: string
   propertyId: string
@@ -131,6 +136,14 @@ export interface Payment {
   tenant?: Tenant
   property?: Property
   scheduleMatches?: { amount: number | string; rentSchedule: RentSchedule }[]
+}
+
+export interface CascadeInfo {
+  leases?: number
+  cheques?: number
+  payments?: number
+  schedules?: number
+  documents?: number
 }
 
 export interface Paginated<T> {
