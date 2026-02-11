@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { UserRole, Prisma } from '@prisma/client';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { UserRole, Prisma, PaymentMethod } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccessService } from '../access/access.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreateChequeDto } from './dto/create-cheque.dto';
 import { UpdateChequeDto } from './dto/update-cheque.dto';
 import { ChequeStatusUpdateDto } from './dto/cheque-status.dto';
@@ -20,9 +21,12 @@ const VALID_TRANSITIONS: Record<ChequeStatus, ChequeStatus[]> = {
 
 @Injectable()
 export class ChequesService {
+  private readonly logger = new Logger(ChequesService.name);
+
   constructor(
     private prisma: PrismaService,
     private accessService: AccessService,
+    private paymentsService: PaymentsService,
   ) {}
 
   async create(userId: string, role: UserRole, dto: CreateChequeDto) {
@@ -130,11 +134,57 @@ export class ChequesService {
     if (dto.bounceReason) data.bounceReason = dto.bounceReason;
     if (dto.replacedByChequeId) data.replacedByChequeId = dto.replacedByChequeId;
 
-    return this.prisma.cheque.update({
+    const updated = await this.prisma.cheque.update({
       where: { id },
       data,
       include: { lease: true, tenant: true, property: true },
     });
+
+    // When a cheque is cleared, automatically create a linked Payment
+    // so the amount is matched against the lease's rent schedule.
+    if (dto.status === ChequeStatus.CLEARED) {
+      await this.createPaymentForClearedCheque(userId, role, updated);
+    }
+
+    return updated;
+  }
+
+  /**
+   * Create a Payment record linked to a cleared cheque.
+   * Uses the cleared date (or cheque date) as the payment date.
+   * Skips if a payment already exists for this cheque.
+   */
+  private async createPaymentForClearedCheque(
+    userId: string,
+    role: UserRole,
+    cheque: { id: string; chequeDate: Date; clearedOrBounceDate: Date | null; amount: Decimal; leaseId: string; tenantId: string; propertyId: string; chequeNumber: string; bankName: string },
+  ) {
+    // Guard: skip if a payment already exists for this cheque
+    const existing = await this.prisma.payment.findFirst({
+      where: { chequeId: cheque.id },
+    });
+    if (existing) {
+      this.logger.log(`Payment already exists for cheque ${cheque.id}, skipping auto-creation`);
+      return;
+    }
+
+    const paymentDate = cheque.clearedOrBounceDate ?? cheque.chequeDate;
+
+    try {
+      await this.paymentsService.create(userId, role, {
+        date: paymentDate.toISOString().split('T')[0],
+        amount: Number(cheque.amount),
+        method: PaymentMethod.CHEQUE,
+        reference: `Cheque #${cheque.chequeNumber} (${cheque.bankName})`,
+        leaseId: cheque.leaseId,
+        tenantId: cheque.tenantId,
+        propertyId: cheque.propertyId,
+        chequeId: cheque.id,
+      });
+      this.logger.log(`Auto-created payment for cleared cheque ${cheque.id}`);
+    } catch (err) {
+      this.logger.error(`Failed to auto-create payment for cheque ${cheque.id}: ${err}`);
+    }
   }
 
   async upcoming(userId: string, role: UserRole, days: 30 | 60 | 90, propertyId?: string) {
