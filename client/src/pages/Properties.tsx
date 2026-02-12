@@ -48,6 +48,8 @@ export default function Properties() {
     setFilterStatus(statusFromUrl)
   }, [countryFromUrl, currencyFromUrl, statusFromUrl])
 
+  const ownerIdFromUrl = searchParams.get('ownerId') ?? ''
+
   useEffect(() => {
     if (searchParams.get('onboarding') === 'new') {
       setEditing(null)
@@ -320,6 +322,7 @@ export default function Properties() {
       {showForm && (
         <PropertyForm
           property={editing ?? undefined}
+          initialOwnerId={!editing && ownerIdFromUrl ? ownerIdFromUrl : undefined}
           onSaved={handleSaved}
           onCancel={() => {
             setShowForm(false)
@@ -328,6 +331,7 @@ export default function Properties() {
               const next = new URLSearchParams(prev)
               next.delete('onboarding')
               next.delete('next')
+              next.delete('ownerId')
               return next
             })
           }}

@@ -5,6 +5,7 @@ import { AccessModule } from './access/access.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PropertiesModule } from './properties/properties.module';
+import { OwnersModule } from './owners/owners.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { LeasesModule } from './leases/leases.module';
 import { RentScheduleModule } from './rent-schedule/rent-schedule.module';
@@ -22,6 +23,7 @@ import { AppConfigModule } from './config/config.module';
     UsersModule,
     AdminModule,
     AppConfigModule,
+    OwnersModule,
     PropertiesModule,
     TenantsModule,
     LeasesModule,

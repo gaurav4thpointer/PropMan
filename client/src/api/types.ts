@@ -8,7 +8,7 @@ export type PaymentMethod = 'CHEQUE' | 'BANK_TRANSFER' | 'UPI' | 'CASH'
 
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY'
 
-export type UserRole = 'USER' | 'SUPER_ADMIN'
+export type UserRole = 'USER' | 'PROPERTY_MANAGER' | 'SUPER_ADMIN'
 
 export interface User {
   id: string
@@ -149,6 +149,26 @@ export interface CascadeInfo {
 export interface Paginated<T> {
   data: T[]
   meta: { total: number; page: number; limit: number; totalPages: number }
+}
+
+export interface Owner {
+  id: string
+  email: string
+  name?: string | null
+  mobile?: string | null
+  role: string
+  createdAt: string
+  propertyCount?: number
+}
+
+export interface OwnerWithProperties extends Owner {
+  properties: Property[]
+}
+
+export interface Manager {
+  id: string
+  email: string
+  name?: string | null
 }
 
 export interface DashboardData {

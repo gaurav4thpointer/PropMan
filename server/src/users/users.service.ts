@@ -1,5 +1,5 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from '../auth/dto/register.dto';
@@ -13,9 +13,11 @@ export class UsersService {
   async create(dto: RegisterDto) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw new ConflictException('Email already registered');
+    const role =
+      dto.role === UserRole.PROPERTY_MANAGER ? UserRole.PROPERTY_MANAGER : UserRole.USER;
     const hashed = await bcrypt.hash(dto.password, 10);
     return this.prisma.user.create({
-      data: { email: dto.email, password: hashed, name: dto.name },
+      data: { email: dto.email, password: hashed, name: dto.name, role },
       select: { id: true, email: true, name: true, mobile: true, gender: true, role: true, createdAt: true },
     });
   }

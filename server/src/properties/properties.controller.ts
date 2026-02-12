@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PropertiesService } from './properties.service';
+import { OwnersService } from '../owners/owners.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
 import { PropertyQueryDto } from './dto/property-query.dto';
+import { AssignManagerDto } from '../owners/dto/assign-manager.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
@@ -13,7 +15,10 @@ import { User } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @Controller('properties')
 export class PropertiesController {
-  constructor(private propertiesService: PropertiesService) {}
+  constructor(
+    private propertiesService: PropertiesService,
+    private ownersService: OwnersService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a property' })
@@ -26,6 +31,12 @@ export class PropertiesController {
   findAll(@CurrentUser() user: User, @Query() query: PropertyQueryDto) {
     const { page, limit, ...filters } = query;
     return this.propertiesService.findAll(user.id, user.role, { page, limit }, filters);
+  }
+
+  @Get(':id/managers')
+  @ApiOperation({ summary: 'List managers for property (owner only)' })
+  getPropertyManagers(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.ownersService.getManagersForProperty(id, user.id, user.role);
   }
 
   @Get(':id')
@@ -62,5 +73,17 @@ export class PropertiesController {
   @ApiOperation({ summary: 'Permanently delete property' })
   remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.propertiesService.remove(user.id, user.role, id);
+  }
+
+  @Post(':id/managers')
+  @ApiOperation({ summary: 'Assign manager to property (owner only)' })
+  assignManager(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: AssignManagerDto) {
+    return this.ownersService.assignManagerToProperty(id, dto.managerId, user.id, user.role);
+  }
+
+  @Delete(':id/managers/:managerId')
+  @ApiOperation({ summary: 'Revoke manager from property (owner only)' })
+  revokeManager(@CurrentUser() user: User, @Param('id') id: string, @Param('managerId') managerId: string) {
+    return this.ownersService.revokeManagerFromProperty(id, managerId, user.id, user.role);
   }
 }

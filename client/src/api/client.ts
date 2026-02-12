@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Property, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload, CascadeInfo } from './types'
+import type { Property, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload, CascadeInfo, Owner, OwnerWithProperties, Manager } from './types'
 
 const baseURL = import.meta.env.VITE_API_URL ?? '/api'
 
@@ -48,8 +48,8 @@ api.interceptors.response.use(
 export const auth = {
   login: (email: string, password: string) =>
     api.post<{ user: { id: string; email: string; name?: string | null; role?: string }; access_token: string }>('/auth/login', { email, password }),
-  register: (name: string, email: string, password: string) =>
-    api.post<{ user: { id: string; email: string; name?: string | null; role?: string }; access_token: string }>('/auth/register', { name, email, password }),
+  register: (name: string, email: string, password: string, role?: 'USER' | 'PROPERTY_MANAGER') =>
+    api.post<{ user: { id: string; email: string; name?: string | null; role?: string }; access_token: string }>('/auth/register', { name, email, password, role }),
 }
 
 export const users = {
@@ -226,4 +226,22 @@ export const admin = {
 
 export const config = {
   getCountries: () => api.get<CountryConfig>('/config/countries'),
+}
+
+export const owners = {
+  list: (params?: { page?: number; limit?: number; search?: string }) =>
+    api.get<Paginated<Owner>>('/owners', { params }),
+  get: (id: string) => api.get<OwnerWithProperties>(`/owners/${id}`),
+  create: (data: { name: string; email: string; password: string; mobile?: string }) =>
+    api.post<Owner>('/owners', data),
+  getMyManagers: () => api.get<{ data: Manager[] }>('/owners/me/managers'),
+  revokeManager: (managerId: string) => api.delete(`/owners/managers/${managerId}`),
+}
+
+export const propertyManagers = {
+  assign: (propertyId: string, managerId: string) =>
+    api.post<{ assigned: boolean }>(`/properties/${propertyId}/managers`, { managerId }),
+  revoke: (propertyId: string, managerId: string) =>
+    api.delete(`/properties/${propertyId}/managers/${managerId}`),
+  list: (propertyId: string) => api.get<{ data: Manager[] }>(`/properties/${propertyId}/managers`),
 }

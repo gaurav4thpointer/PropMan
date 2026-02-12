@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { tenants } from '../api/client'
-import type { Tenant } from '../api/types'
+import { tenants, owners } from '../api/client'
+import type { Tenant, Owner } from '../api/types'
+import { useAuth } from '../context/AuthContext'
+import OwnerForm from './OwnerForm'
 
 function getApiMessage(err: unknown): string {
   const m = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message
@@ -11,6 +13,7 @@ function getApiMessage(err: unknown): string {
 }
 
 const schema = z.object({
+  ownerId: z.string().optional(),
   name: z.string().min(1),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
@@ -33,10 +36,22 @@ export default function TenantForm({
   onSavedWithNew?: (tenant: Tenant) => void
   inline?: boolean
 }) {
+  const { user } = useAuth()
+  const isManager = user?.role === 'PROPERTY_MANAGER'
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [managedOwners, setManagedOwners] = useState<Owner[]>([])
+  const [showAddOwner, setShowAddOwner] = useState(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  useEffect(() => {
+    if (isManager && !tenant) {
+      owners.list({ page: 1, limit: 100 }).then((r) => {
+        setManagedOwners(r.data?.data ?? [])
+      }).catch(() => {})
+    }
+  }, [isManager, tenant])
+
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: tenant
       ? { name: tenant.name, phone: tenant.phone ?? '', email: tenant.email ?? '', idNumber: tenant.idNumber ?? '', notes: tenant.notes ?? '' }
@@ -51,6 +66,14 @@ export default function TenantForm({
       if (tenant) {
         await tenants.update(tenant.id, payload)
       } else {
+        if (isManager) {
+          if (!data.ownerId) {
+            setApiError('Please select or create an owner')
+            setSubmitting(false)
+            return
+          }
+          payload.ownerId = data.ownerId
+        }
         const { data: created } = await tenants.create(payload as Partial<Tenant>)
         onSavedWithNew?.(created)
       }
@@ -71,6 +94,43 @@ export default function TenantForm({
         const wrapperProps = inline ? {} : { onSubmit: handleSubmit(onSubmit) }
         return (
           <Wrapper {...(wrapperProps as React.HTMLAttributes<HTMLElement>)} className="space-y-4">
+            {isManager && !tenant && (
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Owner *</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOwner(true)}
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+                  >
+                    + Add new owner
+                  </button>
+                </div>
+                <select {...register('ownerId', { required: true })} className="w-full rounded-lg border border-slate-300 px-3 py-2">
+                  <option value="">Select owner</option>
+                  {managedOwners.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name || o.email} ({o.email})
+                    </option>
+                  ))}
+                </select>
+                {errors.ownerId && <p className="text-red-600 text-sm mt-1">Owner is required</p>}
+                {showAddOwner && (
+                  <div className="mt-3">
+                    <OwnerForm
+                      inline
+                      onSaved={() => setShowAddOwner(false)}
+                      onCancel={() => setShowAddOwner(false)}
+                      onSavedWithNew={(owner) => {
+                        setManagedOwners((prev) => [...prev, owner])
+                        setValue('ownerId', owner.id)
+                        setShowAddOwner(false)
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
               <input {...register('name')} className="w-full rounded-lg border border-slate-300 px-3 py-2" />

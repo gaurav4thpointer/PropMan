@@ -1,8 +1,8 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { properties, leases, cheques, payments, rentSchedule } from '../api/client'
-import type { Property, Lease, Cheque, Payment, RentSchedule } from '../api/types'
+import { properties, leases, cheques, payments, rentSchedule, propertyManagers, owners } from '../api/client'
+import type { Property, Lease, Cheque, Payment, RentSchedule, Manager } from '../api/types'
 import PropertyForm from '../components/PropertyForm'
 import LeasePaymentCard from '../components/LeasePaymentCard'
 import ArchiveDeleteMenu, { ArchivedBadge } from '../components/ArchiveDeleteMenu'
@@ -53,6 +53,7 @@ export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const isOwner = user?.role === 'USER' || user?.role === 'SUPER_ADMIN'
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -63,6 +64,11 @@ export default function PropertyDetail() {
   const [scheduleMap, setScheduleMap] = useState<Record<string, RentSchedule[]>>({})
   const [relatedLoading, setRelatedLoading] = useState(true)
   const [showOtherLeases, setShowOtherLeases] = useState(false)
+  const [propertyManagersList, setPropertyManagersList] = useState<Manager[]>([])
+  const [myManagers, setMyManagers] = useState<Manager[]>([])
+  const [managersLoading, setManagersLoading] = useState(false)
+  const [assignManagerId, setAssignManagerId] = useState('')
+  const [assigning, setAssigning] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -110,6 +116,24 @@ export default function PropertyDetail() {
       .finally(() => setRelatedLoading(false))
   }, [id])
 
+  useEffect(() => {
+    if (!id || !isOwner) return
+    setManagersLoading(true)
+    Promise.all([
+      propertyManagers.list(id).then((r) => r.data?.data ?? []),
+      owners.getMyManagers().then((r) => r.data?.data ?? []),
+    ])
+      .then(([managers, allManagers]) => {
+        setPropertyManagersList(managers)
+        setMyManagers(allManagers)
+      })
+      .catch(() => {
+        setPropertyManagersList([])
+        setMyManagers([])
+      })
+      .finally(() => setManagersLoading(false))
+  }, [id, isOwner])
+
   const refresh = () => {
     if (!id) return
     properties.get(id).then((r) => setProperty(r.data)).catch(() => {})
@@ -140,6 +164,35 @@ export default function PropertyDetail() {
         setScheduleMap({})
       })
       .finally(() => setRelatedLoading(false))
+  }
+
+  const refreshManagers = () => {
+    if (!id || !isOwner) return
+    propertyManagers.list(id).then((r) => setPropertyManagersList(r.data?.data ?? [])).catch(() => {})
+  }
+
+  const handleAssignManager = async () => {
+    if (!id || !assignManagerId) return
+    setAssigning(true)
+    try {
+      await propertyManagers.assign(id, assignManagerId)
+      setAssignManagerId('')
+      refreshManagers()
+    } catch {
+      /* ignore */
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  const handleRevokeManager = async (managerId: string) => {
+    if (!id) return
+    try {
+      await propertyManagers.revoke(id, managerId)
+      refreshManagers()
+    } catch {
+      /* ignore */
+    }
   }
 
   if (loading) {
@@ -297,6 +350,72 @@ export default function PropertyDetail() {
           ))}
         </div>
       </div>
+
+      {/* Property managers (owner only) */}
+      {isOwner && (
+        <div className="card p-6">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Property managers</h2>
+          {managersLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {propertyManagersList.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-slate-700">Managers on this property</p>
+                  <ul className="space-y-2">
+                    {propertyManagersList.map((m) => (
+                      <li key={m.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3">
+                        <span className="text-sm text-slate-800">{m.name || m.email}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRevokeManager(m.id)}
+                          className="text-sm font-medium text-rose-600 hover:text-rose-700 hover:underline"
+                        >
+                          Revoke
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {myManagers.length > 0 && (
+                <div className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-500">Assign manager</label>
+                    <select
+                      value={assignManagerId}
+                      onChange={(e) => setAssignManagerId(e.target.value)}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    >
+                      <option value="">Select manager</option>
+                      {myManagers
+                        .filter((m) => !propertyManagersList.some((pm) => pm.id === m.id))
+                        .map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name || m.email}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAssignManager}
+                    disabled={!assignManagerId || assigning}
+                    className="btn-primary text-sm"
+                  >
+                    {assigning ? 'Assigning…' : 'Assign'}
+                  </button>
+                </div>
+              )}
+              {propertyManagersList.length === 0 && myManagers.length === 0 && (
+                <p className="text-sm text-slate-500">No managers linked. Onboard owners first; they can then assign you to properties.</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Notes */}
       {property.notes?.trim() && (

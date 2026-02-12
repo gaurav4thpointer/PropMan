@@ -18,10 +18,16 @@ export class TenantsService {
     let ownerId: string;
     if (role === UserRole.USER || role === UserRole.SUPER_ADMIN) {
       ownerId = userId;
+    } else if (role === UserRole.PROPERTY_MANAGER) {
+      const providedOwnerId = dto.ownerId;
+      if (!providedOwnerId) throw new ForbiddenException('Property manager must specify ownerId');
+      const canManage = await this.accessService.canManageOwner(userId, providedOwnerId);
+      if (!canManage) throw new ForbiddenException('You cannot create tenants for this owner');
+      ownerId = providedOwnerId;
     } else {
-      throw new ForbiddenException('Only owners can create tenants');
+      throw new ForbiddenException('Only owners or property managers can create tenants');
     }
-    const { propertyId: _omit, ...rest } = dto;
+    const { ownerId: _omit, propertyId: _p, ...rest } = dto;
     return this.prisma.tenant.create({
       data: { ...rest, ownerId },
     });
@@ -29,7 +35,17 @@ export class TenantsService {
 
   async findAll(userId: string, role: UserRole, pagination: PaginationDto, search?: string, includeArchived?: boolean) {
     const { page = 1, limit = 20 } = pagination;
-    const where: Record<string, unknown> = { ownerId: userId };
+    let ownerFilter: string | { in: string[] };
+    if (role === UserRole.USER || role === UserRole.SUPER_ADMIN) {
+      ownerFilter = userId;
+    } else if (role === UserRole.PROPERTY_MANAGER) {
+      const managedIds = await this.accessService.getManagedOwnerIds(userId);
+      if (managedIds.length === 0) return paginatedResponse([], 0, page, limit);
+      ownerFilter = { in: managedIds };
+    } else {
+      return paginatedResponse([], 0, page, limit);
+    }
+    const where: Record<string, unknown> = { ownerId: ownerFilter };
     if (!includeArchived) where.archivedAt = null;
     if (search?.trim()) {
       const q = search.trim();
@@ -41,12 +57,12 @@ export class TenantsService {
     }
     const [data, total] = await Promise.all([
       this.prisma.tenant.findMany({
-        where: where as { ownerId: string },
+        where: where as object,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { name: 'asc' },
       }),
-      this.prisma.tenant.count({ where: where as { ownerId: string } }),
+      this.prisma.tenant.count({ where: where as object }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }
@@ -54,7 +70,12 @@ export class TenantsService {
   async findOne(userId: string, role: UserRole, id: string) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id } });
     if (!tenant) throw new NotFoundException('Tenant not found');
-    if (tenant.ownerId !== userId || (role !== UserRole.USER && role !== UserRole.SUPER_ADMIN)) {
+    if (role === UserRole.USER || role === UserRole.SUPER_ADMIN) {
+      if (tenant.ownerId !== userId) throw new NotFoundException('Tenant not found');
+    } else if (role === UserRole.PROPERTY_MANAGER) {
+      const canManage = await this.accessService.canManageOwner(userId, tenant.ownerId);
+      if (!canManage) throw new NotFoundException('Tenant not found');
+    } else {
       throw new NotFoundException('Tenant not found');
     }
     return tenant;

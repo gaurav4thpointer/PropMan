@@ -16,6 +16,8 @@ import Cheques from './pages/Cheques'
 import ChequeDetail from './pages/ChequeDetail'
 import Payments from './pages/Payments'
 import Reports from './pages/Reports'
+import Owners from './pages/Owners'
+import OwnerDetail from './pages/OwnerDetail'
 import Account from './pages/Account'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
@@ -42,6 +44,8 @@ function App() {
             <Route path="cheques/:id" element={<ChequeDetail />} />
             <Route path="payments" element={<Payments />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="owners" element={<Owners />} />
+            <Route path="owners/:id" element={<OwnerDetail />} />
             <Route path="account" element={<Account />} />
           </Route>
           <Route

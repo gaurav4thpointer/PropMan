@@ -9,6 +9,7 @@ const schema = z.object({
   name: z.string().min(1, 'Name is required').max(120),
   email: z.string().email(),
   password: z.string().min(8, 'At least 8 characters'),
+  role: z.enum(['USER', 'PROPERTY_MANAGER']),
 })
 
 type FormData = z.infer<typeof schema>
@@ -22,12 +23,13 @@ export default function Register() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { role: 'USER' },
   })
 
   const onSubmit = async (data: FormData) => {
     setError('')
     try {
-      await registerUser(data.name.trim(), data.email, data.password)
+      await registerUser(data.name.trim(), data.email, data.password, data.role)
       navigate(from && from !== '/login' && from !== '/register' ? from : '/', { replace: true })
     } catch (e: unknown) {
       const m = (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
@@ -119,6 +121,19 @@ export default function Register() {
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
                 )}
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">I am a</label>
+                <div className="flex gap-4">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input type="radio" {...register('role')} value="USER" className="rounded border-slate-300" />
+                    <span className="text-sm text-slate-700">Property owner</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input type="radio" {...register('role')} value="PROPERTY_MANAGER" className="rounded border-slate-300" />
+                    <span className="text-sm text-slate-700">Property manager</span>
+                  </label>
+                </div>
               </div>
               <button
                 type="submit"

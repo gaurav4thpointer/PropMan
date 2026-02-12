@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '../context/AuthContext'
-import { users } from '../api/client'
+import { users, owners } from '../api/client'
+import type { Manager } from '../api/types'
 
 const genderOptions = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'] as const
 const profileSchema = z.object({
@@ -29,7 +30,11 @@ function getApiMessage(err: unknown): string {
 }
 
 export default function Account() {
-  const { user, refreshUser } = useAuth()
+  const { user, refreshUser, logout } = useAuth()
+  const navigate = useNavigate()
+  const isOwner = user?.role === 'USER' || user?.role === 'SUPER_ADMIN'
+  const [myManagers, setMyManagers] = useState<Manager[]>([])
+  const [managersLoading, setManagersLoading] = useState(false)
   const [profileSuccess, setProfileSuccess] = useState('')
   const [profileError, setProfileError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
@@ -46,6 +51,22 @@ export default function Account() {
       gender: '' as ProfileFormData['gender'],
     },
   })
+  useEffect(() => {
+    if (isOwner) {
+      setManagersLoading(true)
+      owners.getMyManagers().then((r) => setMyManagers(r.data?.data ?? [])).catch(() => setMyManagers([])).finally(() => setManagersLoading(false))
+    }
+  }, [isOwner])
+
+  const handleRevokeManager = async (managerId: string) => {
+    try {
+      await owners.revokeManager(managerId)
+      setMyManagers((prev) => prev.filter((m) => m.id !== managerId))
+    } catch {
+      /* ignore */
+    }
+  }
+
   useEffect(() => {
     if (user) {
       const genderVal = user.gender && genderOptions.includes(user.gender as typeof genderOptions[number]) ? user.gender : ''
@@ -99,11 +120,27 @@ export default function Account() {
     }
   }
 
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   return (
     <div>
       <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">← Dashboard</Link>
-      <h1 className="mb-2 text-2xl font-bold text-slate-800">Account</h1>
-      <p className="mb-8 text-slate-500">Manage your profile and password</p>
+      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="mb-2 text-2xl font-bold text-slate-800">Account</h1>
+          <p className="text-slate-500">Manage your profile and password</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="btn-secondary shrink-0 self-start sm:self-auto"
+        >
+          Logout
+        </button>
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="card p-6">
@@ -227,6 +264,36 @@ export default function Account() {
             </button>
           </form>
         </div>
+
+        {isOwner && (
+          <div className="card p-6 lg:col-span-2">
+            <h2 className="mb-4 text-lg font-semibold text-slate-800">My property managers</h2>
+            <p className="mb-4 text-sm text-slate-600">Managers who have access to your properties. Revoke to remove access from all properties.</p>
+            {managersLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+              </div>
+            ) : myManagers.length === 0 ? (
+              <p className="text-sm text-slate-500">No managers linked. Property managers can onboard you; then you can assign them to properties.</p>
+            ) : (
+              <ul className="space-y-2">
+                {myManagers.map((m) => (
+                  <li key={m.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3">
+                    <span className="text-sm font-medium text-slate-800">{m.name || m.email}</span>
+                    <span className="text-xs text-slate-500">{m.email}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRevokeManager(m.id)}
+                      className="text-sm font-medium text-rose-600 hover:text-rose-700 hover:underline"
+                    >
+                      Revoke all access
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -227,7 +227,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 pb-8">
       {/* Onboarding */}
-      {!onboardingDismissed && (
+      {!onboardingDismissed && user?.role !== 'PROPERTY_MANAGER' && (
         <OnboardingDashboard onDismiss={handleDismissOnboarding} />
       )}
 

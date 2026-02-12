@@ -18,17 +18,29 @@ export class PropertiesService {
     let ownerId: string;
     if (role === UserRole.USER || role === UserRole.SUPER_ADMIN) {
       ownerId = userId;
+    } else if (role === UserRole.PROPERTY_MANAGER) {
+      const providedOwnerId = dto.ownerId;
+      if (!providedOwnerId) throw new ForbiddenException('Property manager must specify ownerId');
+      const canManage = await this.accessService.canManageOwner(userId, providedOwnerId);
+      if (!canManage) throw new ForbiddenException('You cannot create properties for this owner');
+      ownerId = providedOwnerId;
     } else {
-      throw new ForbiddenException('Only owners can create properties');
+      throw new ForbiddenException('Only owners or property managers can create properties');
     }
     const { ownerId: _omit, ...propertyData } = dto;
-    return this.prisma.property.create({
+    const property = await this.prisma.property.create({
       data: {
         ...propertyData,
         ownerId,
         status: propertyData.status ?? 'VACANT',
       },
     });
+    if (role === UserRole.PROPERTY_MANAGER) {
+      await this.prisma.managedProperty.create({
+        data: { propertyId: property.id, managerId: userId },
+      });
+    }
+    return property;
   }
 
   async findAll(

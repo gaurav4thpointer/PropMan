@@ -1,8 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
-import { UserRole } from '@prisma/client';
+import { IsEmail, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
 
-export class RegisterDto {
+export class CreateOwnerDto {
   @ApiProperty({ example: 'Jane Doe', maxLength: 120 })
   @IsString()
   @MinLength(1, { message: 'Name is required' })
@@ -18,8 +17,8 @@ export class RegisterDto {
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   password: string;
 
-  @ApiPropertyOptional({ enum: ['USER', 'PROPERTY_MANAGER'], default: 'USER' })
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsEnum(UserRole, { message: 'Role must be USER or PROPERTY_MANAGER' })
-  role?: UserRole;
+  @IsString()
+  mobile?: string;
 }

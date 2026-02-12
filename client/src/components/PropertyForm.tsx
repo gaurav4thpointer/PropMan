@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { properties, config } from '../api/client'
+import { properties, config, owners } from '../api/client'
 import type { Property, CreatePropertyPayload, Country, Currency } from '../api/types'
+import type { Owner } from '../api/types'
+import { useAuth } from '../context/AuthContext'
+import OwnerForm from './OwnerForm'
 
 function getApiMessage(err: unknown): string {
   const m = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message
@@ -11,6 +14,7 @@ function getApiMessage(err: unknown): string {
 }
 
 const schema = z.object({
+  ownerId: z.string().optional(),
   name: z.string().min(1),
   address: z.string().optional(),
   country: z.enum(['IN', 'AE', 'US', 'GB', 'SG', 'SA']),
@@ -35,21 +39,35 @@ const DEFAULT_CURRENCY_BY_COUNTRY: Record<Country, Currency> = {
 
 export default function PropertyForm({
   property,
+  initialOwnerId,
   onSaved,
   onCancel,
   onSavedWithNew,
   inline,
 }: {
   property?: Property
+  initialOwnerId?: string
   onSaved: () => void
   onCancel: () => void
   onSavedWithNew?: (property: Property) => void
   inline?: boolean
 }) {
+  const { user } = useAuth()
+  const isManager = user?.role === 'PROPERTY_MANAGER'
   const [apiError, setApiError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [availableCountries, setAvailableCountries] = useState<Country[]>(['IN', 'AE'])
   const [availableCurrencies, setAvailableCurrencies] = useState<Currency[]>(['INR', 'AED'])
+  const [managedOwners, setManagedOwners] = useState<Owner[]>([])
+  const [showAddOwner, setShowAddOwner] = useState(false)
+
+  useEffect(() => {
+    if (isManager && !property) {
+      owners.list({ page: 1, limit: 100 }).then((r) => {
+        setManagedOwners(r.data?.data ?? [])
+      }).catch(() => {})
+    }
+  }, [isManager, property])
 
   useEffect(() => {
     config
@@ -82,6 +100,19 @@ export default function PropertyForm({
       : { status: 'VACANT' },
   })
 
+  useEffect(() => {
+    if (initialOwnerId && !property) {
+      const hasOwner = managedOwners.some((o) => o.id === initialOwnerId)
+      if (hasOwner) {
+        setValue('ownerId', initialOwnerId)
+      } else if (initialOwnerId) {
+        owners.get(initialOwnerId).then((r) => {
+          setManagedOwners((prev) => (prev.some((o) => o.id === initialOwnerId) ? prev : [...prev, r.data]))
+        }).catch(() => {})
+      }
+    }
+  }, [initialOwnerId, property, managedOwners, setValue])
+
   // When country changes, default the currency to the typical one for that country (if enabled).
   useEffect(() => {
     const subscription = watch((value, { name }) => {
@@ -113,6 +144,10 @@ export default function PropertyForm({
           notes: data.notes,
         })
       } else {
+        if (isManager && !data.ownerId) {
+          setApiError('Please select or create an owner')
+          return
+        }
         const payload: CreatePropertyPayload = {
           name: data.name,
           address: data.address,
@@ -124,6 +159,7 @@ export default function PropertyForm({
           status: data.status,
           notes: data.notes,
         }
+        if (isManager && data.ownerId) payload.ownerId = data.ownerId
         const { data: created } = await properties.create(payload)
         onSavedWithNew?.(created)
       }
@@ -144,6 +180,43 @@ export default function PropertyForm({
         const wrapperProps = inline ? {} : { onSubmit: handleSubmit(onSubmit) }
         return (
           <Wrapper {...(wrapperProps as React.HTMLAttributes<HTMLElement>)} className="max-w-xl space-y-4">
+            {isManager && !property && (
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-slate-700">Owner *</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOwner(true)}
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+                  >
+                    + Add new owner
+                  </button>
+                </div>
+                <select {...register('ownerId', { required: true })} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20">
+                  <option value="">Select owner</option>
+                  {managedOwners.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name || o.email} ({o.email})
+                    </option>
+                  ))}
+                </select>
+                {errors.ownerId && <p className="mt-1 text-sm text-red-600">Owner is required</p>}
+                {showAddOwner && (
+                  <div className="mt-3">
+                    <OwnerForm
+                      inline
+                      onSaved={() => setShowAddOwner(false)}
+                      onCancel={() => setShowAddOwner(false)}
+                      onSavedWithNew={(owner) => {
+                        setManagedOwners((prev) => [...prev, owner])
+                        setValue('ownerId', owner.id)
+                        setShowAddOwner(false)
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-slate-700">Name *</label>
               <input {...register('name')} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 focus:outline-none transition-all duration-200" placeholder="Property name" />

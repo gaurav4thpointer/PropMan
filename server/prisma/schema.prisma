@@ -73,7 +73,13 @@ enum Gender {
 
 enum UserRole {
   USER
+  PROPERTY_MANAGER
   SUPER_ADMIN
+}
+
+enum ManagerOwnerStatus {
+  ACTIVE
+  REVOKED
 }
 
 // ============== MODELS ==============
@@ -94,6 +100,35 @@ model User {
   leases           Lease[]
   cheques          Cheque[]
   payments         Payment[]
+  managedOwners    ManagerOwner[]    @relation("ManagerAsManager")
+  managedBy        ManagerOwner[]    @relation("OwnerAsOwner")
+  managedProperties ManagedProperty[]
+}
+
+model ManagerOwner {
+  id        String             @id @default(uuid())
+  managerId String
+  ownerId   String
+  status    ManagerOwnerStatus @default(ACTIVE)
+  createdAt DateTime           @default(now())
+
+  manager User @relation("ManagerAsManager", fields: [managerId], references: [id], onDelete: Cascade)
+  owner   User @relation("OwnerAsOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([managerId, ownerId])
+  @@index([ownerId])
+}
+
+model ManagedProperty {
+  id         String   @id @default(uuid())
+  propertyId String
+  managerId  String
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  manager  User     @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, managerId])
+  @@index([managerId])
 }
 
 model Property {
@@ -112,10 +147,11 @@ model Property {
   updatedAt      DateTime    @updatedAt
   ownerId        String
 
-  owner    User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  leases   Lease[]
-  cheques  Cheque[]
-  payments Payment[]
+  owner             User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  leases            Lease[]
+  cheques           Cheque[]
+  payments          Payment[]
+  managedProperties ManagedProperty[]
 }
 
 model Tenant {
