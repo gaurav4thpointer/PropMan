@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
 const bcrypt = require("bcrypt");
 let UsersService = class UsersService {
@@ -21,9 +22,10 @@ let UsersService = class UsersService {
         const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
         if (existing)
             throw new common_1.ConflictException('Email already registered');
+        const role = dto.role === client_1.UserRole.PROPERTY_MANAGER ? client_1.UserRole.PROPERTY_MANAGER : client_1.UserRole.USER;
         const hashed = await bcrypt.hash(dto.password, 10);
         return this.prisma.user.create({
-            data: { email: dto.email, password: hashed, name: dto.name },
+            data: { email: dto.email, password: hashed, name: dto.name, role },
             select: { id: true, email: true, name: true, mobile: true, gender: true, role: true, createdAt: true },
         });
     }

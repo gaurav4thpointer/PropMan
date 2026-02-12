@@ -101,6 +101,8 @@ let LeasesService = class LeasesService {
                 where.propertyId = filters.propertyId;
             }
         }
+        if (!filters?.includeArchived)
+            where.archivedAt = null;
         if (filters?.tenantId)
             where.tenantId = filters.tenantId;
         if (filters?.search?.trim()) {
@@ -184,12 +186,43 @@ let LeasesService = class LeasesService {
         await this.setPropertyVacantIfNoActiveLease(propertyId, null);
         return { deleted: true };
     }
+    async archive(userId, role, id) {
+        const lease = await this.findOne(userId, role, id);
+        const now = new Date();
+        await this.prisma.$transaction([
+            this.prisma.lease.update({ where: { id }, data: { archivedAt: now } }),
+            this.prisma.cheque.updateMany({ where: { leaseId: id, archivedAt: null }, data: { archivedAt: now } }),
+            this.prisma.payment.updateMany({ where: { leaseId: id, archivedAt: null }, data: { archivedAt: now } }),
+        ]);
+        await this.setPropertyVacantIfNoActiveLease(lease.propertyId, id);
+        return this.findOne(userId, role, id);
+    }
+    async restore(userId, role, id) {
+        await this.findOne(userId, role, id);
+        await this.prisma.$transaction([
+            this.prisma.lease.update({ where: { id }, data: { archivedAt: null } }),
+            this.prisma.cheque.updateMany({ where: { leaseId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+            this.prisma.payment.updateMany({ where: { leaseId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+        ]);
+        return this.findOne(userId, role, id);
+    }
+    async getCascadeInfo(userId, role, id) {
+        await this.findOne(userId, role, id);
+        const [chequeCount, paymentCount, scheduleCount, documentCount] = await Promise.all([
+            this.prisma.cheque.count({ where: { leaseId: id } }),
+            this.prisma.payment.count({ where: { leaseId: id } }),
+            this.prisma.rentSchedule.count({ where: { leaseId: id } }),
+            this.prisma.leaseDocument.count({ where: { leaseId: id } }),
+        ]);
+        return { cheques: chequeCount, payments: paymentCount, schedules: scheduleCount, documents: documentCount };
+    }
     async setPropertyVacantIfNoActiveLease(propertyId, excludeLeaseId) {
         const now = new Date();
         now.setHours(0, 0, 0, 0);
         const leases = await this.prisma.lease.findMany({
             where: {
                 propertyId,
+                archivedAt: null,
                 ...(excludeLeaseId && { id: { not: excludeLeaseId } }),
                 endDate: { gte: now },
             },
@@ -242,9 +275,18 @@ let LeasesService = class LeasesService {
         const property = await this.prisma.property.findUnique({ where: { id: propertyId }, select: { ownerId: true } });
         if (!property)
             throw new common_1.NotFoundException('Property not found');
-        const tenant = await this.prisma.tenant.findFirst({
-            where: { id: tenantId, ownerId: property.ownerId },
-        });
+        let tenantWhere;
+        if (role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN) {
+            tenantWhere = { id: tenantId, ownerId: property.ownerId };
+        }
+        else if (role === client_1.UserRole.PROPERTY_MANAGER) {
+            const managedOwnerIds = await this.accessService.getManagedOwnerIds(userId);
+            tenantWhere = { id: tenantId, ownerId: { in: managedOwnerIds } };
+        }
+        else {
+            throw new common_1.NotFoundException('Tenant not found');
+        }
+        const tenant = await this.prisma.tenant.findFirst({ where: tenantWhere });
         if (!tenant)
             throw new common_1.NotFoundException('Tenant not found');
     }
@@ -254,6 +296,7 @@ let LeasesService = class LeasesService {
         const overlapping = await this.prisma.lease.findFirst({
             where: {
                 propertyId,
+                archivedAt: null,
                 ...(excludeLeaseId && { id: { not: excludeLeaseId } }),
                 startDate: { lte: endDate },
                 endDate: { gte: startDate },

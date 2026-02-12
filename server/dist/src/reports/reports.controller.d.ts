@@ -29,6 +29,7 @@ export declare class ReportsController {
                     bedrooms: number | null;
                     status: import(".prisma/client").$Enums.UnitStatus | null;
                     notes: string | null;
+                    archivedAt: Date | null;
                     ownerId: string;
                 };
                 tenant: {
@@ -38,6 +39,7 @@ export declare class ReportsController {
                     createdAt: Date;
                     updatedAt: Date;
                     notes: string | null;
+                    archivedAt: Date | null;
                     ownerId: string;
                     phone: string | null;
                     idNumber: string | null;
@@ -47,6 +49,7 @@ export declare class ReportsController {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 startDate: Date;
                 endDate: Date;
@@ -82,6 +85,7 @@ export declare class ReportsController {
                 bedrooms: number | null;
                 status: import(".prisma/client").$Enums.UnitStatus | null;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
             };
             tenant: {
@@ -91,6 +95,7 @@ export declare class ReportsController {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 phone: string | null;
                 idNumber: string | null;
@@ -100,6 +105,7 @@ export declare class ReportsController {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 startDate: Date;
                 endDate: Date;
@@ -117,6 +123,7 @@ export declare class ReportsController {
             updatedAt: Date;
             status: import(".prisma/client").$Enums.ChequeStatus;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             propertyId: string;
             tenantId: string;
@@ -150,6 +157,7 @@ export declare class ReportsController {
                 bedrooms: number | null;
                 status: import(".prisma/client").$Enums.UnitStatus | null;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
             };
             tenant: {
@@ -159,6 +167,7 @@ export declare class ReportsController {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 phone: string | null;
                 idNumber: string | null;
@@ -168,6 +177,7 @@ export declare class ReportsController {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -184,6 +194,31 @@ export declare class ReportsController {
         totalChequeValueTracked: number;
         totalSecurityDepositsTracked: number;
     }>;
-    chequesCsv(user: User, res: Response, propertyId?: string, from?: string, to?: string): Promise<void>;
-    rentScheduleCsv(user: User, res: Response, propertyId?: string, from?: string, to?: string): Promise<void>;
+    managerPortfolio(user: User): Promise<{
+        owners: {
+            owner: {
+                id: string;
+                name: string | null;
+                email: string;
+            };
+            propertyCount: number;
+            month: {
+                expected: number;
+                received: number;
+            };
+            quarter: {
+                expected: number;
+                received: number;
+            };
+            overdueAmount: number;
+            overdueCount: number;
+            bouncedCount: number;
+            vacantCount: number;
+            occupiedCount: number;
+            expiringLeasesCount: number;
+            needsAttention: boolean;
+        }[];
+    }>;
+    chequesCsv(user: User, res: Response, propertyId?: string, ownerId?: string, from?: string, to?: string): Promise<void>;
+    rentScheduleCsv(user: User, res: Response, propertyId?: string, ownerId?: string, from?: string, to?: string): Promise<void>;
 }

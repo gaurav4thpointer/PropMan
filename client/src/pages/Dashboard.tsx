@@ -9,7 +9,6 @@ import { reports, properties as propertiesApi } from '../api/client'
 import type { DashboardData, Property, Cheque, Lease, Tenant, RentSchedule } from '../api/types'
 import { useAuth } from '../context/AuthContext'
 import { getDaysOverdue } from '../utils/lease'
-import OnboardingDashboard from './OnboardingDashboard'
 import ManagerDashboard from './ManagerDashboard'
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
@@ -152,20 +151,7 @@ function OwnerDashboard() {
   const [loading, setLoading] = useState(true)
   const [propertiesLoading, setPropertiesLoading] = useState(true)
   const [filterPropertyId, setFilterPropertyId] = useState('')
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
   const [attentionTab, setAttentionTab] = useState<AttentionTab>('overdue')
-
-  const onboardingKey = user ? `onboardingDismissed:${user.id}` : 'onboardingDismissed'
-
-  useEffect(() => {
-    const stored = localStorage.getItem(onboardingKey)
-    setOnboardingDismissed(stored === 'true')
-  }, [onboardingKey])
-
-  const handleDismissOnboarding = () => {
-    setOnboardingDismissed(true)
-    localStorage.setItem(onboardingKey, 'true')
-  }
 
   useEffect(() => {
     setLoading(true)
@@ -227,11 +213,6 @@ function OwnerDashboard() {
 
   return (
     <div className="space-y-8 pb-8">
-      {/* Onboarding */}
-      {!onboardingDismissed && user?.role !== 'PROPERTY_MANAGER' && (
-        <OnboardingDashboard onDismiss={handleDismissOnboarding} />
-      )}
-
       {/* ── Header ──────────────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>

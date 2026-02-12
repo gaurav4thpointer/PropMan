@@ -115,7 +115,7 @@ export default function OwnerDetail() {
           <div className="px-6 py-12 text-center text-slate-500">
             <p className="font-medium">No properties yet</p>
             <p className="mt-1 text-sm">Add a property from the Properties page and assign it to this owner.</p>
-            <Link to={`/properties?onboarding=new&ownerId=${owner.id}`} className="mt-4 inline-block btn-primary">
+            <Link to={`/properties?ownerId=${owner.id}`} className="mt-4 inline-block btn-primary">
               Add property
             </Link>
           </div>

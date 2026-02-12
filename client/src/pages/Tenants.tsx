@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { tenants as tenantsApi } from '../api/client'
 import type { Tenant } from '../api/types'
 import TenantForm from '../components/TenantForm'
@@ -35,8 +35,6 @@ function getInitials(name: string): string {
 }
 
 export default function Tenants() {
-  const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
   const [list, setList] = useState<Tenant[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -51,29 +49,10 @@ export default function Tenants() {
   }
 
   useEffect(() => { load() }, [showArchived])
-  useEffect(() => {
-    if (searchParams.get('onboarding') === 'new') {
-      setEditing(null)
-      setShowForm(true)
-    }
-  }, [searchParams])
 
   const handleSaved = () => {
-    const next = searchParams.get('next')
     setShowForm(false)
     setEditing(null)
-
-    if (next === 'lease') {
-      navigate('/leases?onboarding=new')
-      return
-    }
-
-    setSearchParams((prev) => {
-      const nextParams = new URLSearchParams(prev)
-      nextParams.delete('onboarding')
-      nextParams.delete('next')
-      return nextParams
-    })
     load()
   }
 
@@ -228,12 +207,6 @@ export default function Tenants() {
           onCancel={() => {
             setShowForm(false)
             setEditing(null)
-            setSearchParams((prev) => {
-              const next = new URLSearchParams(prev)
-              next.delete('onboarding')
-              next.delete('next')
-              return next
-            })
           }}
         />
       )}

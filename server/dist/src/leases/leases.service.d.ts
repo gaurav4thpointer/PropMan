@@ -23,6 +23,7 @@ export declare class LeasesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -32,6 +33,7 @@ export declare class LeasesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -51,6 +53,7 @@ export declare class LeasesService {
         createdAt: Date;
         updatedAt: Date;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         startDate: Date;
         endDate: Date;
@@ -66,6 +69,7 @@ export declare class LeasesService {
         propertyId?: string;
         tenantId?: string;
         search?: string;
+        includeArchived?: boolean;
     }): Promise<{
         data: ({
             property: {
@@ -81,6 +85,7 @@ export declare class LeasesService {
                 bedrooms: number | null;
                 status: import(".prisma/client").$Enums.UnitStatus | null;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
             };
             tenant: {
@@ -90,6 +95,7 @@ export declare class LeasesService {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 phone: string | null;
                 idNumber: string | null;
@@ -99,6 +105,7 @@ export declare class LeasesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -131,6 +138,7 @@ export declare class LeasesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -140,6 +148,7 @@ export declare class LeasesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -159,6 +168,7 @@ export declare class LeasesService {
         createdAt: Date;
         updatedAt: Date;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         startDate: Date;
         endDate: Date;
@@ -184,6 +194,7 @@ export declare class LeasesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -193,6 +204,7 @@ export declare class LeasesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -212,6 +224,7 @@ export declare class LeasesService {
         createdAt: Date;
         updatedAt: Date;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         startDate: Date;
         endDate: Date;
@@ -225,6 +238,124 @@ export declare class LeasesService {
     }>;
     remove(userId: string, role: UserRole, id: string): Promise<{
         deleted: boolean;
+    }>;
+    archive(userId: string, role: UserRole, id: string): Promise<{
+        property: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            address: string | null;
+            country: import(".prisma/client").$Enums.Country;
+            emirateOrState: string | null;
+            currency: import(".prisma/client").$Enums.Currency;
+            unitNo: string | null;
+            bedrooms: number | null;
+            status: import(".prisma/client").$Enums.UnitStatus | null;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+        };
+        tenant: {
+            id: string;
+            email: string | null;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+            phone: string | null;
+            idNumber: string | null;
+        };
+        rentSchedules: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import(".prisma/client").$Enums.ScheduleStatus;
+            dueDate: Date;
+            expectedAmount: Prisma.Decimal;
+            paidAmount: Prisma.Decimal | null;
+            leaseId: string;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        notes: string | null;
+        archivedAt: Date | null;
+        ownerId: string;
+        startDate: Date;
+        endDate: Date;
+        terminationDate: Date | null;
+        rentFrequency: import(".prisma/client").$Enums.RentFrequency;
+        installmentAmount: Prisma.Decimal;
+        dueDay: number;
+        securityDeposit: Prisma.Decimal | null;
+        propertyId: string;
+        tenantId: string;
+    }>;
+    restore(userId: string, role: UserRole, id: string): Promise<{
+        property: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            address: string | null;
+            country: import(".prisma/client").$Enums.Country;
+            emirateOrState: string | null;
+            currency: import(".prisma/client").$Enums.Currency;
+            unitNo: string | null;
+            bedrooms: number | null;
+            status: import(".prisma/client").$Enums.UnitStatus | null;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+        };
+        tenant: {
+            id: string;
+            email: string | null;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+            phone: string | null;
+            idNumber: string | null;
+        };
+        rentSchedules: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import(".prisma/client").$Enums.ScheduleStatus;
+            dueDate: Date;
+            expectedAmount: Prisma.Decimal;
+            paidAmount: Prisma.Decimal | null;
+            leaseId: string;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        notes: string | null;
+        archivedAt: Date | null;
+        ownerId: string;
+        startDate: Date;
+        endDate: Date;
+        terminationDate: Date | null;
+        rentFrequency: import(".prisma/client").$Enums.RentFrequency;
+        installmentAmount: Prisma.Decimal;
+        dueDay: number;
+        securityDeposit: Prisma.Decimal | null;
+        propertyId: string;
+        tenantId: string;
+    }>;
+    getCascadeInfo(userId: string, role: UserRole, id: string): Promise<{
+        cheques: number;
+        payments: number;
+        schedules: number;
+        documents: number;
     }>;
     private setPropertyVacantIfNoActiveLease;
     terminateEarly(userId: string, role: UserRole, id: string, dto: TerminateLeaseDto): Promise<{
@@ -241,6 +372,7 @@ export declare class LeasesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -250,6 +382,7 @@ export declare class LeasesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -269,6 +402,7 @@ export declare class LeasesService {
         createdAt: Date;
         updatedAt: Date;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         startDate: Date;
         endDate: Date;

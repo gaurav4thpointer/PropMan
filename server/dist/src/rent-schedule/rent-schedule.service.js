@@ -44,8 +44,8 @@ let RentScheduleService = class RentScheduleService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const leaseWhere = role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN
-            ? { ownerId: userId, ...(propertyId && { propertyId }) }
-            : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, ...(propertyId && { propertyId }) };
+            ? { ownerId: userId, archivedAt: null, ...(propertyId && { propertyId }) }
+            : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, archivedAt: null, ...(propertyId && { propertyId }) };
         if (role !== client_1.UserRole.USER && role !== client_1.UserRole.SUPER_ADMIN && leaseWhere.propertyId?.in?.length === 0) {
             return (0, pagination_dto_1.paginatedResponse)([], 0, 1, 50);
         }
@@ -65,8 +65,8 @@ let RentScheduleService = class RentScheduleService {
     }
     async findOutstanding(userId, role, propertyId, from, to) {
         const leaseWhere = role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN
-            ? { ownerId: userId, ...(propertyId && { propertyId }) }
-            : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, ...(propertyId && { propertyId }) };
+            ? { ownerId: userId, archivedAt: null, ...(propertyId && { propertyId }) }
+            : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, archivedAt: null, ...(propertyId && { propertyId }) };
         const dueDateFilter = {};
         if (from)
             dueDateFilter.gte = new Date(from);

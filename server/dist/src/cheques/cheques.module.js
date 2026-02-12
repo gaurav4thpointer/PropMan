@@ -10,11 +10,13 @@ exports.ChequesModule = void 0;
 const common_1 = require("@nestjs/common");
 const cheques_service_1 = require("./cheques.service");
 const cheques_controller_1 = require("./cheques.controller");
+const payments_module_1 = require("../payments/payments.module");
 let ChequesModule = class ChequesModule {
 };
 exports.ChequesModule = ChequesModule;
 exports.ChequesModule = ChequesModule = __decorate([
     (0, common_1.Module)({
+        imports: [payments_module_1.PaymentsModule],
         controllers: [cheques_controller_1.ChequesController],
         providers: [cheques_service_1.ChequesService],
         exports: [cheques_service_1.ChequesService],

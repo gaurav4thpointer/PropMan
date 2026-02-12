@@ -8,12 +8,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var ChequesService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChequesService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
 const access_service_1 = require("../access/access.service");
+const payments_service_1 = require("../payments/payments.service");
 const pagination_dto_1 = require("../common/dto/pagination.dto");
 const client_2 = require("@prisma/client");
 const library_1 = require("@prisma/client/runtime/library");
@@ -24,10 +26,12 @@ const VALID_TRANSITIONS = {
     [client_2.ChequeStatus.BOUNCED]: [client_2.ChequeStatus.REPLACED],
     [client_2.ChequeStatus.REPLACED]: [],
 };
-let ChequesService = class ChequesService {
-    constructor(prisma, accessService) {
+let ChequesService = ChequesService_1 = class ChequesService {
+    constructor(prisma, accessService, paymentsService) {
         this.prisma = prisma;
         this.accessService = accessService;
+        this.paymentsService = paymentsService;
+        this.logger = new common_1.Logger(ChequesService_1.name);
     }
     async create(userId, role, dto) {
         const lease = await this.ensureLeaseAccessible(userId, role, dto.leaseId);
@@ -57,6 +61,8 @@ let ChequesService = class ChequesService {
         if (role !== client_1.UserRole.USER && role !== client_1.UserRole.SUPER_ADMIN && where.propertyId.in.length === 0) {
             return (0, pagination_dto_1.paginatedResponse)([], 0, page, limit);
         }
+        if (!filters?.includeArchived)
+            where.archivedAt = null;
         if (filters?.propertyId)
             where.propertyId = filters.propertyId;
         if (filters?.tenantId)
@@ -135,19 +141,49 @@ let ChequesService = class ChequesService {
             data.bounceReason = dto.bounceReason;
         if (dto.replacedByChequeId)
             data.replacedByChequeId = dto.replacedByChequeId;
-        return this.prisma.cheque.update({
+        const updated = await this.prisma.cheque.update({
             where: { id },
             data,
             include: { lease: true, tenant: true, property: true },
         });
+        if (dto.status === client_2.ChequeStatus.CLEARED) {
+            await this.createPaymentForClearedCheque(userId, role, updated);
+        }
+        return updated;
+    }
+    async createPaymentForClearedCheque(userId, role, cheque) {
+        const existing = await this.prisma.payment.findFirst({
+            where: { chequeId: cheque.id },
+        });
+        if (existing) {
+            this.logger.log(`Payment already exists for cheque ${cheque.id}, skipping auto-creation`);
+            return;
+        }
+        const paymentDate = cheque.clearedOrBounceDate ?? cheque.chequeDate;
+        try {
+            await this.paymentsService.create(userId, role, {
+                date: paymentDate.toISOString().split('T')[0],
+                amount: Number(cheque.amount),
+                method: client_1.PaymentMethod.CHEQUE,
+                reference: `Cheque #${cheque.chequeNumber} (${cheque.bankName})`,
+                leaseId: cheque.leaseId,
+                tenantId: cheque.tenantId,
+                propertyId: cheque.propertyId,
+                chequeId: cheque.id,
+            });
+            this.logger.log(`Auto-created payment for cleared cheque ${cheque.id}`);
+        }
+        catch (err) {
+            this.logger.error(`Failed to auto-create payment for cheque ${cheque.id}: ${err}`);
+        }
     }
     async upcoming(userId, role, days, propertyId) {
         const from = new Date();
         const to = new Date();
         to.setDate(to.getDate() + days);
         const where = role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN
-            ? { ownerId: userId, chequeDate: { gte: from, lte: to } }
-            : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, chequeDate: { gte: from, lte: to } };
+            ? { ownerId: userId, chequeDate: { gte: from, lte: to }, archivedAt: null }
+            : { propertyId: { in: await this.accessService.getAccessiblePropertyIds(userId, role) }, chequeDate: { gte: from, lte: to }, archivedAt: null };
         if (role !== client_1.UserRole.USER && role !== client_1.UserRole.SUPER_ADMIN && where.propertyId.in.length === 0) {
             return [];
         }
@@ -163,6 +199,14 @@ let ChequesService = class ChequesService {
         await this.findOne(userId, role, id);
         await this.prisma.cheque.delete({ where: { id } });
         return { deleted: true };
+    }
+    async archive(userId, role, id) {
+        await this.findOne(userId, role, id);
+        return this.prisma.cheque.update({ where: { id }, data: { archivedAt: new Date() }, include: { lease: true, tenant: true, property: true } });
+    }
+    async restore(userId, role, id) {
+        await this.findOne(userId, role, id);
+        return this.prisma.cheque.update({ where: { id }, data: { archivedAt: null }, include: { lease: true, tenant: true, property: true } });
     }
     assertValidTransition(current, next, replacedByChequeId) {
         const allowed = VALID_TRANSITIONS[current];
@@ -182,9 +226,10 @@ let ChequesService = class ChequesService {
     }
 };
 exports.ChequesService = ChequesService;
-exports.ChequesService = ChequesService = __decorate([
+exports.ChequesService = ChequesService = ChequesService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        access_service_1.AccessService])
+        access_service_1.AccessService,
+        payments_service_1.PaymentsService])
 ], ChequesService);
 //# sourceMappingURL=cheques.service.js.map

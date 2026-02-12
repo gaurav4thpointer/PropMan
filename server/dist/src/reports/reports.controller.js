@@ -25,13 +25,16 @@ let ReportsController = class ReportsController {
     dashboard(user, propertyId) {
         return this.reportsService.dashboard(user.id, user.role, propertyId);
     }
-    async chequesCsv(user, res, propertyId, from, to) {
-        const csv = await this.reportsService.chequesCsv(user.id, user.role, propertyId, from, to);
+    managerPortfolio(user) {
+        return this.reportsService.managerPortfolio(user.id, user.role);
+    }
+    async chequesCsv(user, res, propertyId, ownerId, from, to) {
+        const csv = await this.reportsService.chequesCsv(user.id, user.role, propertyId, ownerId, from, to);
         res.setHeader('Content-Disposition', 'attachment; filename=cheques.csv');
         res.send(csv);
     }
-    async rentScheduleCsv(user, res, propertyId, from, to) {
-        const csv = await this.reportsService.rentScheduleCsv(user.id, user.role, propertyId, from, to);
+    async rentScheduleCsv(user, res, propertyId, ownerId, from, to) {
+        const csv = await this.reportsService.rentScheduleCsv(user.id, user.role, propertyId, ownerId, from, to);
         res.setHeader('Content-Disposition', 'attachment; filename=rent-schedule.csv');
         res.send(csv);
     }
@@ -47,16 +50,25 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ReportsController.prototype, "dashboard", null);
 __decorate([
+    (0, common_1.Get)('manager/portfolio'),
+    (0, swagger_1.ApiOperation)({ summary: 'Manager: portfolio breakdown by owner for reporting' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ReportsController.prototype, "managerPortfolio", null);
+__decorate([
     (0, common_1.Get)('export/cheques'),
     (0, swagger_1.ApiOperation)({ summary: 'Export cheques as CSV' }),
     (0, common_1.Header)('Content-Type', 'text/csv'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Res)()),
     __param(2, (0, common_1.Query)('propertyId')),
-    __param(3, (0, common_1.Query)('from')),
-    __param(4, (0, common_1.Query)('to')),
+    __param(3, (0, common_1.Query)('ownerId')),
+    __param(4, (0, common_1.Query)('from')),
+    __param(5, (0, common_1.Query)('to')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String, String, String]),
+    __metadata("design:paramtypes", [Object, Object, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "chequesCsv", null);
 __decorate([
@@ -66,10 +78,11 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Res)()),
     __param(2, (0, common_1.Query)('propertyId')),
-    __param(3, (0, common_1.Query)('from')),
-    __param(4, (0, common_1.Query)('to')),
+    __param(3, (0, common_1.Query)('ownerId')),
+    __param(4, (0, common_1.Query)('from')),
+    __param(5, (0, common_1.Query)('to')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String, String, String]),
+    __metadata("design:paramtypes", [Object, Object, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "rentScheduleCsv", null);
 exports.ReportsController = ReportsController = __decorate([

@@ -10,26 +10,28 @@ export declare class TenantsService {
     constructor(prisma: PrismaService, accessService: AccessService);
     create(userId: string, role: UserRole, dto: CreateTenantDto): Promise<{
         id: string;
-        email: string | null;
         name: string;
+        phone: string | null;
+        email: string | null;
+        idNumber: string | null;
+        notes: string | null;
+        archivedAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
-        notes: string | null;
         ownerId: string;
-        phone: string | null;
-        idNumber: string | null;
     }>;
-    findAll(userId: string, role: UserRole, pagination: PaginationDto, search?: string): Promise<{
+    findAll(userId: string, role: UserRole, pagination: PaginationDto, search?: string, includeArchived?: boolean): Promise<{
         data: {
             id: string;
-            email: string | null;
             name: string;
+            phone: string | null;
+            email: string | null;
+            idNumber: string | null;
+            notes: string | null;
+            archivedAt: Date | null;
             createdAt: Date;
             updatedAt: Date;
-            notes: string | null;
             ownerId: string;
-            phone: string | null;
-            idNumber: string | null;
         }[];
         meta: {
             total: number;
@@ -40,27 +42,58 @@ export declare class TenantsService {
     }>;
     findOne(userId: string, role: UserRole, id: string): Promise<{
         id: string;
-        email: string | null;
         name: string;
+        phone: string | null;
+        email: string | null;
+        idNumber: string | null;
+        notes: string | null;
+        archivedAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
-        notes: string | null;
         ownerId: string;
-        phone: string | null;
-        idNumber: string | null;
     }>;
     update(userId: string, role: UserRole, id: string, dto: UpdateTenantDto): Promise<{
         id: string;
-        email: string | null;
         name: string;
+        phone: string | null;
+        email: string | null;
+        idNumber: string | null;
+        notes: string | null;
+        archivedAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
-        notes: string | null;
         ownerId: string;
-        phone: string | null;
-        idNumber: string | null;
     }>;
     remove(userId: string, role: UserRole, id: string): Promise<{
         deleted: boolean;
+    }>;
+    archive(userId: string, role: UserRole, id: string): Promise<{
+        id: string;
+        name: string;
+        phone: string | null;
+        email: string | null;
+        idNumber: string | null;
+        notes: string | null;
+        archivedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        ownerId: string;
+    } | null>;
+    restore(userId: string, role: UserRole, id: string): Promise<{
+        id: string;
+        name: string;
+        phone: string | null;
+        email: string | null;
+        idNumber: string | null;
+        notes: string | null;
+        archivedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        ownerId: string;
+    } | null>;
+    getCascadeInfo(userId: string, role: UserRole, id: string): Promise<{
+        leases: number;
+        cheques: number;
+        payments: number;
     }>;
 }

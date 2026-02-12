@@ -25,17 +25,32 @@ let PropertiesService = class PropertiesService {
         if (role === client_1.UserRole.USER || role === client_1.UserRole.SUPER_ADMIN) {
             ownerId = userId;
         }
+        else if (role === client_1.UserRole.PROPERTY_MANAGER) {
+            const providedOwnerId = dto.ownerId;
+            if (!providedOwnerId)
+                throw new common_1.ForbiddenException('Property manager must specify ownerId');
+            const canManage = await this.accessService.canManageOwner(userId, providedOwnerId);
+            if (!canManage)
+                throw new common_1.ForbiddenException('You cannot create properties for this owner');
+            ownerId = providedOwnerId;
+        }
         else {
-            throw new common_1.ForbiddenException('Only owners can create properties');
+            throw new common_1.ForbiddenException('Only owners or property managers can create properties');
         }
         const { ownerId: _omit, ...propertyData } = dto;
-        return this.prisma.property.create({
+        const property = await this.prisma.property.create({
             data: {
                 ...propertyData,
                 ownerId,
                 status: propertyData.status ?? 'VACANT',
             },
         });
+        if (role === client_1.UserRole.PROPERTY_MANAGER) {
+            await this.prisma.managedProperty.create({
+                data: { propertyId: property.id, managerId: userId },
+            });
+        }
+        return property;
     }
     async findAll(userId, role, pagination, filters) {
         const accessibleIds = await this.accessService.getAccessiblePropertyIds(userId, role);
@@ -44,6 +59,8 @@ let PropertiesService = class PropertiesService {
         }
         const { page = 1, limit = 20 } = pagination;
         const where = { id: { in: accessibleIds } };
+        if (!filters?.includeArchived)
+            where.archivedAt = null;
         if (filters?.country)
             where.country = filters.country;
         if (filters?.currency)
@@ -52,9 +69,11 @@ let PropertiesService = class PropertiesService {
             const q = filters.search.trim();
             where.AND = [
                 { id: { in: accessibleIds } },
+                ...(filters?.includeArchived ? [] : [{ archivedAt: null }]),
                 { OR: [{ name: { contains: q, mode: 'insensitive' } }, { address: { contains: q, mode: 'insensitive' } }] },
             ];
             delete where.id;
+            delete where.archivedAt;
         }
         const [data, total] = await Promise.all([
             this.prisma.property.findMany({
@@ -92,6 +111,36 @@ let PropertiesService = class PropertiesService {
             throw new common_1.ForbiddenException('Only the property owner can delete the property');
         await this.prisma.property.delete({ where: { id } });
         return { deleted: true };
+    }
+    async archive(userId, role, id) {
+        await this.findOne(userId, role, id);
+        const now = new Date();
+        await this.prisma.$transaction([
+            this.prisma.property.update({ where: { id }, data: { archivedAt: now } }),
+            this.prisma.lease.updateMany({ where: { propertyId: id, archivedAt: null }, data: { archivedAt: now } }),
+            this.prisma.cheque.updateMany({ where: { propertyId: id, archivedAt: null }, data: { archivedAt: now } }),
+            this.prisma.payment.updateMany({ where: { propertyId: id, archivedAt: null }, data: { archivedAt: now } }),
+        ]);
+        return this.prisma.property.findUnique({ where: { id } });
+    }
+    async restore(userId, role, id) {
+        await this.findOne(userId, role, id);
+        await this.prisma.$transaction([
+            this.prisma.property.update({ where: { id }, data: { archivedAt: null } }),
+            this.prisma.lease.updateMany({ where: { propertyId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+            this.prisma.cheque.updateMany({ where: { propertyId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+            this.prisma.payment.updateMany({ where: { propertyId: id, archivedAt: { not: null } }, data: { archivedAt: null } }),
+        ]);
+        return this.prisma.property.findUnique({ where: { id } });
+    }
+    async getCascadeInfo(userId, role, id) {
+        await this.findOne(userId, role, id);
+        const [leaseCount, chequeCount, paymentCount] = await Promise.all([
+            this.prisma.lease.count({ where: { propertyId: id } }),
+            this.prisma.cheque.count({ where: { propertyId: id } }),
+            this.prisma.payment.count({ where: { propertyId: id } }),
+        ]);
+        return { leases: leaseCount, cheques: chequeCount, payments: paymentCount };
     }
 };
 exports.PropertiesService = PropertiesService;

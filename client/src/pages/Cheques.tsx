@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { cheques as chequesApi, properties as propertiesApi } from '../api/client'
 import type { Cheque, Property } from '../api/types'
 import ChequeForm from '../components/ChequeForm'
@@ -35,9 +35,7 @@ function formatNum(n: number) {
 }
 
 export default function Cheques() {
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const isOnboarding = searchParams.get('onboarding') === 'new'
   const propertyIdFromUrl = searchParams.get('propertyId') ?? ''
   const tenantIdFromUrl = searchParams.get('tenantId') ?? ''
   const statusFromUrl = searchParams.get('status') ?? ''
@@ -71,12 +69,6 @@ export default function Cheques() {
   useEffect(() => { load() }, [showArchived])
   useEffect(() => { propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data)) }, [])
 
-  useEffect(() => {
-    if (searchParams.get('onboarding') === 'new') {
-      setShowForm(true)
-    }
-  }, [searchParams])
-
   const filteredList = list.filter(
     (c) =>
       (!filterPropertyId || c.propertyId === filterPropertyId) &&
@@ -84,7 +76,7 @@ export default function Cheques() {
       (!filterStatus || c.status === filterStatus)
   )
 
-  const handleSaved = () => { isOnboarding ? navigate(-1) : (setShowForm(false), load()) }
+  const handleSaved = () => { setShowForm(false); load() }
   const handleStatusSaved = () => { setStatusModal(null); load() }
 
   const handleArchiveCheque = async (id: string) => {
@@ -297,7 +289,7 @@ export default function Cheques() {
         </button>
       </div>
 
-      {showForm && <ChequeForm onSaved={handleSaved} onCancel={() => { isOnboarding ? navigate(-1) : setShowForm(false) }} />}
+      {showForm && <ChequeForm onSaved={handleSaved} onCancel={() => setShowForm(false)} />}
       {statusModal && (
         <ChequeStatusUpdate
           cheque={statusModal}

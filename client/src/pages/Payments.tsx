@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { payments as paymentsApi, properties as propertiesApi } from '../api/client'
 import type { Payment, Property } from '../api/types'
 import PaymentForm from '../components/PaymentForm'
@@ -36,9 +36,7 @@ function isThisQuarter(dateStr: string): boolean {
 }
 
 export default function Payments() {
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const isOnboarding = searchParams.get('onboarding') === 'new'
   const propertyIdFromUrl = searchParams.get('propertyId') ?? ''
   const tenantIdFromUrl = searchParams.get('tenantId') ?? ''
   const methodFromUrl = searchParams.get('method') ?? ''
@@ -63,12 +61,6 @@ export default function Payments() {
 
   useEffect(() => { load() }, [])
   useEffect(() => { propertiesApi.list({ limit: 100 }).then((r) => setPropertiesList(r.data.data)) }, [])
-
-  useEffect(() => {
-    if (searchParams.get('onboarding') === 'new') {
-      setShowForm(true)
-    }
-  }, [searchParams])
 
   const filteredList = list.filter(
     (p) =>
@@ -258,7 +250,7 @@ export default function Payments() {
         </button>
       </div>
 
-      {showForm && <PaymentForm onSaved={() => { isOnboarding ? navigate(-1) : (setShowForm(false), load()) }} onCancel={() => { isOnboarding ? navigate(-1) : setShowForm(false) }} />}
+      {showForm && <PaymentForm onSaved={() => { setShowForm(false); load() }} onCancel={() => setShowForm(false)} />}
 
       {/* Filter context banner */}
       {(filterPropertyName || filterTenantName) && (

@@ -10,11 +10,13 @@ exports.PropertiesModule = void 0;
 const common_1 = require("@nestjs/common");
 const properties_service_1 = require("./properties.service");
 const properties_controller_1 = require("./properties.controller");
+const owners_module_1 = require("../owners/owners.module");
 let PropertiesModule = class PropertiesModule {
 };
 exports.PropertiesModule = PropertiesModule;
 exports.PropertiesModule = PropertiesModule = __decorate([
     (0, common_1.Module)({
+        imports: [owners_module_1.OwnersModule],
         controllers: [properties_controller_1.PropertiesController],
         providers: [properties_service_1.PropertiesService],
         exports: [properties_service_1.PropertiesService],

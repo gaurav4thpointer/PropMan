@@ -483,7 +483,7 @@ export default function ManagerDashboard() {
           {Icons.add} Onboard owner
         </Link>
         <Link
-          to="/properties?onboarding=new"
+          to="/properties"
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-700"
         >
           Add property

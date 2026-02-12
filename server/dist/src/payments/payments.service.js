@@ -53,6 +53,8 @@ let PaymentsService = class PaymentsService {
         if (role !== client_1.UserRole.USER && role !== client_1.UserRole.SUPER_ADMIN && where.propertyId.in.length === 0) {
             return (0, pagination_dto_1.paginatedResponse)([], 0, page, limit);
         }
+        if (!filters?.includeArchived)
+            where.archivedAt = null;
         if (filters?.leaseId)
             where.leaseId = filters.leaseId;
         if (filters?.propertyId)

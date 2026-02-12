@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { properties as propertiesApi } from '../api/client'
 import type { Property } from '../api/types'
 import PropertyForm from '../components/PropertyForm'
@@ -20,7 +20,6 @@ const COUNTRY_LABELS: Record<string, string> = {
 }
 
 export default function Properties() {
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const countryFromUrl = searchParams.get('country') ?? ''
   const currencyFromUrl = searchParams.get('currency') ?? ''
@@ -50,13 +49,6 @@ export default function Properties() {
 
   const ownerIdFromUrl = searchParams.get('ownerId') ?? ''
 
-  useEffect(() => {
-    if (searchParams.get('onboarding') === 'new') {
-      setEditing(null)
-      setShowForm(true)
-    }
-  }, [searchParams])
-
   const filteredList = list.filter(
     (p) =>
       (!filterCountry || p.country === filterCountry) &&
@@ -71,19 +63,11 @@ export default function Properties() {
   const countries = [...new Set(filteredList.map((p) => p.country))]
 
   const handleSaved = () => {
-    const next = searchParams.get('next')
     setShowForm(false)
     setEditing(null)
-
-    if (next === 'tenant') {
-      navigate('/tenants?onboarding=new&next=lease')
-      return
-    }
-
     setSearchParams((prev) => {
       const nextParams = new URLSearchParams(prev)
-      nextParams.delete('onboarding')
-      nextParams.delete('next')
+      nextParams.delete('ownerId')
       return nextParams
     })
     load()
@@ -329,8 +313,6 @@ export default function Properties() {
             setEditing(null)
             setSearchParams((prev) => {
               const next = new URLSearchParams(prev)
-              next.delete('onboarding')
-              next.delete('next')
               next.delete('ownerId')
               return next
             })

@@ -46,6 +46,12 @@ let ChequesController = class ChequesController {
     updateStatus(user, id, dto) {
         return this.chequesService.updateStatus(user.id, user.role, id, dto);
     }
+    archive(user, id) {
+        return this.chequesService.archive(user.id, user.role, id);
+    }
+    restore(user, id) {
+        return this.chequesService.restore(user.id, user.role, id);
+    }
     remove(user, id) {
         return this.chequesService.remove(user.id, user.role, id);
     }
@@ -109,8 +115,26 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ChequesController.prototype, "updateStatus", null);
 __decorate([
+    (0, common_1.Patch)(':id/archive'),
+    (0, swagger_1.ApiOperation)({ summary: 'Archive cheque' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ChequesController.prototype, "archive", null);
+__decorate([
+    (0, common_1.Patch)(':id/restore'),
+    (0, swagger_1.ApiOperation)({ summary: 'Restore archived cheque' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ChequesController.prototype, "restore", null);
+__decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Delete cheque' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Permanently delete cheque' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

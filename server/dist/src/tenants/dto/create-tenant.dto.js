@@ -16,6 +16,12 @@ class CreateTenantDto {
 }
 exports.CreateTenantDto = CreateTenantDto;
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Required when creating as property manager (on behalf of owner)' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "ownerId", void 0);
+__decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'Optional property context (for future use)' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

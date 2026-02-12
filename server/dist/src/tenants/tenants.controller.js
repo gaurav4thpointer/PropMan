@@ -29,14 +29,23 @@ let TenantsController = class TenantsController {
         return this.tenantsService.create(user.id, user.role, dto);
     }
     findAll(user, query) {
-        const { page, limit, search } = query;
-        return this.tenantsService.findAll(user.id, user.role, { page, limit }, search);
+        const { page, limit, search, includeArchived } = query;
+        return this.tenantsService.findAll(user.id, user.role, { page, limit }, search, includeArchived);
     }
     findOne(user, id) {
         return this.tenantsService.findOne(user.id, user.role, id);
     }
+    getCascadeInfo(user, id) {
+        return this.tenantsService.getCascadeInfo(user.id, user.role, id);
+    }
     update(user, id, dto) {
         return this.tenantsService.update(user.id, user.role, id, dto);
+    }
+    archive(user, id) {
+        return this.tenantsService.archive(user.id, user.role, id);
+    }
+    restore(user, id) {
+        return this.tenantsService.restore(user.id, user.role, id);
     }
     remove(user, id) {
         return this.tenantsService.remove(user.id, user.role, id);
@@ -71,6 +80,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)(':id/cascade-info'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get cascade info for tenant' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "getCascadeInfo", null);
+__decorate([
     (0, common_1.Patch)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Update tenant' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -81,8 +99,26 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "update", null);
 __decorate([
+    (0, common_1.Patch)(':id/archive'),
+    (0, swagger_1.ApiOperation)({ summary: 'Archive tenant with cascade' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "archive", null);
+__decorate([
+    (0, common_1.Patch)(':id/restore'),
+    (0, swagger_1.ApiOperation)({ summary: 'Restore archived tenant with cascade' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "restore", null);
+__decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Delete tenant' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Permanently delete tenant' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

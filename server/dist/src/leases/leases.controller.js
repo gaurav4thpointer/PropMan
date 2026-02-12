@@ -36,8 +36,17 @@ let LeasesController = class LeasesController {
     findOne(user, id) {
         return this.leasesService.findOne(user.id, user.role, id);
     }
+    getCascadeInfo(user, id) {
+        return this.leasesService.getCascadeInfo(user.id, user.role, id);
+    }
     terminateEarly(user, id, dto) {
         return this.leasesService.terminateEarly(user.id, user.role, id, dto);
+    }
+    archive(user, id) {
+        return this.leasesService.archive(user.id, user.role, id);
+    }
+    restore(user, id) {
+        return this.leasesService.restore(user.id, user.role, id);
     }
     update(user, id, dto) {
         return this.leasesService.update(user.id, user.role, id, dto);
@@ -75,6 +84,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], LeasesController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)(':id/cascade-info'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get cascade info for lease' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], LeasesController.prototype, "getCascadeInfo", null);
+__decorate([
     (0, common_1.Patch)(':id/terminate'),
     (0, swagger_1.ApiOperation)({ summary: 'Terminate lease early' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -84,6 +102,24 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, terminate_lease_dto_1.TerminateLeaseDto]),
     __metadata("design:returntype", void 0)
 ], LeasesController.prototype, "terminateEarly", null);
+__decorate([
+    (0, common_1.Patch)(':id/archive'),
+    (0, swagger_1.ApiOperation)({ summary: 'Archive lease with cascade' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], LeasesController.prototype, "archive", null);
+__decorate([
+    (0, common_1.Patch)(':id/restore'),
+    (0, swagger_1.ApiOperation)({ summary: 'Restore archived lease with cascade' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], LeasesController.prototype, "restore", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Update lease (regenerates rent schedule)' }),
@@ -96,7 +132,7 @@ __decorate([
 ], LeasesController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Delete lease' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Permanently delete lease' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

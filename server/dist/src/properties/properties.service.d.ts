@@ -21,12 +21,14 @@ export declare class PropertiesService {
         bedrooms: number | null;
         status: import(".prisma/client").$Enums.UnitStatus | null;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
     }>;
     findAll(userId: string, role: UserRole, pagination: PaginationDto, filters?: {
         search?: string;
         country?: string;
         currency?: string;
+        includeArchived?: boolean;
     }): Promise<{
         data: {
             id: string;
@@ -41,6 +43,7 @@ export declare class PropertiesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         }[];
         meta: {
@@ -63,6 +66,7 @@ export declare class PropertiesService {
         bedrooms: number | null;
         status: import(".prisma/client").$Enums.UnitStatus | null;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
     }>;
     update(userId: string, role: UserRole, id: string, dto: UpdatePropertyDto): Promise<{
@@ -78,9 +82,47 @@ export declare class PropertiesService {
         bedrooms: number | null;
         status: import(".prisma/client").$Enums.UnitStatus | null;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
     }>;
     remove(userId: string, role: UserRole, id: string): Promise<{
         deleted: boolean;
+    }>;
+    archive(userId: string, role: UserRole, id: string): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        country: import(".prisma/client").$Enums.Country;
+        emirateOrState: string | null;
+        currency: import(".prisma/client").$Enums.Currency;
+        unitNo: string | null;
+        bedrooms: number | null;
+        status: import(".prisma/client").$Enums.UnitStatus | null;
+        notes: string | null;
+        archivedAt: Date | null;
+        ownerId: string;
+    } | null>;
+    restore(userId: string, role: UserRole, id: string): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        country: import(".prisma/client").$Enums.Country;
+        emirateOrState: string | null;
+        currency: import(".prisma/client").$Enums.Currency;
+        unitNo: string | null;
+        bedrooms: number | null;
+        status: import(".prisma/client").$Enums.UnitStatus | null;
+        notes: string | null;
+        archivedAt: Date | null;
+        ownerId: string;
+    } | null>;
+    getCascadeInfo(userId: string, role: UserRole, id: string): Promise<{
+        leases: number;
+        cheques: number;
+        payments: number;
     }>;
 }

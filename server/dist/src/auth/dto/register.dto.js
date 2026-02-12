@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RegisterDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
+const client_1 = require("@prisma/client");
 class RegisterDto {
 }
 exports.RegisterDto = RegisterDto;
@@ -33,4 +34,10 @@ __decorate([
     (0, class_validator_1.MinLength)(8, { message: 'Password must be at least 8 characters' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: ['USER', 'PROPERTY_MANAGER'], default: 'USER' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.UserRole, { message: 'Role must be USER or PROPERTY_MANAGER' }),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "role", void 0);
 //# sourceMappingURL=register.dto.js.map

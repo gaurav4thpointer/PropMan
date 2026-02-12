@@ -23,6 +23,7 @@ export declare class RentScheduleService {
                     bedrooms: number | null;
                     status: import(".prisma/client").$Enums.UnitStatus | null;
                     notes: string | null;
+                    archivedAt: Date | null;
                     ownerId: string;
                 };
                 tenant: {
@@ -32,6 +33,7 @@ export declare class RentScheduleService {
                     createdAt: Date;
                     updatedAt: Date;
                     notes: string | null;
+                    archivedAt: Date | null;
                     ownerId: string;
                     phone: string | null;
                     idNumber: string | null;
@@ -70,6 +72,7 @@ export declare class RentScheduleService {
                     bedrooms: number | null;
                     status: import(".prisma/client").$Enums.UnitStatus | null;
                     notes: string | null;
+                    archivedAt: Date | null;
                     ownerId: string;
                 };
                 tenant: {
@@ -79,6 +82,7 @@ export declare class RentScheduleService {
                     createdAt: Date;
                     updatedAt: Date;
                     notes: string | null;
+                    archivedAt: Date | null;
                     ownerId: string;
                     phone: string | null;
                     idNumber: string | null;
@@ -88,6 +92,7 @@ export declare class RentScheduleService {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 startDate: Date;
                 endDate: Date;
@@ -131,6 +136,7 @@ export declare class RentScheduleService {
                 bedrooms: number | null;
                 status: import(".prisma/client").$Enums.UnitStatus | null;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
             };
             tenant: {
@@ -140,6 +146,7 @@ export declare class RentScheduleService {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 phone: string | null;
                 idNumber: string | null;
@@ -149,6 +156,7 @@ export declare class RentScheduleService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             startDate: Date;
             endDate: Date;

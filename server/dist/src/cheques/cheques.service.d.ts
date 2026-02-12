@@ -1,6 +1,7 @@
 import { UserRole, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccessService } from '../access/access.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreateChequeDto } from './dto/create-cheque.dto';
 import { UpdateChequeDto } from './dto/update-cheque.dto';
 import { ChequeStatusUpdateDto } from './dto/cheque-status.dto';
@@ -9,7 +10,9 @@ import { ChequeStatus } from '@prisma/client';
 export declare class ChequesService {
     private prisma;
     private accessService;
-    constructor(prisma: PrismaService, accessService: AccessService);
+    private paymentsService;
+    private readonly logger;
+    constructor(prisma: PrismaService, accessService: AccessService, paymentsService: PaymentsService);
     create(userId: string, role: UserRole, dto: CreateChequeDto): Promise<{
         property: {
             id: string;
@@ -24,6 +27,7 @@ export declare class ChequesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -33,6 +37,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -42,6 +47,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -59,6 +65,7 @@ export declare class ChequesService {
         updatedAt: Date;
         status: import(".prisma/client").$Enums.ChequeStatus;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         propertyId: string;
         tenantId: string;
@@ -78,6 +85,7 @@ export declare class ChequesService {
         tenantId?: string;
         status?: ChequeStatus;
         search?: string;
+        includeArchived?: boolean;
     }): Promise<{
         data: ({
             property: {
@@ -93,6 +101,7 @@ export declare class ChequesService {
                 bedrooms: number | null;
                 status: import(".prisma/client").$Enums.UnitStatus | null;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
             };
             tenant: {
@@ -102,6 +111,7 @@ export declare class ChequesService {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 phone: string | null;
                 idNumber: string | null;
@@ -111,6 +121,7 @@ export declare class ChequesService {
                 createdAt: Date;
                 updatedAt: Date;
                 notes: string | null;
+                archivedAt: Date | null;
                 ownerId: string;
                 startDate: Date;
                 endDate: Date;
@@ -128,6 +139,7 @@ export declare class ChequesService {
             updatedAt: Date;
             status: import(".prisma/client").$Enums.ChequeStatus;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             propertyId: string;
             tenantId: string;
@@ -163,6 +175,7 @@ export declare class ChequesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -172,6 +185,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -181,6 +195,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -198,6 +213,7 @@ export declare class ChequesService {
             updatedAt: Date;
             status: import(".prisma/client").$Enums.ChequeStatus;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             propertyId: string;
             tenantId: string;
@@ -218,6 +234,7 @@ export declare class ChequesService {
             updatedAt: Date;
             status: import(".prisma/client").$Enums.ChequeStatus;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             propertyId: string;
             tenantId: string;
@@ -238,6 +255,7 @@ export declare class ChequesService {
         updatedAt: Date;
         status: import(".prisma/client").$Enums.ChequeStatus;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         propertyId: string;
         tenantId: string;
@@ -266,6 +284,7 @@ export declare class ChequesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -275,6 +294,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -284,6 +304,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -301,6 +322,7 @@ export declare class ChequesService {
         updatedAt: Date;
         status: import(".prisma/client").$Enums.ChequeStatus;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         propertyId: string;
         tenantId: string;
@@ -329,6 +351,7 @@ export declare class ChequesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -338,6 +361,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -347,6 +371,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -364,6 +389,7 @@ export declare class ChequesService {
         updatedAt: Date;
         status: import(".prisma/client").$Enums.ChequeStatus;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         propertyId: string;
         tenantId: string;
@@ -378,6 +404,7 @@ export declare class ChequesService {
         clearedOrBounceDate: Date | null;
         bounceReason: string | null;
     }>;
+    private createPaymentForClearedCheque;
     upcoming(userId: string, role: UserRole, days: 30 | 60 | 90, propertyId?: string): Promise<({
         property: {
             id: string;
@@ -392,6 +419,7 @@ export declare class ChequesService {
             bedrooms: number | null;
             status: import(".prisma/client").$Enums.UnitStatus | null;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
         };
         tenant: {
@@ -401,6 +429,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             phone: string | null;
             idNumber: string | null;
@@ -410,6 +439,7 @@ export declare class ChequesService {
             createdAt: Date;
             updatedAt: Date;
             notes: string | null;
+            archivedAt: Date | null;
             ownerId: string;
             startDate: Date;
             endDate: Date;
@@ -427,6 +457,7 @@ export declare class ChequesService {
         updatedAt: Date;
         status: import(".prisma/client").$Enums.ChequeStatus;
         notes: string | null;
+        archivedAt: Date | null;
         ownerId: string;
         propertyId: string;
         tenantId: string;
@@ -443,6 +474,140 @@ export declare class ChequesService {
     })[]>;
     remove(userId: string, role: UserRole, id: string): Promise<{
         deleted: boolean;
+    }>;
+    archive(userId: string, role: UserRole, id: string): Promise<{
+        property: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            address: string | null;
+            country: import(".prisma/client").$Enums.Country;
+            emirateOrState: string | null;
+            currency: import(".prisma/client").$Enums.Currency;
+            unitNo: string | null;
+            bedrooms: number | null;
+            status: import(".prisma/client").$Enums.UnitStatus | null;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+        };
+        tenant: {
+            id: string;
+            email: string | null;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+            phone: string | null;
+            idNumber: string | null;
+        };
+        lease: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+            startDate: Date;
+            endDate: Date;
+            terminationDate: Date | null;
+            rentFrequency: import(".prisma/client").$Enums.RentFrequency;
+            installmentAmount: Prisma.Decimal;
+            dueDay: number;
+            securityDeposit: Prisma.Decimal | null;
+            propertyId: string;
+            tenantId: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import(".prisma/client").$Enums.ChequeStatus;
+        notes: string | null;
+        archivedAt: Date | null;
+        ownerId: string;
+        propertyId: string;
+        tenantId: string;
+        leaseId: string;
+        replacedByChequeId: string | null;
+        chequeNumber: string;
+        bankName: string;
+        chequeDate: Date;
+        amount: Prisma.Decimal;
+        coversPeriod: string;
+        depositDate: Date | null;
+        clearedOrBounceDate: Date | null;
+        bounceReason: string | null;
+    }>;
+    restore(userId: string, role: UserRole, id: string): Promise<{
+        property: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            address: string | null;
+            country: import(".prisma/client").$Enums.Country;
+            emirateOrState: string | null;
+            currency: import(".prisma/client").$Enums.Currency;
+            unitNo: string | null;
+            bedrooms: number | null;
+            status: import(".prisma/client").$Enums.UnitStatus | null;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+        };
+        tenant: {
+            id: string;
+            email: string | null;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+            phone: string | null;
+            idNumber: string | null;
+        };
+        lease: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            notes: string | null;
+            archivedAt: Date | null;
+            ownerId: string;
+            startDate: Date;
+            endDate: Date;
+            terminationDate: Date | null;
+            rentFrequency: import(".prisma/client").$Enums.RentFrequency;
+            installmentAmount: Prisma.Decimal;
+            dueDay: number;
+            securityDeposit: Prisma.Decimal | null;
+            propertyId: string;
+            tenantId: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import(".prisma/client").$Enums.ChequeStatus;
+        notes: string | null;
+        archivedAt: Date | null;
+        ownerId: string;
+        propertyId: string;
+        tenantId: string;
+        leaseId: string;
+        replacedByChequeId: string | null;
+        chequeNumber: string;
+        bankName: string;
+        chequeDate: Date;
+        amount: Prisma.Decimal;
+        coversPeriod: string;
+        depositDate: Date | null;
+        clearedOrBounceDate: Date | null;
+        bounceReason: string | null;
     }>;
     private assertValidTransition;
     private ensureLeaseAccessible;
