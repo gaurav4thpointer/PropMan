@@ -19,6 +19,12 @@ export class ReportsController {
     return this.reportsService.dashboard(user.id, user.role, propertyId);
   }
 
+  @Get('manager/portfolio')
+  @ApiOperation({ summary: 'Manager: portfolio breakdown by owner for reporting' })
+  managerPortfolio(@CurrentUser() user: User) {
+    return this.reportsService.managerPortfolio(user.id, user.role);
+  }
+
   @Get('export/cheques')
   @ApiOperation({ summary: 'Export cheques as CSV' })
   @Header('Content-Type', 'text/csv')
@@ -26,10 +32,11 @@ export class ReportsController {
     @CurrentUser() user: User,
     @Res() res: Response,
     @Query('propertyId') propertyId?: string,
+    @Query('ownerId') ownerId?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    const csv = await this.reportsService.chequesCsv(user.id, user.role, propertyId, from, to);
+    const csv = await this.reportsService.chequesCsv(user.id, user.role, propertyId, ownerId, from, to);
     res.setHeader('Content-Disposition', 'attachment; filename=cheques.csv');
     res.send(csv);
   }
@@ -41,10 +48,11 @@ export class ReportsController {
     @CurrentUser() user: User,
     @Res() res: Response,
     @Query('propertyId') propertyId?: string,
+    @Query('ownerId') ownerId?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    const csv = await this.reportsService.rentScheduleCsv(user.id, user.role, propertyId, from, to);
+    const csv = await this.reportsService.rentScheduleCsv(user.id, user.role, propertyId, ownerId, from, to);
     res.setHeader('Content-Disposition', 'attachment; filename=rent-schedule.csv');
     res.send(csv);
   }

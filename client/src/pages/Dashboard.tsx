@@ -10,6 +10,7 @@ import type { DashboardData, Property, Cheque, Lease, Tenant, RentSchedule } fro
 import { useAuth } from '../context/AuthContext'
 import { getDaysOverdue } from '../utils/lease'
 import OnboardingDashboard from './OnboardingDashboard'
+import ManagerDashboard from './ManagerDashboard'
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
 
@@ -142,9 +143,10 @@ function CollectionDonut({ rate, size = 120 }: { rate: number; size?: number }) 
 
 type AttentionTab = 'overdue' | 'cheques' | 'leases'
 
-/* ── main component ──────────────────────────────────────────────────── */
+/* ── owner dashboard (for owners and super admins) ─────────────────────── */
 
-export default function Dashboard() {
+function OwnerDashboard() {
+  const { user } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
   const [propertiesList, setPropertiesList] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
@@ -152,7 +154,6 @@ export default function Dashboard() {
   const [filterPropertyId, setFilterPropertyId] = useState('')
   const [onboardingDismissed, setOnboardingDismissed] = useState(false)
   const [attentionTab, setAttentionTab] = useState<AttentionTab>('overdue')
-  const { user } = useAuth()
 
   const onboardingKey = user ? `onboardingDismissed:${user.id}` : 'onboardingDismissed'
 
@@ -564,6 +565,16 @@ export default function Dashboard() {
       </div>
     </div>
   )
+}
+
+/* ── main Dashboard (routes to Manager or Owner) ───────────────────────── */
+
+export default function Dashboard() {
+  const { user } = useAuth()
+  if (user?.role === 'PROPERTY_MANAGER') {
+    return <ManagerDashboard />
+  }
+  return <OwnerDashboard />
 }
 
 /* ── sub-components ──────────────────────────────────────────────────── */

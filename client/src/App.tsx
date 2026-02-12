@@ -6,6 +6,7 @@ import AdminLayout from './components/AdminLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import Alerts from './pages/Alerts'
 import Properties from './pages/Properties'
 import PropertyDetail from './pages/PropertyDetail'
 import Tenants from './pages/Tenants'
@@ -34,6 +35,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<HomeOrApp />}>
             <Route index element={<Dashboard />} />
+            <Route path="alerts" element={<Alerts />} />
             <Route path="properties" element={<Properties />} />
             <Route path="properties/:id" element={<PropertyDetail />} />
             <Route path="tenants" element={<Tenants />} />

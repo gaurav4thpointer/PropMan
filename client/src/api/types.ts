@@ -185,3 +185,21 @@ export interface DashboardData {
   totalChequeValueTracked?: number
   totalSecurityDepositsTracked?: number
 }
+
+export interface ManagerPortfolioOwner {
+  owner: { id: string; name: string | null; email: string }
+  propertyCount: number
+  month: { expected: number; received: number }
+  quarter: { expected: number; received: number }
+  overdueAmount: number
+  overdueCount: number
+  bouncedCount: number
+  vacantCount: number
+  occupiedCount: number
+  expiringLeasesCount: number
+  needsAttention: boolean
+}
+
+export interface ManagerPortfolioReport {
+  owners: ManagerPortfolioOwner[]
+}

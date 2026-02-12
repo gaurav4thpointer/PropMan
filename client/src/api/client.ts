@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Property, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, Paginated, ChequeStatus, CreatePropertyPayload, CascadeInfo, Owner, OwnerWithProperties, Manager } from './types'
+import type { Property, Tenant, Lease, LeaseDocument, RentSchedule, Cheque, Payment, DashboardData, ManagerPortfolioReport, Paginated, ChequeStatus, CreatePropertyPayload, CascadeInfo, Owner, OwnerWithProperties, Manager } from './types'
 
 const baseURL = import.meta.env.VITE_API_URL ?? '/api'
 
@@ -153,7 +153,8 @@ export const payments = {
 
 export const reports = {
   dashboard: (propertyId?: string) => api.get<DashboardData>('/reports/dashboard', { params: { propertyId } }),
-  exportCheques: (params?: { propertyId?: string; from?: string; to?: string }) =>
+  managerPortfolio: () => api.get<ManagerPortfolioReport>('/reports/manager/portfolio'),
+  exportCheques: (params?: { propertyId?: string; ownerId?: string; from?: string; to?: string }) =>
     api.get('/reports/export/cheques', { params, responseType: 'blob' }).then((r) => {
       const url = URL.createObjectURL(r.data as Blob)
       const a = document.createElement('a')
@@ -162,7 +163,7 @@ export const reports = {
       a.click()
       URL.revokeObjectURL(url)
     }),
-  exportRentSchedule: (params?: { propertyId?: string; from?: string; to?: string }) =>
+  exportRentSchedule: (params?: { propertyId?: string; ownerId?: string; from?: string; to?: string }) =>
     api.get('/reports/export/rent-schedule', { params, responseType: 'blob' }).then((r) => {
       const url = URL.createObjectURL(r.data as Blob)
       const a = document.createElement('a')
