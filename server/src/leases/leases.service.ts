@@ -299,9 +299,20 @@ export class LeasesService {
     if (!canAccess) throw new NotFoundException('Property not found');
     const property = await this.prisma.property.findUnique({ where: { id: propertyId }, select: { ownerId: true } });
     if (!property) throw new NotFoundException('Property not found');
-    const tenant = await this.prisma.tenant.findFirst({
-      where: { id: tenantId, ownerId: property.ownerId },
-    });
+    let tenantWhere: Prisma.TenantWhereInput;
+    if (role === UserRole.USER || role === UserRole.SUPER_ADMIN) {
+      // Owners and super admins can only link tenants that belong to the same owner as the property
+      tenantWhere = { id: tenantId, ownerId: property.ownerId };
+    } else if (role === UserRole.PROPERTY_MANAGER) {
+      // Property managers can link any tenant that belongs to an owner they manage,
+      // even if the tenant's owner is different from the property's owner.
+      const managedOwnerIds = await this.accessService.getManagedOwnerIds(userId);
+      tenantWhere = { id: tenantId, ownerId: { in: managedOwnerIds } };
+    } else {
+      // For any other roles, deny access
+      throw new NotFoundException('Tenant not found');
+    }
+    const tenant = await this.prisma.tenant.findFirst({ where: tenantWhere });
     if (!tenant) throw new NotFoundException('Tenant not found');
   }
 
